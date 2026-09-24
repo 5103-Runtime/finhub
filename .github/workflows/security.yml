@@ -12,5 +12,5 @@ permissions:
 
 jobs:
   scan:
-    uses: 5103-Runtime/.github-private/.github/workflows/gitleaks.yml@main
+    uses: 5103-Runtime/.github/.github/workflows/gitleaks.yml@main
     secrets: inherit
