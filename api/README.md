@@ -6,7 +6,7 @@ ASP.NET Core Web API (.NET 10) using controllers.
 - Write routes out in full and in lowercase: `[Route("api/transactions")]`, not `[Route("api/[controller]")]`.
 - Secrets (connection strings, JWT keys) go in user-secrets, never in committed files.
 
-## Local secrets
+## Local Secrets
 
 The project is configured with the user-secrets ID `supabase-api`. Set backend-only values from the repository root:
 
