@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    uses: ./.github/workflows/api.yml
+  web:
+    uses: ./.github/workflows/web.yml
