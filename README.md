@@ -37,4 +37,4 @@ npm ci
 npm run dev
 ```
 
-The web app proxies `/api/` requests to the API, so both need to be running.
+The web app proxies `/api/` requests to the development API, so both need to be running.
