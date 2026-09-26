@@ -11,6 +11,12 @@ permissions:
   pull-requests: read
 
 jobs:
-  scan:
+  gitleaks:
     uses: 5103-Runtime/.github/.github/workflows/gitleaks.yml@main
     secrets: inherit
+
+  dependency-audit:
+    uses: 5103-Runtime/.github/.github/workflows/dependency-audit.yml@main
+    with:
+      node-version: '24'
+      audit-level: 'high'
