@@ -20,3 +20,4 @@ jobs:
     with:
       node-version: '24'
       audit-level: 'high'
+      working-directory: 'web'
