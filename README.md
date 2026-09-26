@@ -4,6 +4,7 @@ A centralized financial ledger for students and young adults. Import statements 
 
 Statements are parsed in the browser; only the extracted transactions are sent to the server.
 
+![CI](https://github.com/5103-Runtime/finhub/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Tech Stack
