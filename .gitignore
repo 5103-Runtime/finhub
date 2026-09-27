@@ -3,3 +3,8 @@
 *.user
 bin/
 obj/
+
+# Local environment files
+.env
+.env.*
+!.env.template
