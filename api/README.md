@@ -11,7 +11,7 @@ ASP.NET Core Web API (.NET 10) using controllers.
 The project is configured with the user-secrets ID `supabase-api`. Set all local API values from the repository root:
 
 ```powershell
-dotnet user-secrets set "ConnectionStrings:Supabase" "Host=db.bwvnqbuxainfmeumnjci.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;SSL Mode=Require" --project api/FinHub.Api
+dotnet user-secrets set "ConnectionStrings:Supabase" "Host=aws-0-us-east-1.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.bwvnqbuxainfmeumnjci;Password=<DB_PASSWORD>;SSL Mode=Require" --project api/FinHub.Api
 dotnet user-secrets set "Supabase:Url" "https://bwvnqbuxainfmeumnjci.supabase.co" --project api/FinHub.Api
 dotnet user-secrets set "Supabase:PublishableKey" "<SUPABASE_PUBLISHABLE_KEY>" --project api/FinHub.Api
 ```
