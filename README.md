@@ -26,7 +26,7 @@ Statements are parsed in the browser; only the extracted transactions are sent t
 Start the API on http://localhost:5013:
 
 ```bash
-dotnet run --project api/FinHub.Api
+dotnet watch --project api/FinHub.Api --urls http://localhost:5013
 ```
 
 In a second terminal, start the web app on http://localhost:5173:
