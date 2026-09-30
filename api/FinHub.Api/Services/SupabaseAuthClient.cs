@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using FinHub.Api.DTOs;
 
@@ -8,9 +9,11 @@ namespace FinHub.Api.Services;
 /// </summary>
 /// <param name="httpClient">The HTTP client to use for making requests.</param>
 /// <param name="configuration">The application configuration.</param>
+/// <param name="logger">The logger to use for logging messages.</param>
 public sealed class SupabaseAuthClient(
     HttpClient httpClient,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    ILogger<SupabaseAuthClient> logger)
 {
     /// <summary>
     /// Registers a new user with Supabase authentication.
@@ -50,13 +53,35 @@ public sealed class SupabaseAuthClient(
 
         if (!response.IsSuccessStatusCode)
         {
-            SupabaseError? error = System.Text.Json.JsonSerializer.Deserialize<SupabaseError>(responseContent);
-            return RegistrationResult.Failed(
-                (int)response.StatusCode,
-                error?.Message ?? error?.DetailedMessage ?? "Registration failed.");
+            SupabaseError? error = null;
+            try
+            {
+                error = JsonSerializer.Deserialize<SupabaseError>(responseContent);
+            }
+            catch (JsonException ex)
+            {
+                // Log the exception and the raw response content to expect what Supabase actually sent
+                logger.LogWarning(ex, "Failed to deserialize Supabase error response as JSON. Raw content: {ResponseContent}", responseContent);
+            }
+
+            string errorMessage = error?.Message ?? error?.DetailedMessage ??
+                (!string.IsNullOrWhiteSpace(responseContent) ? responseContent : "Registration failed.");
+
+            return RegistrationResult.Failed((int)response.StatusCode, errorMessage);
         }
 
-        SupabaseSignupResponse? result = System.Text.Json.JsonSerializer.Deserialize<SupabaseSignupResponse>(responseContent);
+        SupabaseSignupResponse? result = null;
+        try
+        {
+            result = JsonSerializer.Deserialize<SupabaseSignupResponse>(responseContent);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogError(ex, "Failed to deserialize successful Supabase signup response as JSON. Raw content: {ResponseContent}", responseContent);
+            return RegistrationResult.Failed(
+                StatusCodes.Status502BadGateway,
+                "Supabase returned an invalid registration response.");
+        }
 
         // Extract user ID whether it is nested in a 'user' object or flattened at the root
         string? rawUserId = result?.User?.Id ?? result?.Id;
