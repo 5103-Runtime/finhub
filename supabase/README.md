@@ -55,7 +55,7 @@ The CLI may request the database password. Enter it directly in the terminal; do
 
 Do not run `db reset` against the shared project. It is intended for local development and can destroy database data.
 
-## Verify the migration
+## Verify The Migration
 
 In the Supabase Dashboard:
 
@@ -69,8 +69,9 @@ In the Supabase Dashboard:
 
 Supabase Auth owns credentials and password hashing. The `public.profiles` table stores application profile data such as:
 
-- `full_name`
-- `display_name`
+- `first_name`
+- `last_name`
+- `preferred_name`
 - `date_of_birth`
 - `avatar_url`
 - timestamps
@@ -79,26 +80,8 @@ These fields are nullable so registration can begin with only an email and passw
 
 The profile table is not the place for financial data. Future tables such as `financial_accounts` and `transactions` should have their own migrations and reference the authenticated user's ID.
 
-## API and EF Core ownership
+## API and EF Core Ownership
 
 Supabase migrations own the creation of `public.profiles`, its policies, and its triggers. Later, the ASP.NET API can map that table with an EF Core entity and query it through `FinHubDbContext`.
 
 Do not create a second EF Core migration for the same `profiles` table. EF Core should map and query the table; Supabase migrations should remain the source of truth for this Supabase-specific schema.
-
-## Frontend integration later
-
-No UI is required to complete the database setup. When registration is implemented, the frontend Supabase client can call Auth:
-
-```ts
-const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: {
-      full_name: fullName,
-    },
-  },
-})
-```
-
-After authentication, frontend profile queries should use the authenticated user's ID and the RLS-protected `public.profiles` table. Never put a database password or service-role key in the frontend.
