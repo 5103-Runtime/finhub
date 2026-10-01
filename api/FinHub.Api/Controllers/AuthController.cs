@@ -17,13 +17,34 @@ public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBa
     /// </summary>
     /// <param name="request">The registration request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The registration response.</returns>
+    /// <returns>The authentication response.</returns>
     [HttpPost("register")]
-    public async Task<ActionResult<RegisterResponse>> Register(
+    public async Task<ActionResult<AuthResponse>> Register(
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        RegistrationResult result = await authClient.RegisterAsync(request, cancellationToken);
+        AuthResult result = await authClient.RegisterAsync(request, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return StatusCode(result.StatusCode, new { error = result.Error });
+        }
+
+        return StatusCode(result.StatusCode, result.Response);
+    }
+
+    /// <summary>
+    /// Logs in a user with the provided login credentials.
+    /// </summary>
+    /// <param name="request">The login request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication response.</returns>
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponse>> Login(
+        LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        AuthResult result = await authClient.LoginAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {

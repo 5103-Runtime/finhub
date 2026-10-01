@@ -22,14 +22,11 @@ public sealed class SupabaseAuthClient(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The registration result.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the Supabase configuration is missing or invalid.</exception>
-    public async Task<RegistrationResult> RegisterAsync(
+    public async Task<AuthResult> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        string supabaseUrl = configuration["Supabase:Url"]
-            ?? throw new InvalidOperationException("Supabase URL is not configured.");
-        string publishableKey = configuration["Supabase:PublishableKey"]
-            ?? throw new InvalidOperationException("Supabase publishable key is not configured.");
+        (string? supabaseUrl, string? publishableKey) = GetSupabaseConfig();
 
         using HttpRequestMessage message = new(
             HttpMethod.Post,
@@ -40,12 +37,6 @@ public sealed class SupabaseAuthClient(
         {
             email = request.Email,
             password = request.Password,
-            data = new
-            {
-                first_name = request.FirstName,
-                last_name = request.LastName,
-                preferred_name = request.PreferredName
-            }
         });
 
         using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
@@ -53,75 +44,159 @@ public sealed class SupabaseAuthClient(
 
         if (!response.IsSuccessStatusCode)
         {
-            SupabaseError? error = null;
-            try
-            {
-                error = JsonSerializer.Deserialize<SupabaseError>(responseContent);
-            }
-            catch (JsonException ex)
-            {
-                // Log the exception and the raw response content to expect what Supabase actually sent
-                logger.LogWarning(ex, "Failed to deserialize Supabase error response as JSON. Raw content: {ResponseContent}", responseContent);
-            }
-
-            string errorMessage = error?.Message ?? error?.DetailedMessage ??
-                (!string.IsNullOrWhiteSpace(responseContent) ? responseContent : "Registration failed.");
-
-            return RegistrationResult.Failed((int)response.StatusCode, errorMessage);
+            return HandleErrorResponse(response, responseContent, "Registration failed.");
         }
 
-        SupabaseSignupResponse? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<SupabaseSignupResponse>(responseContent);
-        }
-        catch (JsonException ex)
-        {
-            logger.LogError(ex, "Failed to deserialize successful Supabase signup response as JSON. Raw content: {ResponseContent}", responseContent);
-            return RegistrationResult.Failed(
-                StatusCodes.Status502BadGateway,
-                "Supabase returned an invalid registration response.");
-        }
-
-        // Extract user ID whether it is nested in a 'user' object or flattened at the root
-        string? rawUserId = result?.User?.Id ?? result?.Id;
-        if (rawUserId is null || !Guid.TryParse(rawUserId, out Guid userId))
-        {
-            return RegistrationResult.Failed(
-                StatusCodes.Status502BadGateway,
-                "Supabase returned an invalid registration response.");
-        }
-
-        // If AccessToken is null or empty, email confirmation is required and no active session was returned
-        bool requiresEmailConfirmation = string.IsNullOrEmpty(result?.AccessToken);
-
-        return RegistrationResult.Success(
-            new RegisterResponse(userId, requiresEmailConfirmation));
+        return ParseAuthResponse(responseContent, StatusCodes.Status201Created);
     }
 
     /// <summary>
-    /// Represents the response from Supabase when a user signs up.
+    /// Logs in a user with Supabase authentication.
     /// </summary>
-    private sealed class SupabaseSignupResponse
+    /// <param name="request">The login request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication result.</returns>
+    public async Task<AuthResult> LoginAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        (string? supabaseUrl, string? publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Post,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/token?grant_type=password");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Content = JsonContent.Create(new
+        {
+            email = request.Email,
+            password = request.Password
+        });
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return HandleErrorResponse(response, responseContent, "Login failed.");
+        }
+
+        return ParseAuthResponse(responseContent, StatusCodes.Status200OK);
+    }
+
+    /// <summary>
+    /// Retrieves the Supabase configuration (URL and publishable key) from the application settings.
+    /// </summary>
+    /// <returns>A tuple containing the Supabase URL and publishable key.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the Supabase configuration is missing.</exception>
+    private (string Url, string Key) GetSupabaseConfig()
+    {
+        string url = configuration["Supabase:Url"]
+            ?? throw new InvalidOperationException("Supabase URL is not configured.");
+        string key = configuration["Supabase:PublishableKey"]
+            ?? throw new InvalidOperationException("Supabase publishable key is not configured.");
+        return (url, key);
+    }
+
+    /// <summary>
+    /// Parses the authentication response from Supabase and constructs an AuthResult.
+    /// </summary>
+    /// <param name="responseContent">The raw response content from Supabase.</param>
+    /// <param name="statusCode">The status code of the response.</param>
+    /// <returns>The authentication result.</returns>
+    private AuthResult ParseAuthResponse(string responseContent, int statusCode)
+    {
+        SupabaseAuthResponse? result = null;
+        try
+        {
+            result = JsonSerializer.Deserialize<SupabaseAuthResponse>(responseContent);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogError(ex, "Failed to deserialize Supabase auth response. Raw content: {ResponseContent}", responseContent);
+            return AuthResult.Failed(StatusCodes.Status502BadGateway, "Supabase returned an invalid authentication response.");
+        }
+
+        string? rawUserId = result?.User?.Id ?? result?.Id;
+        if (rawUserId is null || !Guid.TryParse(rawUserId, out Guid userId))
+        {
+            return AuthResult.Failed(StatusCodes.Status502BadGateway, "Supabase returned an invalid user identifier.");
+        }
+
+        bool requiresEmailConfirmation = string.IsNullOrEmpty(result?.AccessToken);
+
+        AuthResponse responseDto = new(
+            userId,
+            result?.AccessToken,
+            result?.RefreshToken,
+            result?.ExpiresIn,
+            requiresEmailConfirmation);
+
+        return AuthResult.Success(statusCode, responseDto);
+    }
+
+    /// <summary>
+    /// Handles error responses from Supabase and constructs an AuthResult indicating failure.
+    /// </summary>
+    /// <param name="response">The HTTP response from Supabase.</param>
+    /// <param name="responseContent">The raw response content from Supabase.</param>
+    /// <param name="defaultMessage">The default error message to use if the response content is empty.</param>
+    /// <returns>The authentication result indicating failure.</returns>
+    private AuthResult HandleErrorResponse(HttpResponseMessage response, string responseContent, string defaultMessage)
+    {
+        SupabaseError? error = null;
+        try
+        {
+            error = JsonSerializer.Deserialize<SupabaseError>(responseContent);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Failed to deserialize Supabase error response. Raw content: {ResponseContent}", responseContent);
+        }
+
+        string errorMessage = error?.Message ?? error?.ErrorCode ??
+            (!string.IsNullOrWhiteSpace(responseContent) ? responseContent : defaultMessage);
+
+        return AuthResult.Failed((int)response.StatusCode, errorMessage);
+    }
+
+    /// <summary>
+    /// Represents the response from Supabase when a user attempts to authenticate or register.
+    /// </summary>
+    private sealed class SupabaseAuthResponse
     {
         /// <summary>
-        /// The user object returned by Supabase. This may be null if the user creation failed.
+        /// The unique identifier of the user. This is a GUID string.
         /// </summary>
         [JsonPropertyName("id")]
         public string? Id { get; init; }
 
         /// <summary>
-        /// The user object returned by Supabase. This may be null if the user creation failed.
+        /// The user object returned by Supabase. This may be null if the user creation failed or if the email is not provided.
         /// </summary>
         [JsonPropertyName("user")]
         public SupabaseUser? User { get; init; }
 
         /// <summary>
-        /// The access token returned by Supabase. This may be null if email confirmation is required.
+        /// The access token returned by Supabase upon successful authentication. 
+        /// This may be null if the user needs to confirm their email or if the authentication failed.
         /// </summary>
         [JsonPropertyName("access_token")]
         public string? AccessToken { get; init; }
 
+        /// <summary>
+        /// The refresh token returned by Supabase upon successful authentication.
+        /// This may be null if the user needs to confirm their email or if the authentication failed
+        /// </summary>
+        [JsonPropertyName("refresh_token")]
+        public string? RefreshToken { get; init; }
+
+        /// <summary>
+        /// The number of seconds until the access token expires. 
+        /// This may be null if the user needs to confirm their email or if the authentication failed.
+        /// </summary>
+        [JsonPropertyName("expires_in")]
+        public int? ExpiresIn { get; init; }
     }
 
     /// <summary>
@@ -148,46 +223,51 @@ public sealed class SupabaseAuthClient(
     private sealed class SupabaseError
     {
         /// <summary>
+        /// The HTTP status code returned by Supabase.
+        /// </summary>
+        [JsonPropertyName("code")]
+        public int? Code { get; init; }
+        
+        /// <summary>
+        /// The error code returned by Supabase.
+        /// </summary>
+        [JsonPropertyName("error_code")]
+        public string? ErrorCode { get; init; }
+
+        /// <summary>
         /// The error message returned by Supabase.
         /// </summary>
         [JsonPropertyName("msg")]
         public string? Message { get; init; }
-
-        /// <summary>
-        /// The detailed error message returned by Supabase, if available.
-        /// </summary>
-        [JsonPropertyName("message")]
-        public string? DetailedMessage { get; init; }
     }
 }
 
 /// <summary>
-/// Represents the result of a registration attempt with Supabase.
+/// Represents the result of a authentication attempt with Supabase.
 /// </summary>
-/// <param name="Succeeded">The success status of the registration.</param>
-/// <param name="StatusCode">The status code of the registration response.</param>
-/// <param name="Response">The response from the registration attempt.</param>
-/// <param name="Error">The error message, if the registration failed.</param>
-public sealed record RegistrationResult(
+/// <param name="Succeeded">The success status of the authentication.</param>
+/// <param name="StatusCode">The status code of the authentication response.</param>
+/// <param name="Response">The response from the authentication attempt.</param>
+/// <param name="Error">The error message, if the authentication failed.</param>
+public sealed record AuthResult(
     bool Succeeded,
     int StatusCode,
-    RegisterResponse? Response,
+    AuthResponse? Response,
     string? Error)
 {
     /// <summary>
-    /// Creates a successful registration result with the provided response.
+    /// Creates a successful authentication result with the provided response.
     /// </summary>
-    /// <param name="response">The response from the registration attempt.</param>
-    /// <returns>A new RegistrationResult instance indicating success.</returns>
-    public static RegistrationResult Success(RegisterResponse response) =>
-        new(true, StatusCodes.Status201Created, response, null);
+    /// <param name="statusCode">The status code of the authentication response.</param>
+    /// <param name="response">The response from the authentication attempt.</param>
+    /// <returns>A new AuthResult instance indicating success.</returns>
+    public static AuthResult Success(int statusCode, AuthResponse response) => new(true, statusCode, response, null);
 
     /// <summary>
-    /// Creates a failed registration result with the provided status code and error message.
+    /// Creates a failed authentication result with the provided status code and error message.
     /// </summary>
-    /// <param name="statusCode">The status code of the registration response.</param>
+    /// <param name="statusCode">The status code of the authentication response.</param>
     /// <param name="error">The error message.</param>
-    /// <returns>A new RegistrationResult instance indicating failure.</returns>
-    public static RegistrationResult Failed(int statusCode, string error) =>
-        new(false, statusCode, null, error);
+    /// <returns>A new AuthResult instance indicating failure.</returns>
+    public static AuthResult Failed(int statusCode, string error) => new(false, statusCode, null, error);
 }
