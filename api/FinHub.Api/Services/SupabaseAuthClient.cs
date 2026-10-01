@@ -154,10 +154,12 @@ public sealed class SupabaseAuthClient(
             logger.LogWarning(ex, "Failed to deserialize Supabase error response. Raw content: {ResponseContent}", responseContent);
         }
 
-        string errorMessage = error?.Message ?? error?.ErrorCode ??
-            (!string.IsNullOrWhiteSpace(responseContent) ? responseContent : defaultMessage);
+        string errorMessage = !string.IsNullOrWhiteSpace(error?.Message)
+            ? error.Message
+            : (error?.ErrorCode ?? (!string.IsNullOrWhiteSpace(responseContent) ? responseContent : defaultMessage));
+        string? errorCode = error?.ErrorCode;
 
-        return AuthResult.Failed((int)response.StatusCode, errorMessage);
+        return AuthResult.Failed((int)response.StatusCode, errorMessage, errorCode);
     }
 
     /// <summary>
@@ -227,7 +229,7 @@ public sealed class SupabaseAuthClient(
         /// </summary>
         [JsonPropertyName("code")]
         public int? Code { get; init; }
-        
+
         /// <summary>
         /// The error code returned by Supabase.
         /// </summary>
@@ -249,11 +251,13 @@ public sealed class SupabaseAuthClient(
 /// <param name="StatusCode">The status code of the authentication response.</param>
 /// <param name="Response">The response from the authentication attempt.</param>
 /// <param name="Error">The error message, if the authentication failed.</param>
+/// <param name="ErrorCode">The error code, if the authentication failed.</param>
 public sealed record AuthResult(
     bool Succeeded,
     int StatusCode,
     AuthResponse? Response,
-    string? Error)
+    string? Error,
+    string? ErrorCode)
 {
     /// <summary>
     /// Creates a successful authentication result with the provided response.
@@ -261,13 +265,14 @@ public sealed record AuthResult(
     /// <param name="statusCode">The status code of the authentication response.</param>
     /// <param name="response">The response from the authentication attempt.</param>
     /// <returns>A new AuthResult instance indicating success.</returns>
-    public static AuthResult Success(int statusCode, AuthResponse response) => new(true, statusCode, response, null);
+    public static AuthResult Success(int statusCode, AuthResponse response) => new(true, statusCode, response, null, null);
 
     /// <summary>
     /// Creates a failed authentication result with the provided status code and error message.
     /// </summary>
     /// <param name="statusCode">The status code of the authentication response.</param>
     /// <param name="error">The error message.</param>
+    /// <param name="errorCode">The error code.</param>
     /// <returns>A new AuthResult instance indicating failure.</returns>
-    public static AuthResult Failed(int statusCode, string error) => new(false, statusCode, null, error);
+    public static AuthResult Failed(int statusCode, string error, string? errorCode = null) => new(false, statusCode, null, error, errorCode);
 }
