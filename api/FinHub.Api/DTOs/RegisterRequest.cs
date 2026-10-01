@@ -20,22 +20,4 @@ public sealed class RegisterRequest
     [Required]
     [MinLength(8)]
     public string Password { get; init; } = "";
-
-    /// <summary>
-    /// The display name of the new user. Optional, but if provided, must not exceed 100 characters.
-    /// </summary>
-    [MaxLength(100)]
-    public string? FirstName { get; init; }
-
-    /// <summary>
-    /// The last name of the new user. Optional, but if provided, must not exceed 100 characters.
-    /// </summary>
-    [MaxLength(100)]
-    public string? LastName { get; init; }
-
-    /// <summary>
-    /// The preferred name of the new user. Optional, but if provided, must not exceed 100 characters.
-    /// </summary>
-    [MaxLength(100)]
-    public string? PreferredName { get; init; }
 }
