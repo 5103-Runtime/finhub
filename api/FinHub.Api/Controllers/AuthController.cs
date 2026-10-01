@@ -27,7 +27,11 @@ public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBa
 
         if (!result.Succeeded)
         {
-            return StatusCode(result.StatusCode, new { error = result.Error });
+            return StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
+            });
         }
 
         return StatusCode(result.StatusCode, result.Response);
@@ -48,7 +52,11 @@ public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBa
 
         if (!result.Succeeded)
         {
-            return StatusCode(result.StatusCode, new { error = result.Error });
+            return StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
+            });
         }
 
         return StatusCode(result.StatusCode, result.Response);
