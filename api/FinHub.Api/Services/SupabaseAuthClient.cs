@@ -26,7 +26,7 @@ public sealed class SupabaseAuthClient(
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        (string? supabaseUrl, string? publishableKey) = GetSupabaseConfig();
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
 
         using HttpRequestMessage message = new(
             HttpMethod.Post,
@@ -60,7 +60,7 @@ public sealed class SupabaseAuthClient(
         LoginRequest request,
         CancellationToken cancellationToken)
     {
-        (string? supabaseUrl, string? publishableKey) = GetSupabaseConfig();
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
 
         using HttpRequestMessage message = new(
             HttpMethod.Post,
