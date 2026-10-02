@@ -1,4 +1,3 @@
-
 import { apiPost } from "./apiClient";
 export { ApiError } from "./apiClient";
 
@@ -31,5 +30,8 @@ export interface RegisterResponse {
  * @throws ApiError If the registration request fails.
  */
 export function register(request: RegisterRequest) {
-  return apiPost<RegisterRequest, RegisterResponse>("/api/auth/register", request);
+  return apiPost<RegisterRequest, RegisterResponse>(
+    "/api/auth/register",
+    request,
+  );
 }
