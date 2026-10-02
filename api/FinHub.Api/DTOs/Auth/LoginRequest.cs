@@ -1,23 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FinHub.Api.DTOs;
+namespace FinHub.Api.DTOs.Auth;
 
 /// <summary>
-/// Represents a request to register a new user.
+/// Represents a request to log into an existing user account.
 /// </summary>
-public sealed class RegisterRequest
+public sealed class LoginRequest
 {
     /// <summary>
-    /// The email address of the new user. Must be a valid email format.
+    /// The email address of the user.
     /// </summary>
     [Required]
     [EmailAddress]
     public string Email { get; init; } = "";
 
     /// <summary>
-    /// The password for the new user. Must be at least 8 characters long.
+    /// The user's password.
     /// </summary>
     [Required]
-    [MinLength(8)]
     public string Password { get; init; } = "";
 }
