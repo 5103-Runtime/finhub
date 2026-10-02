@@ -1,10 +1,14 @@
 //sends JSON to API and throws a ApiError whenever a request fails
 
-//error object , client throws when the API sends a failure
+/**
+ * @breif Represents a error returned from a API request
+ * ApiError is thrown when a API request fails, allowing callers
+ * to access the HTTP status, error code, and field specific errors
+ */
 //example use:
 //  try{ await signUp(data) }
 //  catch(err) {if (err instanceof ApiError) show(err.message) }
-export class ApiError extends Error{
+export class ApiError extends Error {
 
     status: number;
     errorCode?: string;
@@ -25,43 +29,61 @@ export class ApiError extends Error{
 
 }
 
-//typescript interface Error response
+/**
+ * @breif Represents the possible structure of a API error response.
+ * API may return different error information depending on the type of failure
+ */
 interface ErrorBody {
-  error?: string;
-  errorCode?: string;
-  title?: string;
-  detail?: string;
-  errors?: Record<string, string[]>;
+    error?: string;
+    errorCode?: string;
+    title?: string;
+    detail?: string;
+    errors?: Record<string, string[]>;
 }
 
-//send POST request with JSON body, returns parsed JSON response
+/**
+ * @breif Sends a POST request with a JSON body and returns the parsed reponse
+ * 
+ * if request fails, API error response is parsed and a APIError is thrown
+ * containing the error information
+ * 
+ * @tparam TBody Type of request body 
+ * @tparam TResponse type of the expected successful response 
+ * 
+ * @param path API endpoint to send POST to
+ * @param body Data to send in request body
+ * 
+ * @returns the parsed successful API response
+ * @throws ApiError If the API request fails.
+ */
 export async function apiPost<TBody, TResponse>(
-    path: string,
+    path: string, 
     body: TBody,
 
 ): Promise<TResponse> {
     const res = await fetch(path, {
         method: "POST",
-        headers: { "Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
 
-  const data = (await res.json().catch(() => null)) as ErrorBody | null;
 
-  if(!res.ok) {
-    const firstFieldError = data?.errors
-    ? Object.values(data.errors)[0]?.[0]
-    : undefined;
+    if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as ErrorBody | null;
 
-    const message = 
-    data?.error ??
-    firstFieldError ??
-    data?.detail ??
-    data?.title ??
-    `Request failed (${res.status})`;
+        const firstFieldError = data?.errors
+            ? Object.values(data.errors)[0]?.[0]
+            : undefined;
 
-    throw new ApiError(res.status, message, data?.errorCode, data?.errors);
+        const message =
+            data?.error ??
+            firstFieldError ??
+            data?.detail ??
+            data?.title ??
+            `Request failed (${res.status})`;
 
-  }
-  return data as unknown as TResponse;
+        throw new ApiError(res.status, message, data?.errorCode, data?.errors);
+
+    }
+    return (await res.json()) as TResponse;
 }

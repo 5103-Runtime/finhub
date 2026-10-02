@@ -2,14 +2,18 @@
 import { apiPost } from "./apiClient";
 export { ApiError } from "./apiClient";
 
-//request body for sign-up
-export interface SignUpRequest {
+/**
+ * @brief Represents the data required to register a new user.
+ */
+export interface RegisterRequest {
   email: string;
   password: string;
 }
 
-//successful response
-export interface SignUpResponse {
+/**
+ * @brief Represents the response returned after a successful user registration.
+ */
+export interface RegisterResponse {
   userId: string;
   accessToken: string | null;
   refreshToken: string | null;
@@ -17,7 +21,15 @@ export interface SignUpResponse {
   requiresEmailConfirmation: boolean;
 }
 
-//POST, throws ApiError on failure
-export function signUp(request: SignUpRequest) {
-  return apiPost<SignUpRequest, SignUpResponse>("/api/auth/register", request);
+/**
+ * @brief Registers a new user through the authentication API.
+ *
+ * @param request User registration information containing an email and password.
+ *
+ * @returns A promise containing the newly registered user's information.
+ *
+ * @throws ApiError If the registration request fails.
+ */
+export function register(request: RegisterRequest) {
+  return apiPost<RegisterRequest, RegisterResponse>("/api/auth/register", request);
 }
