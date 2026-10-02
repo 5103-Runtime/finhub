@@ -1,4 +1,3 @@
-//sends JSON to API and throws a ApiError whenever a request fails
 
 /**
  * @breif Represents a error returned from a API request
