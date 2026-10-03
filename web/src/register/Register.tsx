@@ -43,7 +43,16 @@ const signupSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter.')
     .regex(/[0-9]/, 'Password must contain at least one number.')
     .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character.'),
+  confirmPassword: z
+  .string()
+  .min(1,"Please re-enter your password")
+  
+  ,
 })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 //Defining a type based of the signup schema
 type FormValues = z.infer<typeof signupSchema>
 
@@ -58,6 +67,7 @@ function Register() {
       // preferredName: '',
       email: '',
       password: '',
+      confirmPassword: ''
     },
     mode: 'onTouched',
   });
@@ -154,6 +164,23 @@ function Register() {
               autoComplete="new-password"
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+            />
+          )}
+        />
+        <Controller
+          name="confirmPassword"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              id="confirm-password"
+              label="Re-enter Password"
+              required
+              type="password"
+              variant="outlined"
+              autoComplete="new-password"
+              error={Boolean(errors.confirmPassword)}
+              helperText={errors.confirmPassword?.message}
             />
           )}
         />
