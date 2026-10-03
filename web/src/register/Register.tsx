@@ -2,6 +2,7 @@
 import { Box, Button, Container, Stack, TextField, Typography } from "@mui/material";
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod";
+import { register, ApiError } from "../services/authApi";
 import z from "zod";
 
 // Zod schema used to validate the information included in the register form.
@@ -47,15 +48,27 @@ function Register() {
     mode: 'onTouched',
   });
 
-  // TODO: change when API is connected
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    try {
-      //This is just a placeholder to test submission
-      console.log('Valid payload sending to backend API:', data);
-    } catch (err) {
-      console.error(err);
+  try {
+    const response = await register({
+      email: data.email,
+      password: data.password,
+    });
+
+    console.log("Registration successful:", response);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.error("Registration failed:", {
+        message: err.message,
+        status: err.status,
+        errorCode: err.errorCode,
+        fieldErrors: err.fieldErrors,
+    });
+    } else {
+      console.error("Unexpected error:", err);
     }
-  };
+  }
+};
 
   return <Container id="page-container">
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate >
