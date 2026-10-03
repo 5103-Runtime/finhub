@@ -8,12 +8,8 @@ import z from "zod";
 // Zod schema used to validate the information included in the register form.
 const signupSchema = z.object({
   email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, 'Email is required.')
-    .email('Please enter a valid email address.')
-    .max(254, 'Email must be 254 characters or less.'),
+  .email("Please enter a valid email address.")
+  .max(254, "Email must be 254 characters or less."),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters long.')
@@ -59,10 +55,10 @@ function Register() {
   } catch (err) {
     if (err instanceof ApiError) {
       console.error("Registration failed:", {
-        message: err.message,
-        status: err.status,
-        errorCode: err.errorCode,
-        fieldErrors: err.fieldErrors,
+      message: err.message,
+      status: err.status,
+      errorCode: err.errorCode,
+      fieldErrors: err.fieldErrors,
     });
     } else {
       console.error("Unexpected error:", err);
