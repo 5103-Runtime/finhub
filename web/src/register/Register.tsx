@@ -4,29 +4,30 @@ import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 
+
 // This regex is for checking if there are special characters in a name. We can remove this if we want to have names like O'Leary or names in other languages.
-const strictAlphaRegex = /^[A-Za-z\s]+$/;
+// const strictAlphaRegex = /^[A-Za-z\s]+$/;
 
 // Zod schema used to validate the information included in the register form.
 const signupSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(1, 'First name is required.')
-    .max(50, 'First name must be 50 characters or less.')
-    .regex(strictAlphaRegex, "First name must not contain special characters")
-  ,
-  lastName: z
-    .string()
-    .trim()
-    .min(1, 'Last name is required.')
-    .max(50, 'Last name must be 50 characters or less.')
-    .regex(strictAlphaRegex, "First name must not contain special characters")
-  ,
-  preferredName: z
-    .string()
-    .trim()
-    .max(50, "Preferred name must be 50 characters or less."),
+  // firstName: z
+  //   .string()
+  //   .trim()
+  //   .min(1, 'First name is required.')
+  //   .max(50, 'First name must be 50 characters or less.')
+  //   .regex(strictAlphaRegex, "First name must not contain special characters")
+  // ,
+  // lastName: z
+  //   .string()
+  //   .trim()
+  //   .min(1, 'Last name is required.')
+  //   .max(50, 'Last name must be 50 characters or less.')
+  //   .regex(strictAlphaRegex, "First name must not contain special characters")
+  // ,
+  // preferredName: z
+  //   .string()
+  //   .trim()
+  //   .max(50, "Preferred name must be 50 characters or less."),
   email: z
     .string()
     .trim()
@@ -52,9 +53,9 @@ function Register() {
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      preferredName: '',
+      // firstName: '',
+      // lastName: '',
+      // preferredName: '',
       email: '',
       password: '',
     },
@@ -75,7 +76,7 @@ function Register() {
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate >
       <Stack id="text-field-box" spacing={2}>
         <Typography variant="h1" align="center">Register</Typography>
-        <Controller
+        {/* <Controller
           name="firstName"
           control={control}
           render={({ field }) => (
@@ -121,7 +122,7 @@ function Register() {
               helperText={errors.preferredName?.message}
             />
           )}
-        />
+        /> */}
         <Controller
           name="email"
           control={control}
