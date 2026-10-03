@@ -1,31 +1,28 @@
-
 /**
  * @brief Represents a error returned from a API request
  * ApiError is thrown when a API request fails, allowing callers
  * to access the HTTP status, error code, and field specific errors
  */
 //example use:
-//  try{ await signUp(data) }
+//  try{ await register(data) }
 //  catch(err) {if (err instanceof ApiError) show(err.message) }
 export class ApiError extends Error {
+  status: number;
+  errorCode?: string;
+  fieldErrors?: Record<string, string[]>;
 
-    status: number;
-    errorCode?: string;
-    fieldErrors?: Record<string, string[]>;
-
-    constructor(
-        status: number,
-        message: string,
-        errorCode?: string,
-        fieldErrors?: Record<string, string[]>,
-    ) {
-        super(message);
-        this.name = "ApiError";
-        this.status = status;
-        this.errorCode = errorCode;
-        this.fieldErrors = fieldErrors;
-    }
-
+  constructor(
+    status: number,
+    message: string,
+    errorCode?: string,
+    fieldErrors?: Record<string, string[]>,
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.errorCode = errorCode;
+    this.fieldErrors = fieldErrors;
+  }
 }
 
 /**
@@ -33,11 +30,11 @@ export class ApiError extends Error {
  * API may return different error information depending on the type of failure
  */
 interface ErrorBody {
-    error?: string;
-    errorCode?: string;
-    title?: string;
-    detail?: string;
-    errors?: Record<string, string[]>;
+  error?: string;
+  errorCode?: string;
+  title?: string;
+  detail?: string;
+  errors?: Record<string, string[]>;
 }
 
 /**
@@ -45,13 +42,13 @@ interface ErrorBody {
  * 
  * if request fails, API error response is parsed and a APIError is thrown
  * containing the error information
- * 
- * @tparam TBody Type of request body 
- * @tparam TResponse type of the expected successful response 
- * 
+ *
+ * @tparam TBody Type of request body
+ * @tparam TResponse type of the expected successful response
+ *
  * @param path API endpoint to send POST to
  * @param body Data to send in request body
- * 
+ *
  * @returns the parsed successful API response
  * @throws ApiError If the API request fails.
  */
