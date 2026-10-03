@@ -1,9 +1,13 @@
 // Contributor: Marlon Gonzalez
-import { Box, Button, Container, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Container, Stack, TextField, Typography, InputAdornment, IconButton } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "../services/authApi";
+import { useState } from "react";
 import z from "zod";
+
 
 // Zod schema used to validate the information included in the register form.
 const signupSchema = z.object({
@@ -21,7 +25,6 @@ const signupSchema = z.object({
   confirmPassword: z
   .string()
   .min(1,"Please re-enter your password")
-  
   ,
 })
   .refine((data) => data.password === data.confirmPassword, {
@@ -33,6 +36,9 @@ type FormValues = z.infer<typeof signupSchema>
 
 // Functional component with a form to take in user info and validate said info using zod and react-form-hook.
 function Register() {
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
@@ -96,11 +102,28 @@ function Register() {
               id="password"
               label="Password"
               required
-              type="password"
+              type={showPassword ? "text" : "password"}
               variant="outlined"
               autoComplete="new-password"
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           )}
         />
@@ -113,11 +136,36 @@ function Register() {
               id="confirm-password"
               label="Re-enter Password"
               required
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               variant="outlined"
               autoComplete="new-password"
               error={Boolean(errors.confirmPassword)}
               helperText={errors.confirmPassword?.message}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowConfirmPassword((prev) => !prev)
+                        }
+                        edge="end"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           )}
         />
