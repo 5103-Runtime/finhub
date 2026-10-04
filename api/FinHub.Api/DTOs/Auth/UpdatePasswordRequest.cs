@@ -18,5 +18,5 @@ public sealed class UpdatePasswordRequest
     /// </summary>
     [Required]
     [MinLength(8)]
-    public string NewPassword { get; init; } = "";
+    public string Password { get; init; } = "";
 }
