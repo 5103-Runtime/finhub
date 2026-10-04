@@ -1,5 +1,12 @@
+// Contributor: Marlon Gonzalez
+import { Route, Routes} from 'react-router-dom'
+import Register from '@app/components/register/Register'
+
 function App() {
-  return <h1>FinHub</h1>
+  return <Routes>
+    {/* TODO: Change default route when its page is created */}
+     <Route path = "/" element={<Register/>}></Route>
+  </Routes>
 }
 
 export default App
