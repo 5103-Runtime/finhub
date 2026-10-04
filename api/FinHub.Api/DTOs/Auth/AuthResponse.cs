@@ -1,4 +1,4 @@
-namespace FinHub.Api.DTOs;
+namespace FinHub.Api.DTOs.Auth;
 
 /// <summary>
 /// Represents the response returned after a successful user authentication.

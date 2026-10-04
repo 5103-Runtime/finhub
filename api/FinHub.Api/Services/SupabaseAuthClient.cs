@@ -1,6 +1,7 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FinHub.Api.DTOs;
+using FinHub.Api.DTOs.Auth;
 
 namespace FinHub.Api.Services;
 
@@ -15,6 +16,7 @@ public sealed class SupabaseAuthClient(
     IConfiguration configuration,
     ILogger<SupabaseAuthClient> logger)
 {
+    #region Public Methods
     /// <summary>
     /// Registers a new user with Supabase authentication.
     /// </summary>
@@ -85,6 +87,80 @@ public sealed class SupabaseAuthClient(
     }
 
     /// <summary>
+    /// Updates the password for the authenticated user using Supabase authentication.
+    /// </summary>
+    /// <param name="accessToken">The access token for the authenticated user.</param>
+    /// <param name="request">The update password request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication result.</returns>
+    public async Task<AuthResult> UpdatePasswordAsync(
+        string accessToken,
+        UpdatePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Put,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        message.Content = JsonContent.Create(new
+        {
+            password = request.Password,
+            current_password = request.CurrentPassword
+        });
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return HandleErrorResponse(response, responseContent, "Password update failed.");
+        }
+
+        // Supabase /user returns a user object, hence reuse ParseAuthResponse with expectTokens: false to safely extract the userId
+        return ParseAuthResponse(responseContent, StatusCodes.Status200OK, expectTokens: false);
+    }
+
+    /// <summary>
+    /// Sends a password recovery email to the user if they forgot their password (FIN-17).
+    /// </summary>
+    /// <param name="request">The forgot password request containing the email.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication result.</returns>
+    public async Task<AuthResult> ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Post,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/recover");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Content = JsonContent.Create(new
+        {
+            email = request.Email
+        });
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return HandleErrorResponse(response, responseContent, "Password recovery failed.");
+        }
+
+        // Supabase /recover returns an empty response, hence just return a 200 OK status code
+        return AuthResult.Success(StatusCodes.Status200OK);
+    }
+    #endregion
+
+    #region Private Helper Methods
+    /// <summary>
     /// Retrieves the Supabase configuration (URL and publishable key) from the application settings.
     /// </summary>
     /// <returns>A tuple containing the Supabase URL and publishable key.</returns>
@@ -103,8 +179,9 @@ public sealed class SupabaseAuthClient(
     /// </summary>
     /// <param name="responseContent">The raw response content from Supabase.</param>
     /// <param name="statusCode">The status code of the response.</param>
+    /// <param name="expectTokens">Indicates whether tokens are expected in the response.</param>
     /// <returns>The authentication result.</returns>
-    private AuthResult ParseAuthResponse(string responseContent, int statusCode)
+    private AuthResult ParseAuthResponse(string responseContent, int statusCode, bool expectTokens = true)
     {
         SupabaseAuthResponse? result = null;
         try
@@ -123,13 +200,13 @@ public sealed class SupabaseAuthClient(
             return AuthResult.Failed(StatusCodes.Status502BadGateway, "Supabase returned an invalid user identifier.");
         }
 
-        bool requiresEmailConfirmation = string.IsNullOrEmpty(result?.AccessToken);
+        bool requiresEmailConfirmation = expectTokens && string.IsNullOrEmpty(result?.AccessToken);
 
         AuthResponse responseDto = new(
             userId,
-            result?.AccessToken,
-            result?.RefreshToken,
-            result?.ExpiresIn,
+            expectTokens ? result?.AccessToken : null,
+            expectTokens ? result?.RefreshToken : null,
+            expectTokens ? result?.ExpiresIn : null,
             requiresEmailConfirmation);
 
         return AuthResult.Success(statusCode, responseDto);
@@ -161,6 +238,7 @@ public sealed class SupabaseAuthClient(
 
         return AuthResult.Failed((int)response.StatusCode, errorMessage, errorCode);
     }
+    #endregion
 
     /// <summary>
     /// Represents the response from Supabase when a user attempts to authenticate or register.
@@ -265,7 +343,7 @@ public sealed record AuthResult(
     /// <param name="statusCode">The status code of the authentication response.</param>
     /// <param name="response">The response from the authentication attempt.</param>
     /// <returns>A new AuthResult instance indicating success.</returns>
-    public static AuthResult Success(int statusCode, AuthResponse response) => new(true, statusCode, response, null, null);
+    public static AuthResult Success(int statusCode, AuthResponse? response = null) => new(true, statusCode, response, null, null);
 
     /// <summary>
     /// Creates a failed authentication result with the provided status code and error message.
