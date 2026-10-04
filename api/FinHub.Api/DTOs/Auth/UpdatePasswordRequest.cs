@@ -8,6 +8,12 @@ namespace FinHub.Api.DTOs.Auth;
 public sealed class UpdatePasswordRequest
 {
     /// <summary>
+    /// The user's current password, used to reauthenticate before changing the password.
+    /// </summary>
+    [Required]
+    public string CurrentPassword { get; init; } = "";
+
+    /// <summary>
     /// The new password for the user. Must be at least 8 characters long.
     /// </summary>
     [Required]

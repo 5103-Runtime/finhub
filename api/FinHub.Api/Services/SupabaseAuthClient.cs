@@ -82,7 +82,7 @@ public sealed class SupabaseAuthClient(
         {
             return HandleErrorResponse(response, responseContent, "Login failed.");
         }
-    
+
         return ParseAuthResponse(responseContent, StatusCodes.Status200OK);
     }
 
@@ -100,9 +100,34 @@ public sealed class SupabaseAuthClient(
     {
         (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
 
-        using HttpRequestMessage message = new(
-            HttpMethod.Put,
-            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+        string? email = await GetAuthenticatedUserEmailAsync(accessToken, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return AuthResult.Failed(
+                StatusCodes.Status401Unauthorized,
+                "The current session is invalid.",
+                "invalid_token");
+        }
+
+        AuthResult reauthentication = await LoginAsync(
+            new LoginRequest
+            {
+                Email = email,
+                Password = request.CurrentPassword
+            },
+            cancellationToken);
+
+        if (!reauthentication.Succeeded ||
+            string.IsNullOrWhiteSpace(reauthentication.Response?.AccessToken))
+        {
+            return AuthResult.Failed(
+                StatusCodes.Status401Unauthorized,
+                "The current password is incorrect.",
+                "invalid_current_password");
+        }
+
+        using HttpRequestMessage message = new(HttpMethod.Put, $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
 
         message.Headers.Add("apikey", publishableKey);
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -171,6 +196,43 @@ public sealed class SupabaseAuthClient(
         string key = configuration["Supabase:PublishableKey"]
             ?? throw new InvalidOperationException("Supabase publishable key is not configured.");
         return (url, key);
+    }
+
+    /// <summary>
+    /// Retrieves the email of the authenticated user using their access token.
+    /// </summary>
+    /// <param name="accessToken">The access token of the authenticated user.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The email of the authenticated user, or null if it cannot be retrieved.</returns>
+    private async Task<string?> GetAuthenticatedUserEmailAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Get,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            return JsonSerializer.Deserialize<SupabaseUser>(responseContent)?.Email;
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Failed to deserialize the authenticated Supabase user.");
+            return null;
+        }
     }
 
     /// <summary>
