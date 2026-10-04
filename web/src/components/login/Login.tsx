@@ -9,7 +9,8 @@ export default function Login(){
             <Button id= "login" variant="contained">Login</Button>
         </Stack>
         <Stack sx={{marginTop: 2}} spacing={2}>
-            <Typography align="center" color="error">Don't have an account?</Typography>
+            {/*  */}
+            <Typography align="center">Don't have an account?</Typography>
             <Button id= "register" variant ="contained">Register</Button>
         </Stack>
     </Container>
