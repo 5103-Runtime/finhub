@@ -39,6 +39,7 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
@@ -51,25 +52,28 @@ function Register() {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-  try {
-    const response = await register({
-      email: data.email,
-      password: data.password,
-    });
+    setServerError("");
+    try {
+      const response = await register({
+        email: data.email,
+        password: data.password,
+      });
 
-    console.log("Registration successful:", response);
-  } catch (err) {
-    if (err instanceof ApiError) {
-      console.error("Registration failed:", {
-      message: err.message,
-      status: err.status,
-      errorCode: err.errorCode,
-      fieldErrors: err.fieldErrors,
-    });
-    } else {
-      console.error("Unexpected error:", err);
+      console.log("Registration successful:", response);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        console.error("Registration failed:", {
+        message: err.message,
+        status: err.status,
+        errorCode: err.errorCode,
+        fieldErrors: err.fieldErrors,
+      });
+      setServerError(err.message);
+      } else {
+        setServerError("Something went wrong. Please try again.");
+        console.error("Unexpected error:", err);
+      }
     }
-  }
 };
 
   return <Container id="page-container">
@@ -170,7 +174,13 @@ function Register() {
           )}
         />
         <Button id="register-btn" type="submit" loading={isSubmitting} variant="contained">Register</Button>
+        {serverError && (
+          <Typography color="error" align="center">
+            {serverError}
+          </Typography>
+        )}
       </Stack>
+     
     </Box>
   </Container>;
 }
