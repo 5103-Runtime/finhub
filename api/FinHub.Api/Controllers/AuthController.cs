@@ -10,7 +10,7 @@ namespace FinHub.Api.Controllers;
 /// <param name="authClient">The authentication client.</param>
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBase
+public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthController> logger) : ControllerBase
 {
     /// <summary>
     /// Registers a new user with the provided registration details.
@@ -84,10 +84,10 @@ public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBa
 
         if (!result.Succeeded)
         {
-            return StatusCode(result.StatusCode, new 
-            { 
-                error = result.Error, 
-                errorCode = result.ErrorCode 
+            return StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
             });
         }
 
@@ -109,11 +109,11 @@ public sealed class AuthController(SupabaseAuthClient authClient) : ControllerBa
 
         if (!result.Succeeded)
         {
-            return StatusCode(result.StatusCode, new 
-            { 
-                error = result.Error, 
-                errorCode = result.ErrorCode 
-            });
+            logger.LogWarning(
+                "Password recovery failed for {Email}: Status: {StatusCode}, Error: {Error}",
+                request.Email,
+                result.StatusCode,
+                result.Error);
         }
 
         // Return a generic success message to prevent email enumeration attacks
