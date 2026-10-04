@@ -40,7 +40,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       email: '',
@@ -169,7 +169,7 @@ function Register() {
             />
           )}
         />
-        <Button id="register-btn" type="submit" variant="contained">Register</Button>
+        <Button id="register-btn" type="submit" loading={isSubmitting} variant="contained">Register</Button>
       </Stack>
     </Box>
   </Container>;
