@@ -4,7 +4,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod";
-import { register, ApiError } from "../services/authApi";
+import { register, ApiError } from "@app/services/authApi";
 import { useState } from "react";
 import z from "zod";
 

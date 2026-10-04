@@ -1,6 +1,6 @@
 // Contributor: Marlon Gonzalez
 import { Route, Routes} from 'react-router-dom'
-import Register from './register/Register'
+import Register from '@app/register/Register'
 
 function App() {
   return <Routes>
