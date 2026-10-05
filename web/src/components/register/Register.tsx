@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
 import { useState } from "react";
 import z from "zod";
+import { Link } from "react-router-dom";
 
 
 // Zod schema used to validate the information included in the register form.
@@ -36,7 +37,6 @@ type FormValues = z.infer<typeof signupSchema>
 
 // Functional component with a form to take in user info and validate said info using zod and react-form-hook.
 function Register() {
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -180,6 +180,11 @@ function Register() {
           </Typography>
         )}
       </Stack>
+      <Stack sx={{marginTop: 2}} spacing={2}>
+            <Typography align="center">Already have an account?</Typography>
+            
+            <Button id= "register" component ={Link} to="/login" variant ="contained" >Login</Button>
+        </Stack>
      
     </Box>
   </Container>;
