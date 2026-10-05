@@ -1,32 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,200..800;1,200..800&display=swap");
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-Variable.woff2") format("woff2");
-  font-weight: 300 900;
-  font-style: normal;
+:root {
+  font-family: "Karla", sans-serif;
+  color: #f7f4ef;
+  background: #202332;
+  font-synthesis: none;
 }
 
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-VariableItalic.woff2") format("woff2");
-  font-weight: 300 900;
-  font-style: italic;
+* {
+  box-sizing: border-box;
 }
 
-@theme {
-  --font-sans: "Satoshi", sans-serif;
-
-  --color-primary: #202332;
-  --color-secondary: #bc9876;
-  --color-surface: #434e61;
-  --color-muted: #8a999e;
+body {
+  margin: 0;
+  min-width: 320px;
 }
 
-@layer base {
-  body {
-     font-family: "Satoshi", sans-serif;
-    background-color: var(--color-primary);
-    color: var(--color-secondary);
-  }
+a {
+  color: inherit;
+  text-decoration: none;
 }

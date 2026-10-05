@@ -1,0 +1,261 @@
+.home-page {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(67, 78, 97, 0.55), transparent 34%),
+    #202332;
+}
+
+.home-shell {
+  min-height: 100vh;
+  padding: 28px 40px 54px;
+}
+
+.home-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-brand,
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #f7f4ef;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.home-brand > span:last-child span,
+.auth-brand > span:last-child span {
+  color: #bc9876;
+}
+
+.home-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-login,
+.nav-register {
+  border-radius: 10px !important;
+  padding: 8px 15px !important;
+  text-transform: none !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.nav-login {
+  color: #f7f4ef !important;
+}
+
+.nav-register {
+  background: #bc9876 !important;
+  color: #202332 !important;
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.55fr);
+  align-items: center;
+  gap: clamp(50px, 9vw, 150px);
+  max-width: 1170px;
+  margin: 12vh auto 0;
+}
+
+.hero-copy {
+  padding: 20px 0;
+}
+
+.hero-title {
+  margin: 18px 0 22px;
+  color: #f7f4ef;
+  font-size: clamp(54px, 7vw, 89px) !important;
+  font-weight: 500 !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.05em !important;
+  margin-bottom: 20px !important;
+}
+
+.hero-title em {
+  color: #bc9876;
+  font-family: "Karla", sans-serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.hero-description {
+  max-width: 510px;
+  color: #b5bdc2;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.feature-list {
+  margin-top: 30px;
+  color: #d9d6d0;
+  font-size: 14px;
+}
+
+.feature-list > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feature-list svg {
+  width: 17px;
+  color: #bc9876;
+}
+
+.import-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  max-width: 590px;
+  margin-top: 42px;
+  padding: 17px 18px;
+  border: 1px solid rgba(188, 152, 118, 0.28);
+  border-radius: 17px !important;
+  background: rgba(67, 78, 97, 0.55) !important;
+  color: #f7f4ef;
+}
+
+.import-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  background: #bc9876;
+  color: #202332;
+}
+
+.import-icon svg {
+  width: 21px;
+}
+
+.import-title {
+  color: #bc9876;
+  font-weight: 700 !important;
+}
+
+.import-copy {
+  margin-top: 2px !important;
+  color: #aab4bb;
+  font-size: 12px !important;
+}
+
+.file-name {
+  margin-top: 4px !important;
+  overflow: hidden;
+  color: #bc9876;
+  font-size: 11px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-button {
+  min-width: 105px;
+  color: #bc9876 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.home-side {
+  padding: 35px 0 35px 38px;
+  border-left: 1px solid rgba(188, 152, 118, 0.35);
+}
+
+.home-side-label {
+  color: #bc9876;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.home-side-copy {
+  max-width: 240px;
+  margin-top: 14px !important;
+  color: #d4d8d8;
+  font-size: clamp(16px, 5vw, 20px) !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.04em;
+}
+
+.home-side-button {
+  width: 100%;
+  margin-top: 32px !important;
+}
+
+.home-side .privacy-note {
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.primary-action {
+  min-height: 49px;
+  border-radius: 12px !important;
+  background: #bc9876 !important;
+  color: #202332 !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.primary-action:hover {
+  background: #d1ad89 !important;
+}
+
+.privacy-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px !important;
+  color: #8a999e;
+  font-size: 11px !important;
+}
+
+@media (max-width: 850px) {
+  .home-shell {
+    padding: 24px 22px 40px;
+  }
+
+  .home-hero {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    margin-top: 9vh;
+  }
+
+  .home-side {
+    padding: 25px 0 0;
+    border-top: 1px solid rgba(188, 152, 118, 0.35);
+    border-left: 0;
+  }
+
+  .home-side-copy {
+    max-width: 500px;
+  }
+
+  .hero-copy {
+    padding: 0;
+  }
+
+  .hero-title {
+    font-size: clamp(52px, 14vw, 75px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .import-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .import-button {
+    margin-left: 58px;
+  }
+}

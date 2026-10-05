@@ -1,0 +1,33 @@
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10vh 8vh 0 8vh;
+  padding-top: 20px;
+  border-top: 1px solid rgba(138, 153, 158, 0.2);
+}
+
+.site-footer-brand {
+  color: #f7f4ef;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.05em;
+}
+
+.site-footer-brand span {
+  color: #bc9876;
+}
+
+.site-footer-copy {
+  color: #8a999e;
+  font-size: 11px !important;
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8vh;
+  }
+}
