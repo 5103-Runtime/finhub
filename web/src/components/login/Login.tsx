@@ -24,7 +24,8 @@ export default function Login(){
     const [showPassword, setShowPassword] = useState(false);
     const [serverError, setServerError] = useState("");
     const { register, handleSubmit, formState: { errors, isSubmitting }, } = useForm<LoginFormData>({resolver: zodResolver(loginSchema),});
-    const onSubmit = async (data : LoginFormData) => {
+    const onSubmit = async (//data : LoginFormData
+        ) => {
         // TODO: Change to empty string when API is implemented
         setServerError("This is to test the server error");
         try {
