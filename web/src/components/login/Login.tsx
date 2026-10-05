@@ -28,12 +28,12 @@ export default function Login(){
         ) => {
         // TODO: Change to empty string when API is implemented
         setServerError("This is to test the server error");
-        try {
+        // try {
             
-            // TODO: put API here
-        } catch (error) {
+        //     // TODO: put API here
+        // } catch (error) {
             
-        }
+        // }
     }
 
     return <Container id ="page-container">
