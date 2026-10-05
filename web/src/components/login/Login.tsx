@@ -7,6 +7,9 @@ export default function Login(){
     const [showPassword, setShowPassword] = useState(false);
 
 
+    
+
+
     return <Container id ="page-container">
         <Stack spacing={4}>
             <Typography variant="h1" align="center">Login</Typography>
@@ -15,7 +18,7 @@ export default function Login(){
                 id="password" 
                 label= "Password" 
                 required 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 autoComplete="password"
                 slotProps={{
                     input: {
