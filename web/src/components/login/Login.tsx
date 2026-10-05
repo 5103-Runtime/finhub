@@ -22,9 +22,13 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login(){
     const [showPassword, setShowPassword] = useState(false);
+    const [serverError, setServerError] = useState("");
     const { register, handleSubmit, formState: { errors, isSubmitting }, } = useForm<LoginFormData>({resolver: zodResolver(loginSchema),});
     const onSubmit = async (data : LoginFormData) => {
+        // TODO: Change to empty string when API is implemented
+        setServerError("This is to test the server error");
         try {
+            
             // TODO: put API here
         } catch (error) {
             
@@ -70,6 +74,11 @@ export default function Login(){
                 }}
             ></TextField>
             <Button type="submit" variant="contained" loading={isSubmitting}>Login</Button>
+            {serverError && (
+            <Typography color="error" align="center">
+                {serverError}
+            </Typography>
+            )}
         </Stack>
         <Stack sx={{marginTop: 2}} spacing={2}>
             <Typography align="center">Don't have an account?</Typography>
