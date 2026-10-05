@@ -7,6 +7,7 @@ function App() {
   return <Routes>
     {/* TODO: Change default route when its page is created */}
      <Route path = "/" element={<Login/>}></Route>
+     <Route path = "/login" element={<Login/>}></Route>
      <Route path='/register' element={<Register/>}></Route>
   </Routes>
 }

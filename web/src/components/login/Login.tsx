@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+import { Link } from "react-router-dom";
 
 const loginSchema = z.object({
     email: z
@@ -71,9 +72,8 @@ export default function Login(){
             <Button type="submit" variant="contained" loading={isSubmitting}>Login</Button>
         </Stack>
         <Stack sx={{marginTop: 2}} spacing={2}>
-            {/*  */}
             <Typography align="center">Don't have an account?</Typography>
-            <Button id= "register" variant ="contained">Register</Button>
+            <Button id= "register" component ={Link} to="/register" variant ="contained" >Register</Button>
         </Stack>
     </Container>
 }
