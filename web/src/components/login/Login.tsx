@@ -1,4 +1,4 @@
-import { Button, Container, Stack, TextField, Typography, InputAdornment, IconButton} from "@mui/material";
+import { Button, Container, Stack, TextField, Typography, InputAdornment, IconButton } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useState } from "react";
@@ -20,23 +20,23 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function Login(){
+export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [serverError, setServerError] = useState("");
-    const { register, handleSubmit, formState: { errors, isSubmitting }, } = useForm<LoginFormData>({resolver: zodResolver(loginSchema),});
+    const { register, handleSubmit, formState: { errors, isSubmitting }, } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema), });
     const onSubmit = async (//data : LoginFormData
-        ) => {
+    ) => {
         // TODO: Change to empty string when API is implemented
         setServerError("This is to test the server error");
         // try {
-            
+
         //     // TODO: put API here
         // } catch (error) {
-            
+
         // }
     }
 
-    return <Container id ="page-container">
+    return <Container id="page-container">
         <Stack component="form" spacing={4} onSubmit={handleSubmit(onSubmit)} noValidate>
             <Typography variant="h1" align="center">Login</Typography>
             <TextField
@@ -48,7 +48,7 @@ export default function Login(){
                 helperText={errors.email?.message}
                 {...register("email")}
             />
-            <TextField 
+            <TextField
                 id="password"
                 label="Password"
                 type={showPassword ? "text" : "password"}
@@ -58,32 +58,32 @@ export default function Login(){
                 {...register("password")}
                 slotProps={{
                     input: {
-                    endAdornment: (
-                        <InputAdornment position="end">
-                        <IconButton
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            edge="end"
-                            aria-label={
-                            showPassword ? "Hide password" : "Show password"
-                            }
-                        >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                        </InputAdornment>
-                    ),
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    edge="end"
+                                    aria-label={
+                                        showPassword ? "Hide password" : "Show password"
+                                    }
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
                     },
                 }}
             ></TextField>
             <Button type="submit" variant="contained" loading={isSubmitting}>Login</Button>
             {serverError && (
-            <Typography color="error" align="center">
-                {serverError}
-            </Typography>
+                <Typography color="error" align="center">
+                    {serverError}
+                </Typography>
             )}
         </Stack>
-        <Stack sx={{marginTop: 2}} spacing={2}>
+        <Stack sx={{ marginTop: 2 }} spacing={2}>
             <Typography align="center">Don't have an account?</Typography>
-            <Button id= "register" component ={Link} to="/register" variant ="contained" >Register</Button>
+            <Button id="register" component={Link} to="/register" variant="contained" >Register</Button>
         </Stack>
     </Container>
 }
