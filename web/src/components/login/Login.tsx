@@ -17,8 +17,9 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ApiError, login } from "@app/services/authApi";
 import z from "zod";
 import "./Login.css";
 
@@ -45,9 +46,29 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async () => {
-    // TODO: Replace with the authentication API when it is implemented.
-    setServerError("This is to test the server error");
+  const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+    setServerError("");
+    try {
+      const response = await login({
+        email: data.email,
+        password: data.password,
+      });
+
+      console.log("Login successful:", response);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        console.error("Login failed:", {
+          message: err.message,
+          status: err.status,
+          errorCode: err.errorCode,
+          fieldErrors: err.fieldErrors,
+        });
+        setServerError(err.message);
+      } else {
+        console.error("Unexpected login error:", err);
+        setServerError("Something went wrong. Please try again.");
+      }
+    }
   };
 
   return (
@@ -116,6 +137,18 @@ export default function Login() {
                 },
               }}
             />
+            {serverError && (
+              <Alert
+                className="auth-error"
+                severity="error"
+                variant="outlined"
+                role="alert"
+              >
+                <Typography className="auth-error-message">
+                  {serverError}
+                </Typography>
+              </Alert>
+            )}
             <Button
               type="submit"
               variant="contained"
@@ -125,7 +158,6 @@ export default function Login() {
             >
               Sign in
             </Button>
-            {serverError && <Alert severity="error">{serverError}</Alert>}
           </Stack>
           <Stack sx={{ marginTop: 3 }} spacing={1.5}>
             <Box className="auth-divider">

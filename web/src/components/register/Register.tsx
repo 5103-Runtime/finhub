@@ -9,6 +9,7 @@ import {
   InputAdornment,
   IconButton,
   Paper,
+  Alert,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -218,6 +219,18 @@ function Register() {
                   />
                 )}
               />
+              {serverError && (
+                <Alert
+                  className="auth-error"
+                  severity="error"
+                  variant="outlined"
+                  role="alert"
+                >
+                  <Typography className="auth-error-message">
+                    {serverError}
+                  </Typography>
+                </Alert>
+              )}
               <Button
                 id="register-btn"
                 type="submit"
@@ -228,11 +241,6 @@ function Register() {
               >
                 Create account
               </Button>
-              {serverError && (
-                <Typography color="error" align="center">
-                  {serverError}
-                </Typography>
-              )}
             </Stack>
             <Stack sx={{ marginTop: 3 }} spacing={1.5}>
               <Box className="auth-divider">

@@ -10,9 +10,17 @@ export interface RegisterRequest {
 }
 
 /**
+ * @brief Represents the data required to log in an existing user.
+ */
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+/**
  * @brief Represents the response returned after a successful user registration.
  */
-export interface RegisterResponse {
+export interface AuthResponse {
   userId: string;
   accessToken: string | null;
   refreshToken: string | null;
@@ -22,16 +30,20 @@ export interface RegisterResponse {
 
 /**
  * @brief Registers a new user through the authentication API.
- *
  * @param request User registration information containing an email and password.
- *
  * @returns A promise containing the newly registered user's information.
- *
  * @throws ApiError If the registration request fails.
  */
 export function register(request: RegisterRequest) {
-  return apiPost<RegisterRequest, RegisterResponse>(
-    "/api/auth/register",
-    request,
-  );
+  return apiPost<RegisterRequest, AuthResponse>("/api/auth/register", request);
+}
+
+/**
+ * Logs in a user through the authentication API.
+ * @param request User login information containing an email and password.
+ * @returns A promise containing the logged-in user's information.
+ * @throws ApiError If the login request fails.
+ */
+export function login(request: LoginRequest) {
+  return apiPost<LoginRequest, AuthResponse>("/api/auth/login", request);
 }

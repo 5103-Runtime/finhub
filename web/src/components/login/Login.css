@@ -114,6 +114,25 @@
   font-size: 12px;
 }
 
+.auth-error {
+  align-items: flex-start;
+  margin-top: 2px;
+  border-color: #d77a72 !important;
+  background: #fff2f0 !important;
+  color: #7f2923 !important;
+}
+
+.auth-error .MuiAlert-icon {
+  color: #b94b42;
+  margin-top: 2px;
+}
+
+.auth-error-message {
+  margin-top: 4px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
 .primary-action {
   min-height: 49px;
   border-radius: 12px !important;
