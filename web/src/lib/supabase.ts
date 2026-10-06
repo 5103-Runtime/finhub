@@ -6,10 +6,10 @@ export const supabase = createClient(
   env.SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
-      persistSession: true, // Turn persistence back on
+      persistSession: true,
       storage: window.sessionStorage, // Tell Supabase to use sessionStorage instead of localStorage
-      autoRefreshToken: true, // Usually good to keep true so tokens refresh during the tab session
-      detectSessionInUrl: true, // Helps if you have auth redirects/magic links
+      autoRefreshToken: true, // Tokens refresh during the tab session
+      detectSessionInUrl: true, // Helps if the application has auth redirects/magic links
     },
   },
 );

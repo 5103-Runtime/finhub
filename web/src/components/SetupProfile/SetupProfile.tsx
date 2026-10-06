@@ -14,6 +14,8 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ApiError } from "@app/services/apiClient";
+import { updateProfile } from "@app/services/profileApi";
 import z from "zod";
 import "./SetupProfile.css";
 
@@ -62,14 +64,19 @@ export default function SetupProfile() {
   const onSubmit: SubmitHandler<SetupFormData> = async (data) => {
     setServerError("");
     try {
-      // TODO: Replace with actual backend API call when ready
-      console.log("Submitting initial setup data:", data);
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      navigate("/overview");
+      await updateProfile({
+        ...data,
+        preferredName: data.preferredName || undefined,
+      });
+      sessionStorage.removeItem("needs_setup");
+      navigate("/overview", { replace: true });
     } catch (err) {
       console.error("Profile setup failed:", err);
-      setServerError("Failed to save your profile details. Please try again.");
+      setServerError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to save your profile details. Please try again.",
+      );
     }
   };
 

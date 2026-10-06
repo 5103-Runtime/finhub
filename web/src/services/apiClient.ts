@@ -5,9 +5,6 @@ import { getAccessToken } from "./authStorage";
  * ApiError is thrown when a API request fails, allowing callers
  * to access the HTTP status, error code, and field specific errors
  */
-//example use:
-//  try{ await register(data) }
-//  catch(err) {if (err instanceof ApiError) show(err.message) }
 export class ApiError extends Error {
   status: number;
   errorCode?: string;
@@ -40,29 +37,22 @@ interface ErrorBody {
 }
 
 /**
- * @brief Sends a POST request with a JSON body and returns the parsed response
- * 
- * if request fails, API error response is parsed and a APIError is thrown
- * containing the error information
- *
- * @tparam TBody Type of request body
- * @tparam TResponse type of the expected successful response
- *
- * @param path API endpoint to send POST to
- * @param body Data to send in request body
- *
- * @returns the parsed successful API response
- * @throws ApiError If the API request fails.
+ * @brief Sends a JSON request to the specified API endpoint.
+ * @param path The API endpoint to call
+ * @param method The HTTP method to use
+ * @param body The request body
+ * @returns A promise resolving to the response data
  */
-export async function apiPost<TBody, TResponse>(
+async function sendJson<TBody, TResponse>(
   path: string,
+  method: "POST" | "PUT",
   body: TBody,
 ): Promise<TResponse> {
   let res: Response;
   try {
     const accessToken = getAccessToken();
     res = await fetch(path, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -79,11 +69,9 @@ export async function apiPost<TBody, TResponse>(
 
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as ErrorBody | null;
-
     const firstFieldError = data?.errors
       ? Object.values(data.errors)[0]?.[0]
       : undefined;
-
     const message =
       data?.error ??
       firstFieldError ??
@@ -95,4 +83,30 @@ export async function apiPost<TBody, TResponse>(
   }
 
   return (await res.json()) as TResponse;
+}
+
+/**
+ * @brief Sends a POST request to the specified API endpoint with a JSON body.
+ * @param path The API endpoint to call
+ * @param body The request body
+ * @returns The response data
+ */
+export function apiPost<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  return sendJson<TBody, TResponse>(path, "POST", body);
+}
+
+/**
+ * @brief Sends a PUT request to the specified API endpoint with a JSON body.
+ * @param path The API endpoint to call
+ * @param body The request body
+ * @returns The response data
+ */
+export function apiPut<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  return sendJson<TBody, TResponse>(path, "PUT", body);
 }

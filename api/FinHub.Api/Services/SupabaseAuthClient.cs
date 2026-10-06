@@ -157,6 +157,44 @@ public sealed class SupabaseAuthClient(
         // Supabase /recover returns an empty response, hence just return a 200 OK status code
         return AuthResult.Success(StatusCodes.Status200OK);
     }
+
+    /// <summary>
+    /// Retrieves the user ID associated with the provided access token from Supabase authentication.
+    /// </summary>
+    /// <param name="accessToken">The access token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The user ID, or null if the user ID cannot be determined.</returns>
+    public async Task<Guid?> GetUserIdAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+        using HttpRequestMessage message = new(
+            HttpMethod.Get,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            SupabaseUser? user = JsonSerializer.Deserialize<SupabaseUser>(responseContent);
+            return user?.Id is not null && Guid.TryParse(user.Id, out Guid userId)
+                ? userId
+                : null;
+        }
+        catch (JsonException exception)
+        {
+            logger.LogWarning(exception, "Supabase returned an invalid user response.");
+            return null;
+        }
+    }
     #endregion
 
     #region Private Helper Methods
@@ -289,12 +327,6 @@ public sealed class SupabaseAuthClient(
         /// </summary>
         [JsonPropertyName("id")]
         public string? Id { get; init; }
-
-        /// <summary>
-        /// The email address of the user. This may be null if the user creation failed or if the email is not provided.
-        /// </summary>
-        [JsonPropertyName("email")]
-        public string? Email { get; init; }
     }
 
     /// <summary>
