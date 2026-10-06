@@ -54,8 +54,7 @@ export default function Home() {
                 <span>One clear view of every account</span>
               </Box>
               <Box>
-                <CheckCircleRounded />{" "}
-                <span>Smart categorization, no tedious bookkeeping</span>
+                <CheckCircleRounded /> <span>Smarter categorization</span>
               </Box>
               <Box>
                 <CheckCircleRounded />{" "}
@@ -99,8 +98,7 @@ export default function Home() {
               A calmer way to manage money
             </Typography>
             <Typography className="home-side-copy">
-              Built for students and young adults who need a simple way to
-              manage multiple accounts.
+              Built for those who need a simple way to manage multiple accounts.
             </Typography>
             <Button
               component={Link}
