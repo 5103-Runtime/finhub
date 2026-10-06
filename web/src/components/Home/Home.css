@@ -60,6 +60,10 @@
   color: #202332 !important;
 }
 
+.nav-register:hover {
+  background: #d1ad89 !important;
+}
+
 .home-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.55fr);
@@ -193,6 +197,7 @@
   width: 100%;
   margin-top: 32px !important;
 }
+
 .primary-action {
   min-height: 49px;
   border-radius: 12px !important;

@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { useForm, Controller, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
 import { useState } from "react";
@@ -58,7 +58,7 @@ function Register() {
   const navigate = useNavigate();
 
   const {
-    control,
+    register: registerField,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -123,143 +123,122 @@ function Register() {
             </Box>
             <Typography component="h2">Create your account</Typography>
           </Box>
-          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <Stack spacing={2}>
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    id="email"
-                    label="Email"
-                    required
-                    type="email"
-                    variant="outlined"
-                    autoComplete="email"
-                    error={Boolean(errors.email)}
-                    helperText={errors.email?.message}
-                  />
-                )}
-              />
-              <Controller
-                name="password"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    id="password"
-                    label="Password"
-                    required
-                    type={showPassword ? "text" : "password"}
-                    variant="outlined"
-                    autoComplete="new-password"
-                    error={Boolean(errors.password)}
-                    helperText={errors.password?.message}
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword((prev) => !prev)}
-                              edge="end"
-                              aria-label={
-                                showPassword ? "Hide password" : "Show password"
-                              }
-                            >
-                              {showPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-              <Controller
-                name="confirmPassword"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    id="confirm-password"
-                    label="Re-enter Password"
-                    required
-                    type={showConfirmPassword ? "text" : "password"}
-                    variant="outlined"
-                    autoComplete="new-password"
-                    error={Boolean(errors.confirmPassword)}
-                    helperText={errors.confirmPassword?.message}
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() =>
-                                setShowConfirmPassword((prev) => !prev)
-                              }
-                              edge="end"
-                              aria-label={
-                                showConfirmPassword
-                                  ? "Hide password"
-                                  : "Show password"
-                              }
-                            >
-                              {showConfirmPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-              {serverError && (
-                <Alert
-                  className="auth-error"
-                  severity="error"
-                  variant="outlined"
-                  role="alert"
-                >
-                  <Typography className="auth-error-message">
-                    {serverError}
-                  </Typography>
-                </Alert>
-              )}
-              <Button
-                id="register-btn"
-                type="submit"
-                loading={isSubmitting}
-                variant="contained"
-                className="primary-action"
-                endIcon={<ArrowForwardRounded />}
-              >
-                Create account
-              </Button>
-            </Stack>
-            <Stack sx={{ marginTop: 3 }} spacing={1.5}>
-              <Box className="auth-divider">
-                <span>Already have an account?</span>
-              </Box>
-              <Button
-                id="register"
-                component={Link}
-                to="/login"
+          <Stack
+            component="form"
+            spacing={2.25}
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
+            <TextField
+              id="email"
+              label="Email"
+              required
+              type="email"
+              variant="outlined"
+              autoComplete="email"
+              error={Boolean(errors.email)}
+              helperText={errors.email?.message}
+              {...registerField("email")}
+            />
+            <TextField
+              id="password"
+              label="Password"
+              required
+              type={showPassword ? "text" : "password"}
+              variant="outlined"
+              autoComplete="new-password"
+              error={Boolean(errors.password)}
+              helperText={errors.password?.message}
+              {...registerField("password")}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <TextField
+              id="confirm-password"
+              label="Re-enter Password"
+              required
+              type={showConfirmPassword ? "text" : "password"}
+              variant="outlined"
+              autoComplete="new-password"
+              error={Boolean(errors.confirmPassword)}
+              helperText={errors.confirmPassword?.message}
+              {...registerField("confirmPassword")}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        edge="end"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            {serverError && (
+              <Alert
+                className="auth-error"
+                severity="error"
                 variant="outlined"
-                className="secondary-action"
+                role="alert"
               >
-                Sign in
-              </Button>
-            </Stack>
-          </Box>
+                <Typography className="auth-error-message">
+                  {serverError}
+                </Typography>
+              </Alert>
+            )}
+            <Button
+              id="register-btn"
+              type="submit"
+              loading={isSubmitting}
+              variant="contained"
+              className="primary-action"
+              endIcon={<ArrowForwardRounded />}
+            >
+              Create account
+            </Button>
+          </Stack>
+          <Stack sx={{ marginTop: 3 }} spacing={1.5}>
+            <Box className="auth-divider">
+              <span>Already have an account?</span>
+            </Box>
+            <Button
+              id="register"
+              component={Link}
+              to="/login"
+              variant="outlined"
+              className="secondary-action"
+            >
+              Sign in
+            </Button>
+          </Stack>
         </Paper>
       </Container>
     </Box>

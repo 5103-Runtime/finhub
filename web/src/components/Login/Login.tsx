@@ -40,7 +40,7 @@ export default function Login() {
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
   const {
-    register,
+    register: registerField,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
@@ -110,7 +110,7 @@ export default function Login() {
               autoComplete="email"
               error={!!errors.email}
               helperText={errors.email?.message}
-              {...register("email")}
+              {...registerField("email")}
             />
             <TextField
               id="password"
@@ -119,7 +119,7 @@ export default function Login() {
               autoComplete="current-password"
               error={!!errors.password}
               helperText={errors.password?.message}
-              {...register("password")}
+              {...registerField("password")}
               slotProps={{
                 input: {
                   endAdornment: (
