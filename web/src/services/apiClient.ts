@@ -1,3 +1,5 @@
+import { getAccessToken } from "./authStorage";
+
 /**
  * @brief Represents a error returned from a API request
  * ApiError is thrown when a API request fails, allowing callers
@@ -58,9 +60,13 @@ export async function apiPost<TBody, TResponse>(
 ): Promise<TResponse> {
   let res: Response;
   try {
+    const accessToken = getAccessToken();
     res = await fetch(path, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify(body),
     });
   } catch {

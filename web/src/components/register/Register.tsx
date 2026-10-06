@@ -16,6 +16,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
+import { saveAuthSession } from "@app/services/authStorage";
 import { useState } from "react";
 import z from "zod";
 import { Link } from "react-router-dom";
@@ -78,7 +79,7 @@ function Register() {
         password: data.password,
       });
 
-      console.log("Registration successful:", response);
+      saveAuthSession(response);
     } catch (err) {
       if (err instanceof ApiError) {
         console.error("Registration failed:", {
