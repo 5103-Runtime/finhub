@@ -99,7 +99,6 @@ function Register() {
       <Container maxWidth="sm" className="auth-shell">
         <Box component="header" className="auth-topbar">
           <Link to="/" className="auth-brand">
-            <span className="brand-mark">F</span>
             <span>
               Fin<span>Hub</span>
             </span>
@@ -118,16 +117,8 @@ function Register() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Box>
-              <Typography className="auth-kicker">
-                START YOUR MONEY RESET
-              </Typography>
-              <Typography component="h2">Create your account</Typography>
-            </Box>
+            <Typography component="h2">Create your account</Typography>
           </Box>
-          <Typography className="auth-subtitle">
-            A simpler financial routine starts here.
-          </Typography>
           <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2}>
               <Controller
@@ -244,12 +235,9 @@ function Register() {
               )}
             </Stack>
             <Stack sx={{ marginTop: 3 }} spacing={1.5}>
-              <Typography
-                align="center"
-                sx={{ color: "#66747b", fontSize: 13 }}
-              >
-                Already have an account?
-              </Typography>
+              <Box className="auth-divider">
+                <span>Already have an account?</span>
+              </Box>
               <Button
                 id="register"
                 component={Link}
@@ -261,9 +249,6 @@ function Register() {
               </Button>
             </Stack>
           </Box>
-          <Typography className="privacy-note">
-            By creating an account, you agree to keep your FinHub login secure.
-          </Typography>
         </Paper>
       </Container>
     </Box>

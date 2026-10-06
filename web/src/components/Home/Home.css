@@ -1,14 +1,17 @@
 .home-page {
   min-height: 100vh;
-  overflow: hidden;
   background:
     radial-gradient(circle at 15% 20%, rgba(67, 78, 97, 0.55), transparent 34%),
     #202332;
 }
 
 .home-shell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   min-height: 100vh;
   padding: 28px 40px 54px;
+  box-sizing: border-box;
 }
 
 .home-topbar {
@@ -190,13 +193,6 @@
   width: 100%;
   margin-top: 32px !important;
 }
-
-.home-side .privacy-note {
-  justify-content: flex-start;
-  text-align: left;
-  line-height: 1.45;
-}
-
 .primary-action {
   min-height: 49px;
   border-radius: 12px !important;
@@ -208,15 +204,6 @@
 
 .primary-action:hover {
   background: #d1ad89 !important;
-}
-
-.privacy-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 24px !important;
-  color: #8a999e;
-  font-size: 11px !important;
 }
 
 @media (max-width: 850px) {

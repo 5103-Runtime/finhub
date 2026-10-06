@@ -55,7 +55,6 @@ export default function Login() {
       <Container maxWidth="sm" className="auth-shell">
         <Box component="header" className="auth-topbar">
           <Link to="/" className="auth-brand">
-            <span className="brand-mark">F</span>
             <span>
               Fin<span>Hub</span>
             </span>
@@ -74,14 +73,8 @@ export default function Login() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Box>
-              <Typography className="auth-kicker">WELCOME BACK</Typography>
-              <Typography component="h2">Sign in to FinHub</Typography>
-            </Box>
+            <Typography component="h2">Sign in to FinHub</Typography>
           </Box>
-          <Typography className="auth-subtitle">
-            Pick up where you left off.
-          </Typography>
           <Stack
             component="form"
             spacing={2.25}
@@ -134,20 +127,19 @@ export default function Login() {
             </Button>
             {serverError && <Alert severity="error">{serverError}</Alert>}
           </Stack>
-          <Box className="auth-divider">
-            <span>NEW TO FINHUB?</span>
-          </Box>
-          <Button
-            component={Link}
-            to="/register"
-            variant="outlined"
-            className="secondary-action"
-          >
-            Create an account
-          </Button>
-          <Typography className="privacy-note">
-            Your data stays yours. Always.
-          </Typography>
+          <Stack sx={{ marginTop: 3 }} spacing={1.5}>
+            <Box className="auth-divider">
+              <span>New to FinHub?</span>
+            </Box>
+            <Button
+              component={Link}
+              to="/register"
+              variant="outlined"
+              className="secondary-action"
+            >
+              Create an account
+            </Button>
+          </Stack>
         </Paper>
       </Container>
     </Box>

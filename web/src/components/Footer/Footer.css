@@ -28,6 +28,6 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
-    margin-top: 8vh;
+    margin: 8vh 2vh 0 2vh;
   }
 }
