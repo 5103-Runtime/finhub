@@ -43,6 +43,27 @@ This creates a timestamped file under `supabase/migrations/`. Put the SQL schema
 
 The current migration creates `public.profiles`. It extends Supabase Auth with application profile data. It does not replace `auth.users`, and it does not store passwords.
 
+## Run migrations locally
+
+Install a runtime the Supabase CLI supports (Docker Desktop, Docker Engine, etc) and keep it running. The CLI uses it to start a local copy of the stack.
+
+From the repository root:
+
+```powershell
+npx supabase@latest start
+npx supabase@latest db reset
+```
+
+`start` downloads and runs the local Postgres, Auth, and Studio containers and prints their URLs. `db reset` drops the local database and applies every file in `supabase/migrations/` from scratch. Run it after writing or editing a migration to verify changes before opening pull requests.
+
+Stop the containers when done:
+
+```powershell
+npx supabase@latest stop
+```
+
+`db reset` without flags only touches the local database. Never pass **``--linked``**; that resets the shared project and destroys database data.
+
 ## Apply a migration to Supabase
 
 Push unapplied migrations to the linked project:
@@ -53,7 +74,7 @@ npx supabase@latest db push
 
 The CLI may request the database password. Enter it directly in the terminal; do not add it to a migration file, README, `.env` file, or GitHub repository.
 
-Do not run `db reset` against the shared project. It is intended for local development and can destroy database data.
+Do not run `db reset --linked`. It resets the shared public database and destroys database data.
 
 ## Verify The Migration
 
