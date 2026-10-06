@@ -1,4 +1,4 @@
-import { apiPost } from "./apiClient";
+import { apiGet, apiPost } from "./apiClient";
 export { ApiError } from "./apiClient";
 
 /**
@@ -22,10 +22,14 @@ export interface LoginRequest {
  */
 export interface AuthResponse {
   userId: string;
-  accessToken: string | null;
-  refreshToken: string | null;
-  expiresIn: number | null;
   requiresEmailConfirmation: boolean;
+}
+
+/**
+ * @brief Represents the current authenticated user's session information.
+ */
+export interface AuthSession {
+  userId: string;
 }
 
 /**
@@ -46,4 +50,20 @@ export function register(request: RegisterRequest) {
  */
 export function login(request: LoginRequest) {
   return apiPost<LoginRequest, AuthResponse>("/api/auth/login", request);
+}
+
+/**
+ * Retrieves the current authenticated user's session information from the authentication API.
+ * @returns The current authenticated user's session information.
+ */
+export function getSession() {
+  return apiGet<AuthSession>("/api/auth/session");
+}
+
+/**
+ * Logs out the current authenticated user through the authentication API.
+ * @returns A promise that resolves when the user is successfully logged out.
+ */
+export function logout() {
+  return apiPost<undefined, void>("/api/auth/logout", undefined);
 }

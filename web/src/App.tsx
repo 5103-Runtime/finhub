@@ -16,7 +16,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Routes (requires authentication via session storage) */}
+      {/* Protected Routes (authentication is validated by the API cookie session) */}
       <Route element={<ProtectedRoute />}>
         <Route path="/overview" element={<Overview />} />
         <Route path="/setup-profile" element={<SetupProfile />} />

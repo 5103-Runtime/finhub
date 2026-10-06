@@ -1,13 +1,14 @@
 import { Box, Button, Container, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { clearAuthSession } from "@app/services/authStorage";
+import { logout } from "@app/services/authApi";
 
 // TODO: Just a placeholder for now, will be replaced with the actual overview page once we have more features implemented.
 export default function Overview() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    clearAuthSession();
+    void logout();
+    sessionStorage.removeItem("needs_setup");
     navigate("/login");
   };
 

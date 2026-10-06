@@ -20,7 +20,6 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, login } from "@app/services/authApi";
-import { saveAuthSession } from "@app/services/authStorage";
 import z from "zod";
 import "./Login.css";
 
@@ -51,12 +50,11 @@ export default function Login() {
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setServerError("");
     try {
-      const response = await login({
+      await login({
         email: data.email,
         password: data.password,
       });
 
-      saveAuthSession(response);
       navigate("/overview");
     } catch (err) {
       if (err instanceof ApiError) {

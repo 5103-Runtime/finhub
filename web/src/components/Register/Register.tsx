@@ -16,7 +16,6 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
-import { saveAuthSession } from "@app/services/authStorage";
 import { useState } from "react";
 import z from "zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -75,12 +74,11 @@ function Register() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setServerError("");
     try {
-      const response = await register({
+      await register({
         email: data.email,
         password: data.password,
       });
 
-      saveAuthSession(response);
       // Set a flag in sessionStorage to indicate that the user needs to complete the setup process
       sessionStorage.setItem("needs_setup", "true");
       navigate("/setup-profile");

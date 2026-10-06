@@ -1,4 +1,5 @@
 using FinHub.Api.Data;
+using FinHub.Api.Constants;
 using FinHub.Api.DTOs.Profile;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
@@ -84,20 +85,15 @@ public sealed class ProfileController(
 
     #region Private Helper Methods
     /// <summary>
-    /// Retrieves the access token from the Authorization header of the request.
+    /// Retrieves the access token from the HttpOnly authentication cookie.
     /// </summary>
     /// <returns>The access token, or null if it is not found or is invalid.</returns>
     private string? GetAccessToken()
     {
-        string? authorization = Request.Headers.Authorization;
-        if (string.IsNullOrWhiteSpace(authorization) ||
-            !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        string token = authorization["Bearer ".Length..].Trim();
-        return token.Length == 0 ? null : token;
+        return Request.Cookies.TryGetValue(AuthCookies.AccessToken, out string? token) &&
+            !string.IsNullOrWhiteSpace(token)
+                ? token
+                : null;
     }
     #endregion
 }
