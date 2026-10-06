@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -39,6 +39,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -56,6 +57,7 @@ export default function Login() {
       });
 
       saveAuthSession(response);
+      navigate("/overview");
     } catch (err) {
       if (err instanceof ApiError) {
         console.error("Login failed:", {

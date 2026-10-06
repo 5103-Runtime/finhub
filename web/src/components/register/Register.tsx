@@ -19,7 +19,7 @@ import { register, ApiError } from "@app/services/authApi";
 import { saveAuthSession } from "@app/services/authStorage";
 import { useState } from "react";
 import z from "zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
@@ -56,6 +56,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState("");
+  const navigate = useNavigate();
 
   const {
     control,
@@ -80,6 +81,9 @@ function Register() {
       });
 
       saveAuthSession(response);
+      // Set a flag in sessionStorage to indicate that the user needs to complete the setup process
+      sessionStorage.setItem("needs_setup", "true");
+      navigate("/setup-profile");
     } catch (err) {
       if (err instanceof ApiError) {
         console.error("Registration failed:", {
