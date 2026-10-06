@@ -50,7 +50,7 @@
 }
 
 .auth-page-card {
-  margin: 5vh auto 0;
+  margin: 10vh auto 0;
 }
 
 .auth-card {
@@ -136,14 +136,14 @@
 .primary-action {
   min-height: 49px;
   border-radius: 12px !important;
-  background: #202332 !important;
-  color: #f7f4ef !important;
+  background: #bc9876 !important;
+  color: #202332 !important;
   font-weight: 700 !important;
   text-transform: none !important;
 }
 
 .primary-action:hover {
-  background: #434e61 !important;
+  background: #a58260 !important;
 }
 
 .auth-divider {
