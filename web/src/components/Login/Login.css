@@ -137,19 +137,6 @@
   line-height: 1.4 !important;
 }
 
-.primary-action {
-  min-height: 49px;
-  border-radius: 12px !important;
-  background: #bc9876 !important;
-  color: #202332 !important;
-  font-weight: 700 !important;
-  text-transform: none !important;
-}
-
-.primary-action:hover {
-  background: #a58260 !important;
-}
-
 .auth-divider {
   display: flex;
   align-items: center;
