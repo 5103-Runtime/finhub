@@ -20,6 +20,9 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * @brief Represents the structure of an error response body returned from an API request.
+ */
 interface ErrorBody {
   error?: string;
   errorCode?: string;
@@ -28,6 +31,13 @@ interface ErrorBody {
   errors?: Record<string, string[]>;
 }
 
+/**
+ * @brief Sends a JSON request to the specified path.
+ * @param path The API endpoint path to send the request to.
+ * @param method The HTTP method to use for the request (GET, POST, or PUT).
+ * @param body The request body to send with the request (optional).
+ * @returns A promise that resolves to the response body.
+ */
 async function sendJson<TBody, TResponse>(
   path: string,
   method: "GET" | "POST" | "PUT",
@@ -72,10 +82,21 @@ async function sendJson<TBody, TResponse>(
   return (await res.json()) as TResponse;
 }
 
+/**
+ * @brief Sends a GET request to the specified path and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @returns A promise that resolves to the response body.
+ */
 export function apiGet<TResponse>(path: string): Promise<TResponse> {
   return sendJson<undefined, TResponse>(path, "GET");
 }
 
+/**
+ * @brief Sends a POST request to the specified path with the given body and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @param body The request body to send with the request.
+ * @returns A promise that resolves to the response body.
+ */
 export function apiPost<TBody, TResponse>(
   path: string,
   body: TBody,
@@ -83,6 +104,12 @@ export function apiPost<TBody, TResponse>(
   return sendJson<TBody, TResponse>(path, "POST", body);
 }
 
+/**
+ * @brief Sends a PUT request to the specified path with the given body and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @param body The request body to send with the request.
+ * @returns A promise that resolves to the response body.
+ */
 export function apiPut<TBody, TResponse>(
   path: string,
   body: TBody,

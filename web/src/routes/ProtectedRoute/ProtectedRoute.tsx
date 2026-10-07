@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { getSession } from "@app/services/authApi";
 
 export default function ProtectedRoute() {
-  const [session, setSession] = useState<
-    Awaited<ReturnType<typeof getSession>> | null
-  >(null);
+  const [session, setSession] = useState<Awaited<
+    ReturnType<typeof getSession>
+  > | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const location = useLocation();
 

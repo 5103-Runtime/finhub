@@ -12,6 +12,8 @@ namespace FinHub.Api.Controllers;
 /// Controller responsible for handling authentication-related operations.
 /// </summary>
 /// <param name="authClient">The authentication client.</param>
+/// <param name="dbContext">The database context.</param>
+/// <param name="logger">The logger instance.</param>
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthController(
@@ -244,6 +246,12 @@ public sealed class AuthController(
             requiresProfileSetup
         };
 
+    /// <summary>
+    /// Checks if the user has a complete profile by verifying that the first name, last name, and date of birth are not null.
+    /// </summary>
+    /// <param name="userId">The ID of the user to check.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the user has a complete profile, false otherwise.</returns>
     private async Task<bool> HasCompleteProfileAsync(
         Guid userId,
         CancellationToken cancellationToken)

@@ -23,8 +23,5 @@ export interface ProfileResponse extends UpdateProfileRequest {
  * @returns The response body containing the updated profile information.
  */
 export function updateProfile(request: UpdateProfileRequest) {
-  return apiPut<UpdateProfileRequest, ProfileResponse>(
-    "/api/profile",
-    request,
-  );
+  return apiPut<UpdateProfileRequest, ProfileResponse>("/api/profile", request);
 }
