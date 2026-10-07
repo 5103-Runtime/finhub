@@ -19,6 +19,23 @@ import { updateProfile } from "@app/services/profileApi";
 import z from "zod";
 import "./SetupProfile.css";
 
+const maximumAgeYears = 120;
+
+function formatDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const today = new Date();
+const maximumDateOfBirth = formatDateInputValue(today);
+const minimumDateOfBirth = (() => {
+  const date = new Date(today);
+  date.setFullYear(date.getFullYear() - maximumAgeYears);
+  return formatDateInputValue(date);
+})();
+
 const setupSchema = z.object({
   firstName: z
     .string()
@@ -29,7 +46,15 @@ const setupSchema = z.object({
     .min(1, "Last name is required")
     .max(50, "Must be 50 characters or less"),
   preferredName: z.string().max(50, "Must be 50 characters or less").optional(),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  dateOfBirth: z
+    .string()
+    .min(1, "Date of birth is required")
+    .refine((value) => value <= maximumDateOfBirth, {
+      message: "Date of birth cannot be in the future",
+    })
+    .refine((value) => value >= minimumDateOfBirth, {
+      message: `Date of birth cannot be more than ${maximumAgeYears} years ago`,
+    }),
 });
 
 type SetupFormData = z.infer<typeof setupSchema>;
@@ -146,6 +171,10 @@ export default function SetupProfile() {
                     required
                     variant="outlined"
                     slotProps={{
+                      htmlInput: {
+                        min: minimumDateOfBirth,
+                        max: maximumDateOfBirth,
+                      },
                       inputLabel: { shrink: true },
                     }}
                     error={Boolean(errors.dateOfBirth)}

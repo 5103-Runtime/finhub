@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FinHub.Api.Validations;
 
 namespace FinHub.Api.DTOs.Profile;
 
@@ -13,4 +14,5 @@ public sealed record UpdateProfileRequest(
     [Required, StringLength(50)] string FirstName,
     [Required, StringLength(50)] string LastName,
     [StringLength(50)] string? PreferredName,
+    [DateOfBirth]
     DateOnly DateOfBirth);
