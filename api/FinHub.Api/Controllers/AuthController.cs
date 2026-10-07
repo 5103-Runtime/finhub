@@ -135,12 +135,18 @@ public sealed class AuthController(
     }
 
     /// <summary>
-    /// Logs out the current authenticated user by deleting the access token cookie.
+    /// Logs out the current authenticated user from Supabase and deletes the access token cookie.
     /// </summary>
     /// <returns>The result of the logout operation.</returns>
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
+        string? accessToken = GetAccessToken();
+        if (accessToken is not null)
+        {
+            await authClient.LogoutAsync(accessToken, cancellationToken);
+        }
+
         Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
         return NoContent();
     }

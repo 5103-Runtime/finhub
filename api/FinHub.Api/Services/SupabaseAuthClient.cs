@@ -195,6 +195,44 @@ public sealed class SupabaseAuthClient(
             return null;
         }
     }
+
+    /// <summary>
+    /// Invalidates the current user's Supabase session.
+    /// </summary>
+    /// <param name="accessToken">The access token to invalidate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True when Supabase successfully invalidates the session.</returns>
+    public async Task<bool> LogoutAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+        using HttpRequestMessage message = new(
+            HttpMethod.Post,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/logout");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        try
+        {
+            using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            logger.LogWarning(
+                "Supabase logout failed with status code {StatusCode}.",
+                (int)response.StatusCode);
+            return false;
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(exception, "Supabase logout request could not reach the authentication service.");
+            return false;
+        }
+    }
     #endregion
 
     #region Private Helper Methods
