@@ -56,10 +56,8 @@ export default function Login() {
       });
 
       if (response.requiresProfileSetup) {
-        sessionStorage.setItem("needs_setup", "true");
         navigate("/setup-profile");
       } else {
-        sessionStorage.removeItem("needs_setup");
         navigate("/overview");
       }
     } catch (err) {

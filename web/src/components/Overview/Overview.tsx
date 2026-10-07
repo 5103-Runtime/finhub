@@ -21,7 +21,6 @@ export default function Overview() {
         console.error("Unexpected logout error:", err);
       }
     } finally {
-      sessionStorage.removeItem("needs_setup");
       navigate("/login", { replace: true });
     }
   };

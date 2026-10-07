@@ -60,7 +60,6 @@ export default function SetupProfile() {
         ...data,
         preferredName: data.preferredName || undefined,
       });
-      sessionStorage.removeItem("needs_setup");
       navigate("/overview", { replace: true });
     } catch (err) {
       console.error("Profile setup failed:", err);

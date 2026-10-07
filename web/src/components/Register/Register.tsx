@@ -74,14 +74,11 @@ function Register() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setServerError("");
     try {
-      const response = await register({
+      await register({
         email: data.email,
         password: data.password,
       });
 
-      if (response.requiresProfileSetup) {
-        sessionStorage.setItem("needs_setup", "true");
-      }
       navigate("/setup-profile");
     } catch (err) {
       if (err instanceof ApiError) {
