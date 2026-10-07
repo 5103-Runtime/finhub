@@ -65,7 +65,7 @@ public sealed class ProfileController(
         profile.PreferredName = string.IsNullOrWhiteSpace(request.PreferredName)
             ? null
             : request.PreferredName.Trim();
-        profile.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc);
+        profile.DateOfBirth = request.DateOfBirth;
         profile.UpdatedAt = DateTime.UtcNow;
 
         if (dbContext.Entry(profile).State == EntityState.Detached)

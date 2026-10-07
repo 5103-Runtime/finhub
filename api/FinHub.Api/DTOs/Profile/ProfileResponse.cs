@@ -13,4 +13,4 @@ public sealed record ProfileResponse(
     string FirstName,
     string LastName,
     string? PreferredName,
-    DateTime DateOfBirth);
+    DateOnly DateOfBirth);

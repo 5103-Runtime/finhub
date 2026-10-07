@@ -28,7 +28,7 @@ public sealed class Profile
     /// <summary>
     /// Gets or sets the date of birth of the user.
     /// </summary>
-    public DateTime? DateOfBirth { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
     /// <summary>
     /// Gets or sets the date and time when the profile was created.

@@ -13,4 +13,4 @@ public sealed record UpdateProfileRequest(
     [Required, StringLength(50)] string FirstName,
     [Required, StringLength(50)] string LastName,
     [StringLength(50)] string? PreferredName,
-    DateTime DateOfBirth);
+    DateOnly DateOfBirth);
