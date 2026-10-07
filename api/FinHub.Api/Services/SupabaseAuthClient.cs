@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FinHub.Api.DTOs.Auth;
@@ -163,8 +164,8 @@ public sealed class SupabaseAuthClient(
     /// </summary>
     /// <param name="accessToken">The access token.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The user ID, or null if the user ID cannot be determined.</returns>
-    public async Task<Guid?> GetUserIdAsync(
+    /// <returns>The result of the user lookup.</returns>
+    public async Task<SupabaseUserResult> GetUserIdAsync(
         string accessToken,
         CancellationToken cancellationToken)
     {
@@ -183,19 +184,21 @@ public sealed class SupabaseAuthClient(
         catch (HttpRequestException exception)
         {
             LogSupabaseRequestFailure(exception, "retrieve the authenticated user");
-            return null;
+            return SupabaseUserResult.ServiceUnavailable();
         }
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             LogSupabaseRequestFailure(exception, "retrieve the authenticated user");
-            return null;
+            return SupabaseUserResult.ServiceUnavailable();
         }
 
         using (response)
         {
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                return response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+                    ? SupabaseUserResult.InvalidToken()
+                    : SupabaseUserResult.ServiceUnavailable();
             }
 
             string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -203,13 +206,13 @@ public sealed class SupabaseAuthClient(
             {
                 SupabaseUser? user = JsonSerializer.Deserialize<SupabaseUser>(responseContent);
                 return user?.Id is not null && Guid.TryParse(user.Id, out Guid userId)
-                    ? userId
-                    : null;
+                    ? SupabaseUserResult.Authenticated(userId)
+                    : SupabaseUserResult.ServiceUnavailable();
             }
             catch (JsonException exception)
             {
                 logger.LogWarning(exception, "Supabase returned an invalid user response.");
-                return null;
+                return SupabaseUserResult.ServiceUnavailable();
             }
         }
     }
@@ -459,4 +462,53 @@ public sealed record AuthResult(
     /// <param name="errorCode">The error code.</param>
     /// <returns>A new AuthResult instance indicating failure.</returns>
     public static AuthResult Failed(int statusCode, string error, string? errorCode = null) => new(false, statusCode, null, error, errorCode);
+}
+
+/// <summary>
+/// Represents the result of looking up an authenticated Supabase user.
+/// </summary>
+/// <param name="UserId">The authenticated user's ID, if available.</param>
+/// <param name="Status">The outcome of the lookup.</param>
+public sealed record SupabaseUserResult(
+    Guid? UserId,
+    SupabaseUserLookupStatus Status)
+{
+    /// <summary>
+    /// Creates a successful user lookup result.
+    /// </summary>
+    public static SupabaseUserResult Authenticated(Guid userId) =>
+        new(userId, SupabaseUserLookupStatus.Authenticated);
+
+    /// <summary>
+    /// Creates a result indicating that the access token is invalid.
+    /// </summary>
+    public static SupabaseUserResult InvalidToken() =>
+        new(null, SupabaseUserLookupStatus.InvalidToken);
+
+    /// <summary>
+    /// Creates a result indicating that Supabase could not be reached or returned an invalid response.
+    /// </summary>
+    public static SupabaseUserResult ServiceUnavailable() =>
+        new(null, SupabaseUserLookupStatus.ServiceUnavailable);
+}
+
+/// <summary>
+/// Describes the outcome of a Supabase user lookup.
+/// </summary>
+public enum SupabaseUserLookupStatus
+{
+    /// <summary>
+    /// Supabase authenticated the user.
+    /// </summary>
+    Authenticated,
+
+    /// <summary>
+    /// Supabase rejected the access token.
+    /// </summary>
+    InvalidToken,
+
+    /// <summary>
+    /// Supabase could not complete the lookup.
+    /// </summary>
+    ServiceUnavailable
 }

@@ -40,8 +40,17 @@ public sealed class ProfileController(
             });
         }
 
-        Guid? userId = await authClient.GetUserIdAsync(accessToken, cancellationToken);
-        if (userId is null)
+        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
+        if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                error = "Authentication service is temporarily unavailable. Please try again.",
+                errorCode = "authentication_service_unavailable"
+            });
+        }
+
+        if (userResult.UserId is null)
         {
             return Unauthorized(new
             {
@@ -51,10 +60,10 @@ public sealed class ProfileController(
         }
 
         Profile profile = await dbContext.Profiles
-            .SingleOrDefaultAsync(item => item.Id == userId.Value, cancellationToken)
+            .SingleOrDefaultAsync(item => item.Id == userResult.UserId.Value, cancellationToken)
             ?? new Profile
             {
-                Id = userId.Value,
+                Id = userResult.UserId.Value,
                 CreatedAt = DateTime.UtcNow
             };
 
