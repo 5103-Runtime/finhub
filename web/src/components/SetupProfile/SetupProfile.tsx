@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Alert,
@@ -37,14 +37,6 @@ type SetupFormData = z.infer<typeof setupSchema>;
 export default function SetupProfile() {
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
-
-  // Prevent access to the setup page if the user is not in the initial setup flow
-  useEffect(() => {
-    const needsSetup = sessionStorage.getItem("needs_setup");
-    if (!needsSetup) {
-      navigate("/overview", { replace: true });
-    }
-  }, [navigate]);
 
   const {
     control,

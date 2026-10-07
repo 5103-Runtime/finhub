@@ -7,18 +7,36 @@ export default function ProtectedRoute() {
     ReturnType<typeof getSession>
   > | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [checkedPath, setCheckedPath] = useState<string | null>(null);
   const location = useLocation();
+  const pathname = location.pathname;
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     getSession()
       .then((currentSession) => {
+        if (!isCurrentRequest) {
+          return;
+        }
         setSession(currentSession);
         setIsAuthenticated(currentSession.authenticated);
+        setCheckedPath(pathname);
       })
-      .catch(() => setIsAuthenticated(false));
-  }, []);
+      .catch(() => {
+        if (!isCurrentRequest) {
+          return;
+        }
+        setIsAuthenticated(false);
+        setCheckedPath(pathname);
+      });
 
-  if (isAuthenticated === null) {
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [pathname]);
+
+  if (isAuthenticated === null || checkedPath !== pathname) {
     return null;
   }
 
@@ -30,7 +48,10 @@ export default function ProtectedRoute() {
     return <Navigate to="/setup-profile" replace />;
   }
 
-  if (!session?.requiresProfileSetup && location.pathname === "/setup-profile") {
+  if (
+    !session?.requiresProfileSetup &&
+    location.pathname === "/setup-profile"
+  ) {
     return <Navigate to="/overview" replace />;
   }
 
