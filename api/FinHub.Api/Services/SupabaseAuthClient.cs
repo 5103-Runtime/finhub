@@ -175,24 +175,42 @@ public sealed class SupabaseAuthClient(
         message.Headers.Add("apikey", publishableKey);
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        HttpResponseMessage? response;
+        try
         {
+            response = await httpClient.SendAsync(message, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            LogSupabaseRequestFailure(exception, "retrieve the authenticated user");
+            return null;
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "retrieve the authenticated user");
             return null;
         }
 
-        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        try
+        using (response)
         {
-            SupabaseUser? user = JsonSerializer.Deserialize<SupabaseUser>(responseContent);
-            return user?.Id is not null && Guid.TryParse(user.Id, out Guid userId)
-                ? userId
-                : null;
-        }
-        catch (JsonException exception)
-        {
-            logger.LogWarning(exception, "Supabase returned an invalid user response.");
-            return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            try
+            {
+                SupabaseUser? user = JsonSerializer.Deserialize<SupabaseUser>(responseContent);
+                return user?.Id is not null && Guid.TryParse(user.Id, out Guid userId)
+                    ? userId
+                    : null;
+            }
+            catch (JsonException exception)
+            {
+                logger.LogWarning(exception, "Supabase returned an invalid user response.");
+                return null;
+            }
         }
     }
 
@@ -229,13 +247,31 @@ public sealed class SupabaseAuthClient(
         }
         catch (HttpRequestException exception)
         {
-            logger.LogWarning(exception, "Supabase logout request could not reach the authentication service.");
+            LogSupabaseRequestFailure(exception, "log out the user");
+            return false;
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "log out the user");
             return false;
         }
     }
     #endregion
 
     #region Private Helper Methods
+    /// <summary>
+    /// Logs a non-cancellation failure while calling Supabase.
+    /// </summary>
+    /// <param name="exception">The request failure.</param>
+    /// <param name="operation">The operation that could not be completed.</param>
+    private void LogSupabaseRequestFailure(Exception exception, string operation)
+    {
+        logger.LogWarning(
+            exception,
+            "Supabase request could not {Operation}.",
+            operation);
+    }
+
     /// <summary>
     /// Retrieves the Supabase configuration (URL and publishable key) from the application settings.
     /// </summary>
