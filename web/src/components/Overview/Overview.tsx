@@ -1,6 +1,6 @@
 import { Box, Button, Container, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { logout } from "@app/services/authApi";
+import { ApiError, logout } from "@app/services/authApi";
 
 // TODO: Just a placeholder for now, will be replaced with the actual overview page once we have more features implemented.
 export default function Overview() {
@@ -9,6 +9,17 @@ export default function Overview() {
   const handleLogout = async () => {
     try {
       await logout();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        console.error("Logout failed:", {
+          message: err.message,
+          status: err.status,
+          errorCode: err.errorCode,
+          fieldErrors: err.fieldErrors,
+        });
+      } else {
+        console.error("Unexpected logout error:", err);
+      }
     } finally {
       sessionStorage.removeItem("needs_setup");
       navigate("/login", { replace: true });
