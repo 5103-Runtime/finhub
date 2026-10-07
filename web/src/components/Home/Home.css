@@ -1,8 +1,8 @@
 .home-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 20%, rgba(67, 78, 97, 0.55), transparent 34%),
-    #202332;
+    radial-gradient(circle at 15% 20%, var(--surface-overlay), transparent 34%),
+    var(--color-ink);
 }
 
 .home-shell {
@@ -25,7 +25,7 @@
   display: inline-flex;
   align-items: center;
   gap: 11px;
-  color: #f7f4ef;
+  color: var(--color-cream);
   font-size: 25px;
   font-weight: 800;
   letter-spacing: -0.06em;
@@ -33,7 +33,7 @@
 
 .home-brand > span:last-child span,
 .auth-brand > span:last-child span {
-  color: #bc9876;
+  color: var(--color-bronze);
 }
 
 .home-nav {
@@ -52,16 +52,16 @@
 }
 
 .nav-login {
-  color: #f7f4ef !important;
+  color: var(--color-cream) !important;
 }
 
 .nav-register {
-  background: #bc9876 !important;
-  color: #202332 !important;
+  background: var(--color-bronze) !important;
+  color: var(--color-ink) !important;
 }
 
 .nav-register:hover {
-  background: #d1ad89 !important;
+  background: var(--color-bronze) !important;
 }
 
 .home-hero {
@@ -79,7 +79,7 @@
 
 .hero-title {
   margin: 18px 0 22px;
-  color: #f7f4ef;
+  color: var(--color-cream);
   font-size: clamp(54px, 7vw, 89px) !important;
   font-weight: 500 !important;
   line-height: 0.98 !important;
@@ -88,7 +88,7 @@
 }
 
 .hero-title em {
-  color: #bc9876;
+  color: var(--color-bronze);
   font-family: "Karla", sans-serif;
   font-style: italic;
   font-weight: 400;
@@ -96,14 +96,14 @@
 
 .hero-description {
   max-width: 510px;
-  color: #b5bdc2;
+  color: var(--color-mist);
   font-size: 17px;
   line-height: 1.6;
 }
 
 .feature-list {
   margin-top: 30px;
-  color: #d9d6d0;
+  color: var(--color-mist);
   font-size: 14px;
 }
 
@@ -115,7 +115,7 @@
 
 .feature-list svg {
   width: 17px;
-  color: #bc9876;
+  color: var(--color-bronze);
 }
 
 .import-card {
@@ -125,10 +125,10 @@
   max-width: 590px;
   margin-top: 42px;
   padding: 17px 18px;
-  border: 1px solid rgba(188, 152, 118, 0.28);
+  border: 1px solid var(--border-accent);
   border-radius: 17px !important;
-  background: rgba(67, 78, 97, 0.55) !important;
-  color: #f7f4ef;
+  background: var(--surface-overlay) !important;
+  color: var(--color-cream);
 }
 
 .import-icon {
@@ -137,8 +137,8 @@
   width: 43px;
   height: 43px;
   border-radius: 13px;
-  background: #bc9876;
-  color: #202332;
+  background: var(--color-bronze);
+  color: var(--color-ink);
 }
 
 .import-icon svg {
@@ -146,20 +146,20 @@
 }
 
 .import-title {
-  color: #bc9876;
+  color: var(--color-bronze);
   font-weight: 700 !important;
 }
 
 .import-copy {
   margin-top: 2px !important;
-  color: #aab4bb;
+  color: var(--color-mist);
   font-size: 12px !important;
 }
 
 .file-name {
   margin-top: 4px !important;
   overflow: hidden;
-  color: #bc9876;
+  color: var(--color-bronze);
   font-size: 11px !important;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -167,7 +167,7 @@
 
 .import-button {
   min-width: 105px;
-  color: #bc9876 !important;
+  color: var(--color-bronze) !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   text-transform: none !important;
@@ -175,11 +175,11 @@
 
 .home-side {
   padding: 35px 0 35px 38px;
-  border-left: 1px solid rgba(188, 152, 118, 0.35);
+  border-left: 1px solid var(--border-accent);
 }
 
 .home-side-label {
-  color: #bc9876;
+  color: var(--color-bronze);
   font-size: 14px !important;
   font-weight: 700 !important;
 }
@@ -187,7 +187,7 @@
 .home-side-copy {
   max-width: 240px;
   margin-top: 14px !important;
-  color: #d4d8d8;
+  color: var(--color-mist);
   font-size: clamp(16px, 5vw, 20px) !important;
   line-height: 1.2 !important;
   letter-spacing: -0.04em;
@@ -201,14 +201,14 @@
 .primary-action {
   min-height: 49px;
   border-radius: 12px !important;
-  background: #bc9876 !important;
-  color: #202332 !important;
+  background: var(--color-bronze) !important;
+  color: var(--color-ink) !important;
   font-weight: 700 !important;
   text-transform: none !important;
 }
 
 .primary-action:hover {
-  background: #a58260 !important;
+  background: var(--color-bronze) !important;
 }
 
 @media (max-width: 850px) {
@@ -224,7 +224,7 @@
 
   .home-side {
     padding: 25px 0 0;
-    border-top: 1px solid rgba(188, 152, 118, 0.35);
+    border-top: 1px solid var(--border-accent);
     border-left: 0;
   }
 

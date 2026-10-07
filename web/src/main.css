@@ -2,9 +2,29 @@
 @import "tailwindcss";
 
 :root {
+  --color-ink: #202332;
+  --color-slate: #434e61;
+  --color-bronze: #bc9876;
+  --color-cream: #f7f4ef;
+  --color-paper: #f3eee7;
+  --color-mist: #b5bdc2;
+  --color-danger: #b94b42;
+
+  --border-subtle: color-mix(in srgb, var(--color-slate) 50%, transparent);
+  --border-accent: color-mix(in srgb, var(--color-bronze) 30%, transparent);
+  --surface-overlay: color-mix(in srgb, var(--color-slate) 55%, transparent);
+  --surface-input: color-mix(in srgb, var(--color-cream) 55%, transparent);
+  --surface-danger: color-mix(
+    in srgb,
+    var(--color-danger) 15%,
+    var(--color-paper)
+  );
+  --shadow-soft: color-mix(in srgb, var(--color-ink) 25%, transparent);
+  --divider: color-mix(in srgb, var(--color-mist) 55%, transparent);
+
   font-family: "Karla", sans-serif;
-  color: #f7f4ef;
-  background: #202332;
+  color: var(--color-cream);
+  background: var(--color-ink);
   font-synthesis: none;
 }
 
