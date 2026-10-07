@@ -50,12 +50,18 @@ export default function Login() {
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setServerError("");
     try {
-      await login({
+      const response = await login({
         email: data.email,
         password: data.password,
       });
 
-      navigate("/overview");
+      if (response.requiresProfileSetup) {
+        sessionStorage.setItem("needs_setup", "true");
+        navigate("/setup-profile");
+      } else {
+        sessionStorage.removeItem("needs_setup");
+        navigate("/overview");
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         console.error("Login failed:", {

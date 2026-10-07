@@ -6,15 +6,18 @@ import Overview from "@app/components/Overview";
 import NotFound from "@app/components/NotFound";
 import SetupProfile from "@app/components/SetupProfile";
 import ProtectedRoute from "@app/routes/ProtectedRoute";
+import PublicRoute from "@app/routes/PublicRoute";
 
 function App() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Home />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Public routes redirect authenticated users to the correct app page. */}
+      <Route element={<PublicRoute />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
 
       {/* Protected Routes (authentication is validated by the API cookie session) */}
       <Route element={<ProtectedRoute />}>

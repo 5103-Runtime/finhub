@@ -23,6 +23,7 @@ export interface LoginRequest {
 export interface AuthResponse {
   userId: string;
   requiresEmailConfirmation: boolean;
+  requiresProfileSetup: boolean;
 }
 
 /**
@@ -30,6 +31,7 @@ export interface AuthResponse {
  */
 export interface AuthSession {
   userId: string;
+  requiresProfileSetup: boolean;
 }
 
 /**

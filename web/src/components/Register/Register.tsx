@@ -74,13 +74,14 @@ function Register() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setServerError("");
     try {
-      await register({
+      const response = await register({
         email: data.email,
         password: data.password,
       });
 
-      // Set a flag in sessionStorage to indicate that the user needs to complete the setup process
-      sessionStorage.setItem("needs_setup", "true");
+      if (response.requiresProfileSetup) {
+        sessionStorage.setItem("needs_setup", "true");
+      }
       navigate("/setup-profile");
     } catch (err) {
       if (err instanceof ApiError) {

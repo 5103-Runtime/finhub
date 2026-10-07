@@ -1,13 +1,20 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getSession } from "@app/services/authApi";
 
 export default function ProtectedRoute() {
+  const [session, setSession] = useState<
+    Awaited<ReturnType<typeof getSession>> | null
+  >(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     getSession()
-      .then(() => setIsAuthenticated(true))
+      .then((currentSession) => {
+        setSession(currentSession);
+        setIsAuthenticated(true);
+      })
       .catch(() => setIsAuthenticated(false));
   }, []);
 
@@ -15,5 +22,17 @@ export default function ProtectedRoute() {
     return null;
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (session?.requiresProfileSetup && location.pathname !== "/setup-profile") {
+    return <Navigate to="/setup-profile" replace />;
+  }
+
+  if (!session?.requiresProfileSetup && location.pathname === "/setup-profile") {
+    return <Navigate to="/overview" replace />;
+  }
+
+  return <Outlet />;
 }

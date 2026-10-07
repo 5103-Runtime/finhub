@@ -1,6 +1,9 @@
 using FinHub.Api.DTOs.Auth;
 using FinHub.Api.Constants;
+using FinHub.Api.Data;
+using FinHub.Api.Models;
 using FinHub.Api.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinHub.Api.Controllers;
@@ -11,7 +14,10 @@ namespace FinHub.Api.Controllers;
 /// <param name="authClient">The authentication client.</param>
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthController> logger) : ControllerBase
+public sealed class AuthController(
+    SupabaseAuthClient authClient,
+    FinHubDbContext dbContext,
+    ILogger<AuthController> logger) : ControllerBase
 {
     /// <summary>
     /// Registers a new user with the provided registration details.
@@ -45,7 +51,9 @@ public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthCo
         }
 
         SetAccessTokenCookie(result.Response);
-        return StatusCode(result.StatusCode, ToClientResponse(result.Response));
+        return StatusCode(
+            result.StatusCode,
+            ToClientResponse(result.Response, requiresProfileSetup: true));
     }
 
     /// <summary>
@@ -80,7 +88,12 @@ public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthCo
         }
 
         SetAccessTokenCookie(result.Response);
-        return StatusCode(result.StatusCode, ToClientResponse(result.Response));
+        bool requiresProfileSetup = !await HasCompleteProfileAsync(
+            result.Response.UserId,
+            cancellationToken);
+        return StatusCode(
+            result.StatusCode,
+            ToClientResponse(result.Response, requiresProfileSetup));
     }
 
     /// <summary>
@@ -98,9 +111,15 @@ public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthCo
         }
 
         Guid? userId = await authClient.GetUserIdAsync(accessToken, cancellationToken);
-        return userId is null
-            ? Unauthorized()
-            : Ok(new { userId });
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        bool requiresProfileSetup = !await HasCompleteProfileAsync(
+            userId.Value,
+            cancellationToken);
+        return Ok(new { userId, requiresProfileSetup });
     }
 
     /// <summary>
@@ -214,10 +233,27 @@ public sealed class AuthController(SupabaseAuthClient authClient, ILogger<AuthCo
     /// Converts the authentication response to a client-friendly format, including the user ID and email confirmation requirement.
     /// </summary>
     /// <param name="response">The authentication response to convert.</param>
+    /// <param name="requiresProfileSetup">Indicates if the user still needs to complete their profile.</param>
     /// <returns>The client-friendly response.</returns>
-    private static object ToClientResponse(AuthResponse response) => new
+    private static object ToClientResponse(
+        AuthResponse response,
+        bool requiresProfileSetup = false) => new
+        {
+            userId = response.UserId,
+            requiresEmailConfirmation = response.RequiresEmailConfirmation,
+            requiresProfileSetup
+        };
+
+    private async Task<bool> HasCompleteProfileAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
     {
-        userId = response.UserId,
-        requiresEmailConfirmation = response.RequiresEmailConfirmation
-    };
+        Profile? profile = await dbContext.Profiles
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == userId, cancellationToken);
+
+        return profile?.FirstName is not null &&
+            profile.LastName is not null &&
+            profile.DateOfBirth is not null;
+    }
 }
