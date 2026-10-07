@@ -1,11 +1,6 @@
 /**
- * @brief Represents a error returned from a API request
- * ApiError is thrown when a API request fails, allowing callers
- * to access the HTTP status, error code, and field specific errors
+ * @brief Represents an error returned from an API request.
  */
-//example use:
-//  try{ await register(data) }
-//  catch(err) {if (err instanceof ApiError) show(err.message) }
 export class ApiError extends Error {
   status: number;
   errorCode?: string;
@@ -26,8 +21,7 @@ export class ApiError extends Error {
 }
 
 /**
- * @brief Represents the possible structure of a API error response.
- * API may return different error information depending on the type of failure
+ * @brief Represents the structure of an error response body returned from an API request.
  */
 interface ErrorBody {
   error?: string;
@@ -38,30 +32,25 @@ interface ErrorBody {
 }
 
 /**
- * @brief Sends a POST request with a JSON body and returns the parsed response
- * 
- * if request fails, API error response is parsed and a APIError is thrown
- * containing the error information
- *
- * @tparam TBody Type of request body
- * @tparam TResponse type of the expected successful response
- *
- * @param path API endpoint to send POST to
- * @param body Data to send in request body
- *
- * @returns the parsed successful API response
- * @throws ApiError If the API request fails.
+ * @brief Sends a JSON request to the specified path.
+ * @param path The API endpoint path to send the request to.
+ * @param method The HTTP method to use for the request (GET, POST, or PUT).
+ * @param body The request body to send with the request (optional).
+ * @returns A promise that resolves to the response body.
  */
-export async function apiPost<TBody, TResponse>(
+async function sendJson<TBody, TResponse>(
   path: string,
-  body: TBody,
+  method: "GET" | "POST" | "PUT",
+  body?: TBody,
 ): Promise<TResponse> {
   let res: Response;
   try {
     res = await fetch(path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      method,
+      credentials: "include",
+      headers:
+        body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(
@@ -73,11 +62,9 @@ export async function apiPost<TBody, TResponse>(
 
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as ErrorBody | null;
-
     const firstFieldError = data?.errors
       ? Object.values(data.errors)[0]?.[0]
       : undefined;
-
     const message =
       data?.error ??
       firstFieldError ??
@@ -88,5 +75,44 @@ export async function apiPost<TBody, TResponse>(
     throw new ApiError(res.status, message, data?.errorCode, data?.errors);
   }
 
+  if (res.status === 204) {
+    return undefined as TResponse;
+  }
+
   return (await res.json()) as TResponse;
+}
+
+/**
+ * @brief Sends a GET request to the specified path and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @returns A promise that resolves to the response body.
+ */
+export function apiGet<TResponse>(path: string): Promise<TResponse> {
+  return sendJson<undefined, TResponse>(path, "GET");
+}
+
+/**
+ * @brief Sends a POST request to the specified path with the given body and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @param body The request body to send with the request.
+ * @returns A promise that resolves to the response body.
+ */
+export function apiPost<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  return sendJson<TBody, TResponse>(path, "POST", body);
+}
+
+/**
+ * @brief Sends a PUT request to the specified path with the given body and returns the response body.
+ * @param path The API endpoint path to send the request to.
+ * @param body The request body to send with the request.
+ * @returns A promise that resolves to the response body.
+ */
+export function apiPut<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  return sendJson<TBody, TResponse>(path, "PUT", body);
 }
