@@ -13,7 +13,7 @@ export default function ProtectedRoute() {
     getSession()
       .then((currentSession) => {
         setSession(currentSession);
-        setIsAuthenticated(true);
+        setIsAuthenticated(currentSession.authenticated);
       })
       .catch(() => setIsAuthenticated(false));
   }, []);

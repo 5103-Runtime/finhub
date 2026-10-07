@@ -109,19 +109,29 @@ public sealed class AuthController(
         string? accessToken = GetAccessToken();
         if (accessToken is null)
         {
-            return Unauthorized();
+            return Ok(new
+            {
+                authenticated = false,
+                userId = (Guid?)null,
+                requiresProfileSetup = false
+            });
         }
 
         Guid? userId = await authClient.GetUserIdAsync(accessToken, cancellationToken);
         if (userId is null)
         {
-            return Unauthorized();
+            return Ok(new
+            {
+                authenticated = false,
+                userId = (Guid?)null,
+                requiresProfileSetup = false
+            });
         }
 
         bool requiresProfileSetup = !await HasCompleteProfileAsync(
             userId.Value,
             cancellationToken);
-        return Ok(new { userId, requiresProfileSetup });
+        return Ok(new { authenticated = true, userId, requiresProfileSetup });
     }
 
     /// <summary>

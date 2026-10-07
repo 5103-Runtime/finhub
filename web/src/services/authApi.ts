@@ -30,7 +30,8 @@ export interface AuthResponse {
  * @brief Represents the current authenticated user's session information.
  */
 export interface AuthSession {
-  userId: string;
+  authenticated: boolean;
+  userId: string | null;
   requiresProfileSetup: boolean;
 }
 

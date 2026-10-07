@@ -10,7 +10,7 @@ export default function PublicRoute() {
     getSession()
       .then((session) => {
         setRequiresProfileSetup(session.requiresProfileSetup);
-        setIsAuthenticated(true);
+        setIsAuthenticated(session.authenticated);
       })
       .catch(() => setIsAuthenticated(false));
   }, []);

@@ -6,10 +6,13 @@ import { logout } from "@app/services/authApi";
 export default function Overview() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    void logout();
-    sessionStorage.removeItem("needs_setup");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      sessionStorage.removeItem("needs_setup");
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
