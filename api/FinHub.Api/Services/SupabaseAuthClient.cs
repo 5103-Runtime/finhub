@@ -109,15 +109,34 @@ public sealed class SupabaseAuthClient(
             refresh_token = refreshToken
         });
 
-        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
-        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return HandleErrorResponse(response, responseContent, "Token refresh failed.");
-        }
+            using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        return ParseAuthResponse(responseContent, StatusCodes.Status200OK);
+            if (!response.IsSuccessStatusCode)
+            {
+                return HandleErrorResponse(response, responseContent, "Token refresh failed.");
+            }
+
+            return ParseAuthResponse(responseContent, StatusCodes.Status200OK);
+        }
+        catch (HttpRequestException exception)
+        {
+            LogSupabaseRequestFailure(exception, "refresh the authentication token");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "refresh the authentication token");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
     }
 
     /// <summary>

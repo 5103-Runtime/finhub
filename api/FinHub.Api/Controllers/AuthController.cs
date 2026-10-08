@@ -117,8 +117,7 @@ public sealed class AuthController(
         AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
         if (!result.Succeeded)
         {
-            Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
-            Response.Cookies.Delete(AuthCookies.RefreshToken, CookieOptions());
+            DeleteAuthCookiesIfRefreshTokenIsInvalid(result.StatusCode);
             return StatusCode(result.StatusCode, new
             {
                 error = result.Error,
@@ -145,39 +144,73 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The current authenticated user's session information.</returns>
     [HttpGet("session")]
-    public async Task<ActionResult> GetSession(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSession(CancellationToken cancellationToken)
     {
         string? accessToken = GetAccessToken();
-        if (accessToken is null)
+        string? refreshToken = GetRefreshToken();
+
+        // Anonymous visitors do not need a session refresh.
+        if (accessToken is null && refreshToken is null)
         {
-            return Ok(new
-            {
-                authenticated = false,
-                userId = (Guid?)null,
-                requiresProfileSetup = false
-            });
+            return Ok(UnauthenticatedSession());
         }
 
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
+        // Refresh the session when only the refresh token remains.
+        if (accessToken is null && refreshToken is not null)
+        {
+            // Refresh the session and update the access token cookie.
+            AuthResult refreshResult = await RefreshSessionAsync(refreshToken, cancellationToken);
+            if (!refreshResult.Succeeded)
+            {
+                return RefreshFailureResponse(refreshResult);
+            }
+
+            // Ensure the refreshed session includes an access token.
+            if (refreshResult.Response?.AccessToken is null)
+            {
+                return IncompleteAuthResponse();
+            }
+
+            accessToken = refreshResult.Response.AccessToken;
+        }
+
+        // Validate the current access token with Supabase.
+        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken!, cancellationToken);
         if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
         {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
-            {
-                error = "Authentication service is temporarily unavailable. Please try again.",
-                errorCode = "authentication_service_unavailable"
-            });
+            return AuthenticationServiceUnavailable();
         }
 
+        // If the access token expired, retry validation with a refreshed session.
+        if (userResult.Status == SupabaseUserLookupStatus.InvalidToken && refreshToken is not null)
+        {
+            AuthResult refreshResult = await RefreshSessionAsync(refreshToken, cancellationToken);
+            if (!refreshResult.Succeeded)
+            {
+                return RefreshFailureResponse(refreshResult);
+            }
+
+            if (refreshResult.Response?.AccessToken is null)
+            {
+                return IncompleteAuthResponse();
+            }
+
+            userResult = await authClient.GetUserIdAsync(
+                refreshResult.Response.AccessToken,
+                cancellationToken);
+            if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
+            {
+                return AuthenticationServiceUnavailable();
+            }
+        }
+
+        // Return an unauthenticated session when no valid user was found.
         if (userResult.UserId is null)
         {
-            return Ok(new
-            {
-                authenticated = false,
-                userId = (Guid?)null,
-                requiresProfileSetup = false
-            });
+            return Ok(UnauthenticatedSession());
         }
 
+        // Include whether the authenticated user still needs to complete their profile.
         bool requiresProfileSetup = !await HasCompleteProfileAsync(
             userResult.UserId.Value,
             cancellationToken);
@@ -278,6 +311,92 @@ public sealed class AuthController(
         !string.IsNullOrWhiteSpace(token)
             ? token
             : null;
+
+    /// <summary>
+    /// Creates the response returned when no authenticated user is available.
+    /// </summary>
+    /// <returns>An unauthenticated session response.</returns>
+    private static object UnauthenticatedSession() => new
+    {
+        authenticated = false,
+        userId = (Guid?)null,
+        requiresProfileSetup = false
+    };
+
+    /// <summary>
+    /// Creates an error response for a refresh operation that did not succeed.
+    /// </summary>
+    /// <param name="result">The failed refresh result.</param>
+    /// <returns>An unauthenticated response for invalid credentials or the service error response.</returns>
+    private IActionResult RefreshFailureResponse(AuthResult result)
+    {
+        DeleteAuthCookiesIfRefreshTokenIsInvalid(result.StatusCode);
+        return result.StatusCode is StatusCodes.Status400BadRequest
+            or StatusCodes.Status401Unauthorized
+            or StatusCodes.Status403Forbidden
+            ? Ok(UnauthenticatedSession())
+            : StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
+            });
+    }
+
+    /// <summary>
+    /// Creates the response returned when the authentication service returns incomplete data.
+    /// </summary>
+    /// <returns>A bad gateway response indicating an invalid authentication response.</returns>
+    private ObjectResult IncompleteAuthResponse() => StatusCode(StatusCodes.Status502BadGateway, new
+    {
+        error = "Authentication service returned an incomplete response.",
+        errorCode = "invalid_auth_response"
+    });
+
+    /// <summary>
+    /// Creates the response returned when the authentication service is unavailable.
+    /// </summary>
+    /// <returns>An unavailable-service response.</returns>
+    private ObjectResult AuthenticationServiceUnavailable() => StatusCode(
+        StatusCodes.Status503ServiceUnavailable,
+        new
+        {
+            error = "Authentication service is temporarily unavailable. Please try again.",
+            errorCode = "authentication_service_unavailable"
+        });
+
+    /// <summary>
+    /// Refreshes the current session and updates the authentication cookies when successful.
+    /// </summary>
+    /// <param name="refreshToken">The refresh token used to renew the session.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the session refresh.</returns>
+    private async Task<AuthResult> RefreshSessionAsync(
+        string refreshToken,
+        CancellationToken cancellationToken)
+    {
+        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        if (result.Succeeded && result.Response is not null)
+        {
+            SetAuthCookies(result.Response, refreshToken);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Deletes authentication cookies when the refresh token is rejected as invalid.
+    /// </summary>
+    /// <param name="statusCode">The status code returned by the authentication service.</param>
+    private void DeleteAuthCookiesIfRefreshTokenIsInvalid(int statusCode)
+    {
+        if (statusCode is StatusCodes.Status400BadRequest
+            or StatusCodes.Status401Unauthorized
+            or StatusCodes.Status403Forbidden)
+        {
+            Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
+            Response.Cookies.Delete(AuthCookies.RefreshToken, CookieOptions());
+        }
+    }
 
     /// <summary>
     /// Sets the access and refresh token cookies returned by the authentication service.

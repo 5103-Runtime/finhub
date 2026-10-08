@@ -60,17 +60,7 @@ export function login(request: LoginRequest) {
  * @returns The current authenticated user's session information.
  */
 export async function getSession() {
-  const session = await apiGet<AuthSession>("/api/auth/session");
-  if (session.authenticated) {
-    return session;
-  }
-
-  try {
-    await refresh();
-    return await apiGet<AuthSession>("/api/auth/session");
-  } catch {
-    return session;
-  }
+  return apiGet<AuthSession>("/api/auth/session");
 }
 
 /**
