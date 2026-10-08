@@ -61,7 +61,7 @@
 }
 
 .nav-register:hover {
-  background: var(--color-bronze) !important;
+  background: var(--color-bronze-hover) !important;
 }
 
 .home-hero {
@@ -208,7 +208,7 @@
 }
 
 .primary-action:hover {
-  background: var(--color-bronze) !important;
+  background: var(--color-bronze-hover) !important;
 }
 
 @media (max-width: 850px) {
