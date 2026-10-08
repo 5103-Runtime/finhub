@@ -31,17 +31,26 @@ interface ErrorBody {
   errors?: Record<string, string[]>;
 }
 
+const refreshExcludedPaths = new Set([
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/refresh",
+  "/api/auth/logout",
+]);
+
 /**
  * @brief Sends a JSON request to the specified path.
  * @param path The API endpoint path to send the request to.
  * @param method The HTTP method to use for the request (GET, POST, or PUT).
  * @param body The request body to send with the request (optional).
+ * @param allowRefresh Whether to allow token refresh on 401 Unauthorized responses (default: true).
  * @returns A promise that resolves to the response body.
  */
 async function sendJson<TBody, TResponse>(
   path: string,
   method: "GET" | "POST" | "PUT",
   body?: TBody,
+  allowRefresh = true,
 ): Promise<TResponse> {
   let res: Response;
   try {
@@ -58,6 +67,22 @@ async function sendJson<TBody, TResponse>(
       "Could not reach the server. Please try again.",
       "network_error",
     );
+  }
+
+  if (res.status === 401 && allowRefresh && !refreshExcludedPaths.has(path)) {
+    try {
+      await sendJson<undefined, void>(
+        "/api/auth/refresh",
+        "POST",
+        undefined,
+        false,
+      );
+      return sendJson<TBody, TResponse>(path, method, body, false);
+    } catch (refreshError) {
+      if (!(refreshError instanceof ApiError)) {
+        throw refreshError;
+      }
+    }
   }
 
   if (!res.ok) {

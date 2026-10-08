@@ -52,7 +52,7 @@ public sealed class AuthController(
             });
         }
 
-        SetAccessTokenCookie(result.Response);
+        SetAuthCookies(result.Response);
         return StatusCode(
             result.StatusCode,
             ToClientResponse(result.Response, requiresProfileSetup: true));
@@ -89,13 +89,54 @@ public sealed class AuthController(
             });
         }
 
-        SetAccessTokenCookie(result.Response);
+        SetAuthCookies(result.Response);
         bool requiresProfileSetup = !await HasCompleteProfileAsync(
             result.Response.UserId,
             cancellationToken);
         return StatusCode(
             result.StatusCode,
             ToClientResponse(result.Response, requiresProfileSetup));
+    }
+
+    /// <summary>
+    /// Refreshes the access token using the refresh token cookie.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The refreshed authentication result.</returns>
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+    {
+        string? refreshToken = GetRefreshToken();
+        if (refreshToken is null)
+        {
+            // Avoid returning 401 Unauthorized when the user 
+            // first lands on the page and have not logged in yet
+            return NoContent();
+        }
+
+        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        if (!result.Succeeded)
+        {
+            Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
+            Response.Cookies.Delete(AuthCookies.RefreshToken, CookieOptions());
+            return StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
+            });
+        }
+
+        if (result.Response is null)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                error = "Authentication service returned an incomplete response.",
+                errorCode = "invalid_auth_response"
+            });
+        }
+
+        SetAuthCookies(result.Response, refreshToken);
+        return Ok(ToClientResponse(result.Response));
     }
 
     /// <summary>
@@ -157,6 +198,7 @@ public sealed class AuthController(
         }
 
         Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
+        Response.Cookies.Delete(AuthCookies.RefreshToken, CookieOptions());
         return NoContent();
     }
 
@@ -228,17 +270,38 @@ public sealed class AuthController(
             : null;
 
     /// <summary>
-    /// Sets the access token cookie in the response if the access token is present in the authentication response.
+    /// Retrieves the refresh token from the request cookies.
+    /// </summary>
+    /// <returns>The refresh token, or null if it is not found.</returns>
+    private string? GetRefreshToken() =>
+        Request.Cookies.TryGetValue(AuthCookies.RefreshToken, out string? token) &&
+        !string.IsNullOrWhiteSpace(token)
+            ? token
+            : null;
+
+    /// <summary>
+    /// Sets the access and refresh token cookies returned by the authentication service.
     /// </summary>
     /// <param name="response">The authentication response containing the access token.</param>
-    private void SetAccessTokenCookie(AuthResponse response)
+    /// <param name="fallbackRefreshToken">The existing refresh token to retain when token rotation is not used.</param>
+    private void SetAuthCookies(AuthResponse response, string? fallbackRefreshToken = null)
     {
-        if (string.IsNullOrWhiteSpace(response.AccessToken))
+        if (!string.IsNullOrWhiteSpace(response.AccessToken))
         {
-            return;
+            Response.Cookies.Append(
+                AuthCookies.AccessToken,
+                response.AccessToken,
+                CookieOptions(response.ExpiresIn));
         }
 
-        Response.Cookies.Append(AuthCookies.AccessToken, response.AccessToken, CookieOptions(response.ExpiresIn));
+        string? refreshToken = response.RefreshToken ?? fallbackRefreshToken;
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            Response.Cookies.Append(
+                AuthCookies.RefreshToken,
+                refreshToken,
+                CookieOptions());
+        }
     }
 
     /// <summary>

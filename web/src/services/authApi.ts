@@ -59,8 +59,26 @@ export function login(request: LoginRequest) {
  * Retrieves the current authenticated user's session information from the authentication API.
  * @returns The current authenticated user's session information.
  */
-export function getSession() {
-  return apiGet<AuthSession>("/api/auth/session");
+export async function getSession() {
+  const session = await apiGet<AuthSession>("/api/auth/session");
+  if (session.authenticated) {
+    return session;
+  }
+
+  try {
+    await refresh();
+    return await apiGet<AuthSession>("/api/auth/session");
+  } catch {
+    return session;
+  }
+}
+
+/**
+ * Refreshes the access token using the HttpOnly refresh-token cookie.
+ * @returns A promise containing the refreshed user's information.
+ */
+export function refresh() {
+  return apiPost<undefined, void>("/api/auth/refresh", undefined);
 }
 
 /**
