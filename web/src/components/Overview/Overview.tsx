@@ -27,7 +27,12 @@ export default function Overview() {
 
   return (
     <Box
-      sx={{ minHeight: "100vh", bgcolor: "#202332", color: "#f7f4ef", p: 4 }}
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "var(--color-ink)",
+        color: "var(--color-cream)",
+        p: 4,
+      }}
     >
       <Container maxWidth="lg">
         <Box
@@ -39,17 +44,21 @@ export default function Overview() {
           }}
         >
           <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Fin<span style={{ color: "#bc9876" }}>Hub</span> Overview
+            Fin<span style={{ color: "var(--color-bronze)" }}>Hub</span>{" "}
+            Overview
           </Typography>
           <Button
             variant="outlined"
             onClick={handleLogout}
-            sx={{ color: "#bc9876", borderColor: "#bc9876" }}
+            sx={{
+              color: "var(--color-bronze)",
+              borderColor: "var(--color-bronze)",
+            }}
           >
             Sign out
           </Button>
         </Box>
-        <Typography variant="body1" sx={{ color: "#b5bdc2" }}>
+        <Typography variant="body1" sx={{ color: "var(--color-mist)" }}>
           Welcome back! You are successfully signed in and viewing your account
           overview.
         </Typography>

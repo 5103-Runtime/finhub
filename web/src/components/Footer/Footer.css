@@ -4,22 +4,22 @@
   justify-content: space-between;
   margin: 10vh 8vh 0 8vh;
   padding-top: 20px;
-  border-top: 1px solid rgba(138, 153, 158, 0.2);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .site-footer-brand {
-  color: #f7f4ef;
+  color: var(--color-cream);
   font-size: 16px !important;
   font-weight: 800 !important;
   letter-spacing: -0.05em;
 }
 
 .site-footer-brand span {
-  color: #bc9876;
+  color: var(--color-bronze);
 }
 
 .site-footer-copy {
-  color: #8a999e;
+  color: var(--color-mist);
   font-size: 11px !important;
 }
 

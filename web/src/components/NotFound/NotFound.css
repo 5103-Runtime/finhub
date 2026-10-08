@@ -1,8 +1,8 @@
 .not-found-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 20%, rgba(67, 78, 97, 0.55), transparent 34%),
-    #202332;
+    radial-gradient(circle at 15% 20%, var(--surface-overlay), transparent 34%),
+    var(--color-ink);
 }
 
 .not-found-shell {
@@ -25,7 +25,7 @@
 }
 
 .error-code {
-  color: #bc9876;
+  color: var(--color-bronze);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -35,7 +35,7 @@
 
 .error-title {
   margin: 0 0 20px 0 !important;
-  color: #f7f4ef;
+  color: var(--color-cream);
   font-size: clamp(48px, 6vw, 75px) !important;
   font-weight: 500 !important;
   line-height: 1 !important;
@@ -45,7 +45,7 @@
 
 .error-description {
   max-width: 480px;
-  color: #b5bdc2;
+  color: var(--color-mist);
   font-size: 17px;
   line-height: 1.6;
   margin: 10px auto !important;
