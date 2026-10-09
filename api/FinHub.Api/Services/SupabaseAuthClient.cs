@@ -88,6 +88,58 @@ public sealed class SupabaseAuthClient(
     }
 
     /// <summary>
+    /// Exchanges a refresh token for a new Supabase access token.
+    /// </summary>
+    /// <param name="refreshToken">The refresh token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The refreshed authentication result.</returns>
+    public async Task<AuthResult> RefreshAsync(
+        string refreshToken,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Post,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/token?grant_type=refresh_token");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Content = JsonContent.Create(new
+        {
+            refresh_token = refreshToken
+        });
+
+        try
+        {
+            using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return HandleErrorResponse(response, responseContent, "Token refresh failed.");
+            }
+
+            return ParseAuthResponse(responseContent, StatusCodes.Status200OK);
+        }
+        catch (HttpRequestException exception)
+        {
+            LogSupabaseRequestFailure(exception, "refresh the authentication token");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "refresh the authentication token");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
+    }
+
+    /// <summary>
     /// Updates the password for the authenticated user using Supabase authentication.
     /// </summary>
     /// <param name="accessToken">The access token for the authenticated user.</param>

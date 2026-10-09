@@ -1,29 +1,9 @@
 import { Box, Button, Container, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { ApiError, logout } from "@app/services/authApi";
+import { useLogout } from "@app/hooks/useLogout";
 
 // TODO: Just a placeholder for now, will be replaced with the actual overview page once we have more features implemented.
 export default function Overview() {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        console.error("Logout failed:", {
-          message: err.message,
-          status: err.status,
-          errorCode: err.errorCode,
-          fieldErrors: err.fieldErrors,
-        });
-      } else {
-        console.error("Unexpected logout error:", err);
-      }
-    } finally {
-      navigate("/login", { replace: true });
-    }
-  };
+  const handleLogout = useLogout();
 
   return (
     <Box
@@ -49,11 +29,8 @@ export default function Overview() {
           </Typography>
           <Button
             variant="outlined"
+            className="auth-logout-button"
             onClick={handleLogout}
-            sx={{
-              color: "var(--color-bronze)",
-              borderColor: "var(--color-bronze)",
-            }}
           >
             Sign out
           </Button>

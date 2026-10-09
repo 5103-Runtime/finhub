@@ -15,6 +15,7 @@ import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError } from "@app/services/apiClient";
+import { useLogout } from "@app/hooks/useLogout";
 import { updateProfile } from "@app/services/profileApi";
 import z from "zod";
 import "./SetupProfile.css";
@@ -62,6 +63,7 @@ type SetupFormData = z.infer<typeof setupSchema>;
 export default function SetupProfile() {
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
+  const handleLogout = useLogout();
 
   const {
     control,
@@ -105,6 +107,14 @@ export default function SetupProfile() {
               Fin<span>Hub</span>
             </span>
           </Link>
+          <Button
+            type="button"
+            variant="outlined"
+            className="auth-logout-button"
+            onClick={handleLogout}
+          >
+            Sign out
+          </Button>
         </Box>
         <Paper className="auth-card register-card" elevation={0}>
           <Box className="auth-card-heading">

@@ -9,4 +9,9 @@ public static class AuthCookies
     /// The name of the cookie used to store the access token for authenticated users.
     /// </summary>
     public const string AccessToken = @"finhub_access_token";
+
+    /// <summary>
+    /// The name of the cookie used to store the refresh token for authenticated users.
+    /// </summary>
+    public const string RefreshToken = @"finhub_refresh_token";
 }
