@@ -44,11 +44,12 @@ export default function ForgotPassword() {
       await requestPasswordReset({ email: data.email });
       setSubmittedEmail(data.email);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setServerError(err.message);
-      } else {
-        setServerError("Something went wrong. Please try again.");
-      }
+      
+      setServerError(
+        err instanceof ApiError
+        ? err.message
+        : "Something went wrong. Please try again",
+      );
     }
   };
 
