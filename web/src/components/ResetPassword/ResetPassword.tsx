@@ -56,7 +56,11 @@ export default function ResetPassword() {
   // Remove the token from the address bar so it isn't kept in history.
   useEffect(() => {
     if (window.location.hash) {
-      window.history.replaceState(null, "", window.location.pathname);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname,
+      );
     }
   }, []);
 
