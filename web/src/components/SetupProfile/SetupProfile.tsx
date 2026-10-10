@@ -86,7 +86,9 @@ export default function SetupProfile() {
             <Box className="lock-icon">
               <PersonOutlineRounded />
             </Box>
-            <Typography component="h2">Complete your profile</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Complete your profile
+            </Typography>
           </Box>
           <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2}>

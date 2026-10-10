@@ -110,7 +110,9 @@ function Register() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Create your account</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Create your account
+            </Typography>
           </Box>
           <Stack
             component="form"

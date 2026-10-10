@@ -202,7 +202,9 @@ export default function Profile() {
             <Box className="lock-icon">
               <PersonOutlineRounded />
             </Box>
-            <Typography component="h2">Your profile</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Your profile
+            </Typography>
           </Box>
           <Stack
             component="form"
@@ -297,7 +299,9 @@ export default function Profile() {
               <Box className="lock-icon">
                 <LockRounded />
               </Box>
-              <Typography component="h2">Change password</Typography>
+              <Typography className="auth-card-title" component="h2">
+                Change password
+              </Typography>
             </Box>
             <ExpandMoreRounded
               className={isPasswordSectionOpen ? "expanded" : ""}
