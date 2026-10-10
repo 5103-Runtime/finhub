@@ -85,4 +85,16 @@ export function logout() {
        "/api/auth/forgot-password",
        request,
      );
-   }
+}
+
+export interface ResetPasswordRequest {
+  accessToken: string;
+  newPassword: string;
+}
+
+export function resetPassword(request: ResetPasswordRequest) {
+  return apiPost<ResetPasswordRequest, MessageResponse>(
+    "/api/auth/reset-password",
+    request,
+  );
+}

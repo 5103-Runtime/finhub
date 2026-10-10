@@ -292,6 +292,41 @@ public sealed class AuthController(
         return Ok(new { message = "A password reset link has been sent to the provided email." });
     }
 
+        /// <summary>
+    /// Sets a new password using the recovery token from a password reset email.
+    /// </summary>
+    /// <param name="request">The reset password request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A confirmation message.</returns>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        AuthResult result = await authClient.ResetPasswordAsync(request, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            if (result.StatusCode is StatusCodes.Status401Unauthorized
+                or StatusCodes.Status403Forbidden)
+            {
+                return StatusCode(StatusCodes.Status401Unauthorized, new
+                {
+                    error = "This reset link is invalid or has expired. Please request a new one.",
+                    errorCode = "invalid_reset_token"
+                });
+            }
+
+            return StatusCode(result.StatusCode, new
+            {
+                error = result.Error,
+                errorCode = result.ErrorCode
+            });
+        }
+
+        return Ok(new { message = "Your password has been updated." });
+    }
+
     /// <summary>
     /// Retrieves the access token from the request cookies.
     /// </summary>

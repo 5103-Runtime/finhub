@@ -177,7 +177,7 @@ public sealed class SupabaseAuthClient(
         return ParseAuthResponse(responseContent, StatusCodes.Status200OK, expectTokens: false);
     }
 
-    /// <summary>
+        /// <summary>
     /// Sends a password recovery email to the user if they forgot their password (FIN-17).
     /// </summary>
     /// <param name="request">The forgot password request containing the email.</param>
@@ -189,9 +189,19 @@ public sealed class SupabaseAuthClient(
     {
         (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
 
-        using HttpRequestMessage message = new(
-            HttpMethod.Post,
-            $"{supabaseUrl.TrimEnd('/')}/auth/v1/recover");
+        string recoverUrl = $"{supabaseUrl.TrimEnd('/')}/auth/v1/recover";
+        string? redirectTo = configuration["Supabase:PasswordResetRedirectUrl"];
+        if (string.IsNullOrWhiteSpace(redirectTo))
+        {
+            logger.LogWarning(
+                "Supabase:PasswordResetRedirectUrl is not configured; reset links will use the Supabase default Site URL.");
+        }
+        else
+        {
+            recoverUrl += $"?redirect_to={Uri.EscapeDataString(redirectTo)}";
+        }
+
+        using HttpRequestMessage message = new(HttpMethod.Post, recoverUrl);
 
         message.Headers.Add("apikey", publishableKey);
         message.Content = JsonContent.Create(new
@@ -208,6 +218,40 @@ public sealed class SupabaseAuthClient(
         }
 
         // Supabase /recover returns an empty response, hence just return a 200 OK status code
+        return AuthResult.Success(StatusCodes.Status200OK);
+    }
+
+    /// <summary>
+    /// Sets a new password for a user who followed a password recovery link.
+    /// </summary>
+    /// <param name="request">The reset request containing the recovery token and new password.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication result.</returns>
+    public async Task<AuthResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Put,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.AccessToken);
+        message.Content = JsonContent.Create(new
+        {
+            password = request.NewPassword
+        });
+
+        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return HandleErrorResponse(response, responseContent, "Password reset failed.");
+        }
+
         return AuthResult.Success(StatusCodes.Status200OK);
     }
 
