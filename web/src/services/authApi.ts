@@ -70,3 +70,19 @@ export function getSession() {
 export function logout() {
   return apiPost<undefined, void>("/api/auth/logout", undefined);
 }
+
+
+   export interface ForgotPasswordRequest {
+     email: string;
+   }
+
+   export interface MessageResponse {
+     message: string;
+   }
+
+   export function requestPasswordReset(request: ForgotPasswordRequest) {
+     return apiPost<ForgotPasswordRequest, MessageResponse>(
+       "/api/auth/forgot-password",
+       request,
+     );
+   }

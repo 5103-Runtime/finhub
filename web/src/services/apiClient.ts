@@ -36,6 +36,7 @@ const refreshExcludedPaths = new Set([
   "/api/auth/register",
   "/api/auth/refresh",
   "/api/auth/logout",
+  "/api/auth/forgot-password",
 ]);
 
 /**
