@@ -17,48 +17,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError } from "@app/services/apiClient";
 import { useLogout } from "@app/hooks/useLogout";
 import { updateProfile } from "@app/services/profileApi";
-import z from "zod";
+import {
+  maximumDateOfBirth,
+  minimumDateOfBirth,
+  profileSchema,
+  type ProfileFormData,
+} from "@app/validators/profileSchemas";
 import "./SetupProfile.css";
-
-const maximumAgeYears = 120;
-
-function formatDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-const today = new Date();
-const maximumDateOfBirth = formatDateInputValue(today);
-const minimumDateOfBirth = (() => {
-  const date = new Date(today);
-  date.setFullYear(date.getFullYear() - maximumAgeYears);
-  return formatDateInputValue(date);
-})();
-
-const setupSchema = z.object({
-  firstName: z
-    .string()
-    .min(1, "First name is required")
-    .max(50, "Must be 50 characters or less"),
-  lastName: z
-    .string()
-    .min(1, "Last name is required")
-    .max(50, "Must be 50 characters or less"),
-  preferredName: z.string().max(50, "Must be 50 characters or less").optional(),
-  dateOfBirth: z
-    .string()
-    .min(1, "Date of birth is required")
-    .refine((value) => value <= maximumDateOfBirth, {
-      message: "Date of birth cannot be in the future",
-    })
-    .refine((value) => value >= minimumDateOfBirth, {
-      message: `Date of birth cannot be more than ${maximumAgeYears} years ago`,
-    }),
-});
-
-type SetupFormData = z.infer<typeof setupSchema>;
 
 export default function SetupProfile() {
   const [serverError, setServerError] = useState("");
@@ -69,8 +34,8 @@ export default function SetupProfile() {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SetupFormData>({
-    resolver: zodResolver(setupSchema),
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -80,7 +45,7 @@ export default function SetupProfile() {
     mode: "onTouched",
   });
 
-  const onSubmit: SubmitHandler<SetupFormData> = async (data) => {
+  const onSubmit: SubmitHandler<ProfileFormData> = async (data) => {
     setServerError("");
     try {
       await updateProfile({

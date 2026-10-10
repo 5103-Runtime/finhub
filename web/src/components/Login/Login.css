@@ -177,6 +177,27 @@
   line-height: 1.4 !important;
 }
 
+.auth-success {
+  align-items: flex-start;
+  margin-top: 2px;
+  border-color: var(--color-success) !important;
+  background: var(--surface-success) !important;
+  color: var(--color-success) !important;
+}
+
+.auth-success .MuiAlert-icon {
+  color: var(--color-success) !important;
+  margin-top: 2px;
+}
+
+.auth-success-message {
+  margin-top: 3px !important;
+  color: var(--color-success) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

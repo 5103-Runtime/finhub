@@ -14,6 +14,7 @@
   --color-paper: #f3eee7;
   --color-mist: #b5bdc2;
   --color-danger: #b94b42;
+  --color-success: #2e7d32;
 
   --border-subtle: color-mix(in srgb, var(--color-slate) 50%, transparent);
   --border-accent: color-mix(in srgb, var(--color-bronze) 30%, transparent);
@@ -22,6 +23,11 @@
   --surface-danger: color-mix(
     in srgb,
     var(--color-danger) 15%,
+    var(--color-paper)
+  );
+  --surface-success: color-mix(
+    in srgb,
+    var(--color-success) 15%,
     var(--color-paper)
   );
   --shadow-soft: color-mix(in srgb, var(--color-ink) 25%, transparent);
