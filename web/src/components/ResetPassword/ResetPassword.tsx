@@ -22,20 +22,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, resetPassword } from "@app/services/authApi";
 import z from "zod";
 import "@app/components/Login/Login.css";
+import { passwordSchema } from "@app/validation/password";
+
 
 const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(128, "Password must be 128 characters or less"),
-    confirmPassword: z.string().min(1, "Confirm your password"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Please re-enter your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
     path: ["confirmPassword"],
-    message: "Passwords do not match",
   });
-
+  
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 /** Reads the recovery token Supabase puts in the URL fragment. */
@@ -50,6 +49,7 @@ function readRecoveryToken(): string | null {
 export default function ResetPassword() {
   const [accessToken] = useState(readRecoveryToken);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState("");
   const [done, setDone] = useState(false);
 
@@ -163,11 +163,30 @@ export default function ResetPassword() {
         <TextField
           id="confirmPassword"
           label="Confirm new password"
-          type={showPassword ? "text" : "password"}
+          type={showConfirmPassword ? "text" : "password"}
           autoComplete="new-password"
           error={!!errors.confirmPassword}
           helperText={errors.confirmPassword?.message}
           {...registerField("confirmPassword")}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    edge="end"
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirmation password"
+                        : "Show confirmation password"
+                    }
+                  >
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
         />
         {serverError && (
           <Alert

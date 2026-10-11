@@ -72,26 +72,47 @@ export function logout() {
 }
 
 
-   export interface ForgotPasswordRequest {
-     email: string;
-   }
-
-   export interface MessageResponse {
-     message: string;
-   }
-
-   export function requestPasswordReset(request: ForgotPasswordRequest) {
-     return apiPost<ForgotPasswordRequest, MessageResponse>(
-       "/api/auth/forgot-password",
-       request,
-     );
+/**
+ * @brief Represents the data required to request a password reset email.
+ */
+export interface ForgotPasswordRequest {
+  email: string;
 }
 
+/**
+ * @brief Represents a simple confirmation message returned by the API.
+ */
+export interface MessageResponse {
+  message: string;
+}
+
+/**
+ * @brief Requests a password reset email through the authentication API.
+ * @param request The email address to send the reset link to.
+ * @returns A promise containing a confirmation message.
+ * @throws ApiError If the request fails.
+ */
+export function requestPasswordReset(request: ForgotPasswordRequest) {
+  return apiPost<ForgotPasswordRequest, MessageResponse>(
+    "/api/auth/forgot-password",
+    request,
+  );
+}
+
+/**
+ * @brief Represents the data required to set a new password using a recovery token.
+ */
 export interface ResetPasswordRequest {
   accessToken: string;
   newPassword: string;
 }
 
+/**
+ * @brief Sets a new password using the recovery token from a password reset email.
+ * @param request The recovery token and the new password.
+ * @returns A promise containing a confirmation message.
+ * @throws ApiError If the token is invalid or expired, or the request fails.
+ */
 export function resetPassword(request: ResetPasswordRequest) {
   return apiPost<ResetPasswordRequest, MessageResponse>(
     "/api/auth/reset-password",
