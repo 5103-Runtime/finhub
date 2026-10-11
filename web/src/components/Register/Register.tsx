@@ -18,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
 import { useState } from "react";
 import z from "zod";
+import { newPasswordSchema } from "@app/validators/passwordSchemas";
 import { Link, useNavigate } from "react-router-dom";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
@@ -30,17 +31,7 @@ const signupSchema = z
     email: z
       .email("Please enter a valid email address.")
       .max(254, "Email must be 254 characters or less."),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters long.")
-      .max(128, "Password must be 128 characters or less.")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
-      .regex(/[0-9]/, "Password must contain at least one number.")
-      .regex(
-        /[^A-Za-z0-9]/,
-        "Password must contain at least one special character.",
-      ),
+    password: newPasswordSchema,
     confirmPassword: z.string().min(1, "Please re-enter your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -119,7 +110,9 @@ function Register() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Create your account</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Create your account
+            </Typography>
           </Box>
           <Stack
             component="form"
