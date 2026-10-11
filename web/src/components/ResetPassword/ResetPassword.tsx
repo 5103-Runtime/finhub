@@ -34,7 +34,7 @@ const resetPasswordSchema = z
     message: "Passwords do not match.",
     path: ["confirmPassword"],
   });
-  
+
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 /** Reads the recovery token Supabase puts in the URL fragment. */
@@ -113,8 +113,15 @@ export default function ResetPassword() {
   } else if (done) {
     content = (
       <Stack spacing={2.25}>
-        <Alert severity="success" variant="outlined" role="status">
-          Your password has been updated. You can now sign in.
+        <Alert
+          className="auth-success"
+          severity="success"
+          variant="outlined"
+          role="status"
+        >
+          <Typography className="auth-success-message">
+            Your password has been updated. You can now sign in.
+          </Typography>
         </Alert>
         <Button
           component={Link}

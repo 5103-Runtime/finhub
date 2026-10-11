@@ -292,7 +292,7 @@ public sealed class AuthController(
         return Ok(new { message = "A password reset link has been sent to the provided email." });
     }
 
-        /// <summary>
+    /// <summary>
     /// Sets a new password using the recovery token from a password reset email.
     /// </summary>
     /// <param name="request">The reset password request.</param>

@@ -36,6 +36,28 @@ export interface AuthSession {
 }
 
 /**
+ * @brief Represents the data required to set a new password using a recovery token.
+ */
+export interface ResetPasswordRequest {
+  accessToken: string;
+  newPassword: string;
+}
+
+/**
+ * @brief Represents a simple confirmation message returned by the API.
+ */
+export interface MessageResponse {
+  message: string;
+}
+
+/**
+ * @brief Represents the data required to request a password reset email.
+ */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+/**
  * @brief Registers a new user through the authentication API.
  * @param request User registration information containing an email and password.
  * @returns A promise containing the newly registered user's information.
@@ -71,21 +93,6 @@ export function logout() {
   return apiPost<undefined, void>("/api/auth/logout", undefined);
 }
 
-
-/**
- * @brief Represents the data required to request a password reset email.
- */
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-/**
- * @brief Represents a simple confirmation message returned by the API.
- */
-export interface MessageResponse {
-  message: string;
-}
-
 /**
  * @brief Requests a password reset email through the authentication API.
  * @param request The email address to send the reset link to.
@@ -97,14 +104,6 @@ export function requestPasswordReset(request: ForgotPasswordRequest) {
     "/api/auth/forgot-password",
     request,
   );
-}
-
-/**
- * @brief Represents the data required to set a new password using a recovery token.
- */
-export interface ResetPasswordRequest {
-  accessToken: string;
-  newPassword: string;
 }
 
 /**

@@ -20,6 +20,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
       </Route>
 
@@ -28,9 +29,6 @@ function App() {
         <Route path="/overview" element={<Overview />} />
         <Route path="/setup-profile" element={<SetupProfile />} />
       </Route>
-
-      {/* Reset link works whether or not the visitor is logged in. */}
-      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* 404 Catch-All */}
       <Route path="*" element={<NotFound />} />

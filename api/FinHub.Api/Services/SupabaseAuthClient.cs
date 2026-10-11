@@ -177,7 +177,7 @@ public sealed class SupabaseAuthClient(
         return ParseAuthResponse(responseContent, StatusCodes.Status200OK, expectTokens: false);
     }
 
-        /// <summary>
+    /// <summary>
     /// Sends a password recovery email to the user if they forgot their password (FIN-17).
     /// </summary>
     /// <param name="request">The forgot password request containing the email.</param>
@@ -244,15 +244,34 @@ public sealed class SupabaseAuthClient(
             password = request.NewPassword
         });
 
-        using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
-        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return HandleErrorResponse(response, responseContent, "Password reset failed.");
-        }
+            using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        return AuthResult.Success(StatusCodes.Status200OK);
+            if (!response.IsSuccessStatusCode)
+            {
+                return HandleErrorResponse(response, responseContent, "Password reset failed.");
+            }
+
+            return AuthResult.Success(StatusCodes.Status200OK);
+        }
+        catch (HttpRequestException exception)
+        {
+            LogSupabaseRequestFailure(exception, "reset the password");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "reset the password");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
     }
 
     /// <summary>

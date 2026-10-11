@@ -44,12 +44,11 @@ export default function ForgotPassword() {
       await requestPasswordReset({ email: data.email });
       setSubmittedEmail(data.email);
     } catch (err) {
-      
-      setServerError(
-        err instanceof ApiError
-        ? err.message
-        : "Something went wrong. Please try again",
-      );
+      if (err instanceof ApiError) {
+        setServerError(err.message);
+      } else {
+        setServerError("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -81,9 +80,16 @@ export default function ForgotPassword() {
 
           {submittedEmail ? (
             <Stack spacing={2.25}>
-              <Alert severity="success" variant="outlined" role="status">
-                If an account exists for {submittedEmail}, we've sent a link to
-                reset your password. Check your inbox.
+                            <Alert
+                className="auth-success"
+                severity="success"
+                variant="outlined"
+                role="status"
+              >
+                <Typography className="auth-success-message">
+                  If an account exists for {submittedEmail}, we've sent a link
+                  to reset your password. Check your inbox.
+                </Typography>
               </Alert>
               <Button
                 component={Link}
