@@ -18,12 +18,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { register, ApiError } from "@app/services/authApi";
 import { useState } from "react";
 import z from "zod";
+import { newPasswordSchema } from "@app/validators/passwordSchemas";
 import { Link, useNavigate } from "react-router-dom";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import "./Register.css";
-import { newPasswordSchema } from "@app/validators/passwordSchemas";
 
 // Zod schema used to validate the information included in the register form.
 const signupSchema = z
@@ -110,7 +110,9 @@ function Register() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Create your account</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Create your account
+            </Typography>
           </Box>
           <Stack
             component="form"

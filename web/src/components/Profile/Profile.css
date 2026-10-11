@@ -1,0 +1,40 @@
+@import "../Register/Register.css";
+
+.profile-shell {
+  padding-bottom: 4rem;
+}
+
+.profile-card {
+  margin: 3rem auto 0;
+}
+
+.password-card {
+  margin-top: 1.5rem;
+}
+
+.password-section-toggle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 !important;
+  color: var(--color-ink) !important;
+  text-align: left !important;
+  text-transform: none !important;
+}
+
+.password-section-toggle .auth-card-heading {
+  margin-bottom: 0 !important;
+}
+
+.password-form {
+  margin-top: 1.25rem;
+}
+
+.password-section-toggle > svg {
+  color: var(--color-slate);
+  transition: transform 160ms ease;
+}
+
+.password-section-toggle > svg.expanded {
+  transform: rotate(180deg);
+}

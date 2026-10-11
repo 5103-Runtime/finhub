@@ -99,7 +99,9 @@ export default function Login() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Sign in to FinHub</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Sign in to FinHub
+            </Typography>
           </Box>
           <Stack
             component="form"

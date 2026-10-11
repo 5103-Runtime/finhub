@@ -41,16 +41,18 @@ const refreshExcludedPaths = new Set([
 ]);
 
 /**
- * @brief Sends a JSON request to the specified path.
+ * Sends an authenticated JSON request and transparently retries once after
+ * refreshing the session when the server returns 401 Unauthorized.
  * @param path The API endpoint path to send the request to.
- * @param method The HTTP method to use for the request (GET, POST, or PUT).
- * @param body The request body to send with the request (optional).
- * @param allowRefresh Whether to allow token refresh on 401 Unauthorized responses (default: true).
- * @returns A promise that resolves to the response body.
+ * @param method The HTTP method to use for the request.
+ * @param body The request body to send, when the endpoint accepts a body.
+ * @param allowRefresh Whether to attempt a session refresh after a 401 response.
+ * @returns A promise that resolves to the parsed response body, or undefined for a 204 response.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 async function sendJson<TBody, TResponse>(
   path: string,
-  method: "GET" | "POST" | "PUT",
+  method: "GET" | "POST" | "PUT" | "PATCH",
   body?: TBody,
   allowRefresh = true,
 ): Promise<TResponse> {
@@ -110,19 +112,21 @@ async function sendJson<TBody, TResponse>(
 }
 
 /**
- * @brief Sends a GET request to the specified path and returns the response body.
+ * Sends an authenticated GET request to the specified path.
  * @param path The API endpoint path to send the request to.
- * @returns A promise that resolves to the response body.
+ * @returns A promise that resolves to the parsed response body.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 export function apiGet<TResponse>(path: string): Promise<TResponse> {
   return sendJson<undefined, TResponse>(path, "GET");
 }
 
 /**
- * @brief Sends a POST request to the specified path with the given body and returns the response body.
+ * Sends an authenticated POST request to the specified path with a JSON body.
  * @param path The API endpoint path to send the request to.
  * @param body The request body to send with the request.
- * @returns A promise that resolves to the response body.
+ * @returns A promise that resolves to the parsed response body, or undefined for a 204 response.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 export function apiPost<TBody, TResponse>(
   path: string,
@@ -132,14 +136,29 @@ export function apiPost<TBody, TResponse>(
 }
 
 /**
- * @brief Sends a PUT request to the specified path with the given body and returns the response body.
+ * Sends an authenticated PUT request to the specified path with a JSON body.
  * @param path The API endpoint path to send the request to.
  * @param body The request body to send with the request.
- * @returns A promise that resolves to the response body.
+ * @returns A promise that resolves to the parsed response body, or undefined for a 204 response.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 export function apiPut<TBody, TResponse>(
   path: string,
   body: TBody,
 ): Promise<TResponse> {
   return sendJson<TBody, TResponse>(path, "PUT", body);
+}
+
+/**
+ * Sends an authenticated PATCH request to the specified path with a JSON body.
+ * @param path The API endpoint path to send the request to.
+ * @param body The request body to send with the request.
+ * @returns A promise that resolves to the parsed response body, or undefined for a 204 response.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
+ */
+export function apiPatch<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  return sendJson<TBody, TResponse>(path, "PATCH", body);
 }

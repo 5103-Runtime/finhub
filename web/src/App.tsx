@@ -5,6 +5,7 @@ import Home from "@app/components/Home";
 import Overview from "@app/components/Overview";
 import NotFound from "@app/components/NotFound";
 import SetupProfile from "@app/components/SetupProfile";
+import Profile from "@app/components/Profile";
 import ProtectedRoute from "@app/routes/ProtectedRoute";
 import PublicRoute from "@app/routes/PublicRoute";
 import ForgotPassword from "@app/components/ForgotPassword";
@@ -28,6 +29,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/overview" element={<Overview />} />
         <Route path="/setup-profile" element={<SetupProfile />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       {/* 404 Catch-All */}

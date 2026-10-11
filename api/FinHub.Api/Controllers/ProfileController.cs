@@ -20,6 +20,67 @@ public sealed class ProfileController(
     SupabaseAuthClient authClient) : ControllerBase
 {
     /// <summary>
+    /// Retrieves the authenticated user's profile.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authenticated user's profile response.</returns>
+    [HttpGet]
+    public async Task<ActionResult<ProfileResponse>> Get(
+        CancellationToken cancellationToken)
+    {
+        string? accessToken = GetAccessToken();
+        if (accessToken is null)
+        {
+            return Unauthorized(new
+            {
+                error = "Missing or invalid authorization token.",
+                errorCode = "missing_token"
+            });
+        }
+
+        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
+        if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                error = "Authentication service is temporarily unavailable. Please try again.",
+                errorCode = "authentication_service_unavailable"
+            });
+        }
+
+        if (userResult.UserId is null)
+        {
+            return Unauthorized(new
+            {
+                error = "The authorization token is invalid or expired.",
+                errorCode = "invalid_token"
+            });
+        }
+
+        Profile? profile = await dbContext.Profiles
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == userResult.UserId.Value, cancellationToken);
+
+        if (profile?.FirstName is null ||
+            profile.LastName is null ||
+            profile.DateOfBirth is null)
+        {
+            return NotFound(new
+            {
+                error = "A complete profile could not be found.",
+                errorCode = "profile_not_found"
+            });
+        }
+
+        return Ok(new ProfileResponse(
+            profile.Id,
+            profile.FirstName,
+            profile.LastName,
+            profile.PreferredName,
+            profile.DateOfBirth.Value));
+    }
+
+    /// <summary>
     /// Updates the user's profile with the provided information.
     /// </summary>
     /// <param name="request">The update profile request.</param>

@@ -170,7 +170,21 @@ public sealed class SupabaseAuthClient(
 
         if (!response.IsSuccessStatusCode)
         {
-            return HandleErrorResponse(response, responseContent, "Password update failed.");
+            // Handle the specific case where the current password is incorrect
+            if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized
+                && responseContent.Contains("current password", StringComparison.OrdinalIgnoreCase))
+            {
+                return AuthResult.Failed(
+                    (int)response.StatusCode,
+                    "Current password is incorrect.",
+                    "invalid_current_password");
+            }
+
+            // Handle other error responses
+            return HandleErrorResponse(
+                response,
+                responseContent,
+                "Password update failed.");
         }
 
         // Supabase /user returns a user object, hence reuse ParseAuthResponse with expectTokens: false to safely extract the userId
