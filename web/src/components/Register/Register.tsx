@@ -23,7 +23,7 @@ import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import "./Register.css";
-import { passwordSchema } from "@app/validation/password";
+import { newPasswordSchema } from "@app/validators/passwordSchemas";
 
 // Zod schema used to validate the information included in the register form.
 const signupSchema = z
@@ -31,7 +31,7 @@ const signupSchema = z
     email: z
       .email("Please enter a valid email address.")
       .max(254, "Email must be 254 characters or less."),
-    password: passwordSchema,
+    password: newPasswordSchema,
     confirmPassword: z.string().min(1, "Please re-enter your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {

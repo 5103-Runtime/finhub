@@ -22,12 +22,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, resetPassword } from "@app/services/authApi";
 import z from "zod";
 import "@app/components/Login/Login.css";
-import { passwordSchema } from "@app/validation/password";
-
+import { newPasswordSchema } from "@app/validators/passwordSchemas";
 
 const resetPasswordSchema = z
   .object({
-    password: passwordSchema,
+    password: newPasswordSchema,
     confirmPassword: z.string().min(1, "Please re-enter your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
