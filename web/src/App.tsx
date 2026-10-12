@@ -8,6 +8,8 @@ import SetupProfile from "@app/components/SetupProfile";
 import Profile from "@app/components/Profile";
 import ProtectedRoute from "@app/routes/ProtectedRoute";
 import PublicRoute from "@app/routes/PublicRoute";
+import ForgotPassword from "@app/components/ForgotPassword";
+import ResetPassword from "@app/components/ResetPassword";
 
 function App() {
   return (
@@ -18,6 +20,9 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
       </Route>
 
       {/* Protected Routes (authentication is validated by the API cookie session) */}

@@ -203,9 +203,19 @@ public sealed class SupabaseAuthClient(
     {
         (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
 
-        using HttpRequestMessage message = new(
-            HttpMethod.Post,
-            $"{supabaseUrl.TrimEnd('/')}/auth/v1/recover");
+        string recoverUrl = $"{supabaseUrl.TrimEnd('/')}/auth/v1/recover";
+        string? redirectTo = configuration["Supabase:PasswordResetRedirectUrl"];
+        if (string.IsNullOrWhiteSpace(redirectTo))
+        {
+            logger.LogWarning(
+                "Supabase:PasswordResetRedirectUrl is not configured; reset links will use the Supabase default Site URL.");
+        }
+        else
+        {
+            recoverUrl += $"?redirect_to={Uri.EscapeDataString(redirectTo)}";
+        }
+
+        using HttpRequestMessage message = new(HttpMethod.Post, recoverUrl);
 
         message.Headers.Add("apikey", publishableKey);
         message.Content = JsonContent.Create(new
@@ -223,6 +233,59 @@ public sealed class SupabaseAuthClient(
 
         // Supabase /recover returns an empty response, hence just return a 200 OK status code
         return AuthResult.Success(StatusCodes.Status200OK);
+    }
+
+    /// <summary>
+    /// Sets a new password for a user who followed a password recovery link.
+    /// </summary>
+    /// <param name="request">The reset request containing the recovery token and new password.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The authentication result.</returns>
+    public async Task<AuthResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        (string supabaseUrl, string publishableKey) = GetSupabaseConfig();
+
+        using HttpRequestMessage message = new(
+            HttpMethod.Put,
+            $"{supabaseUrl.TrimEnd('/')}/auth/v1/user");
+
+        message.Headers.Add("apikey", publishableKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.AccessToken);
+        message.Content = JsonContent.Create(new
+        {
+            password = request.NewPassword
+        });
+
+        try
+        {
+            using HttpResponseMessage response = await httpClient.SendAsync(message, cancellationToken);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return HandleErrorResponse(response, responseContent, "Password reset failed.");
+            }
+
+            return AuthResult.Success(StatusCodes.Status200OK);
+        }
+        catch (HttpRequestException exception)
+        {
+            LogSupabaseRequestFailure(exception, "reset the password");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogSupabaseRequestFailure(exception, "reset the password");
+            return AuthResult.Failed(
+                StatusCodes.Status503ServiceUnavailable,
+                "Authentication service is temporarily unavailable.",
+                "authentication_service_unavailable");
+        }
     }
 
     /// <summary>

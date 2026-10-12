@@ -144,6 +144,18 @@ export default function Login() {
                 },
               }}
             />
+            <Button
+              component={Link}
+              to="/forgot-password"
+              size="small"
+              sx={{
+                alignSelf: "flex-end",
+                textTransform: "none",
+                color: "var(--color-bronze)",
+              }}
+            >
+              Forgot password?
+            </Button>
             {serverError && (
               <Alert
                 className="auth-error"
