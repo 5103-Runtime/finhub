@@ -75,12 +75,12 @@ export default function ForgotPassword() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Forgot your password?</Typography>
+            <Typography className="auth-card-title" component="h2">Forgot your password?</Typography>
           </Box>
 
           {submittedEmail ? (
             <Stack spacing={2.25}>
-                            <Alert
+              <Alert
                 className="auth-success"
                 severity="success"
                 variant="outlined"
@@ -95,7 +95,7 @@ export default function ForgotPassword() {
                 component={Link}
                 to="/login"
                 variant="outlined"
-                className="secondary-action"
+                className="primary-action"
               >
                 Back to sign in
               </Button>

@@ -242,7 +242,7 @@ export default function ResetPassword() {
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography component="h2">Set a new password</Typography>
+            <Typography className="auth-card-title" component="h2">Set a new password</Typography>
           </Box>
           {content}
         </Paper>
