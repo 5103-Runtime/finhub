@@ -15,6 +15,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_create_profiles` creates `public.profiles`. It extends Supabase Auth with application profile data. It does not replace `auth.users`, and it does not store passwords.
 - `_create_financial_accounts` creates `public.financial_accounts`, described under [Financial accounts](./financial-accounts.md).
 - `_use_now_for_timestamps` switches the `created_at` and `updated_at` defaults on both tables, and `set_updated_at()`, from `timezone('utc', now())` to `now()`. The old form returns a timestamp without a zone that Postgres casts back using the session time zone; `now()` is already a `timestamptz`.
+- `_restrict_table_access_to_api` revokes `anon` and `authenticated` privileges on both tables and stops Postgres granting them on future tables, so the API, connecting as `postgres`, is the only allowed client.
 
 ## Create a migration
 
