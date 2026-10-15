@@ -18,3 +18,13 @@ Deliberately left out:
 ## Security
 
 Row Level Security is enabled with select, insert, update, and delete policies, each scoped to `(select auth.uid()) = user_id`. The API bypasses RLS, so it must filter by the authenticated user itself.
+
+## Verify The Migration
+
+In the Supabase Dashboard:
+
+1. Open **Table Editor** and confirm `public.financial_accounts` exists.
+2. Open the table policies and confirm Row Level Security is enabled with select, insert, update, and delete policies.
+3. Confirm each policy restricts users to their own accounts.
+4. Insert a row for a test user and confirm `created_at` and `updated_at` are set, then edit it and confirm `updated_at` changes.
+5. Insert a row with an `account_type` other than `chequing`, `savings`, or `credit_card` and confirm the insert is rejected.
