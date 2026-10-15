@@ -41,7 +41,10 @@ npx supabase@latest migration new create_profiles
 
 This creates a timestamped file under `supabase/migrations/`. Put the SQL schema change in that file, then commit the migration so every team member receives the same database change.
 
-The current migration creates `public.profiles`. It extends Supabase Auth with application profile data. It does not replace `auth.users`, and it does not store passwords.
+## Migrations
+
+- `_create_profiles` creates `public.profiles`. It extends Supabase Auth with application profile data. It does not replace `auth.users`, and it does not store passwords.
+- `_create_financial_accounts` creates `public.financial_accounts`, described under [Financial accounts](#financial-accounts).
 
 ## Run migrations locally
 
@@ -88,21 +91,41 @@ In the Supabase Dashboard:
 
 ## Authentication and profiles
 
-Supabase Auth owns credentials and password hashing. The `public.profiles` table stores application profile data such as:
+Supabase Auth owns credentials and password hashing. The `public.profiles` table is not the place for financial data; it stores application profile data such as:
 
 - `first_name`
 - `last_name`
 - `preferred_name`
 - `date_of_birth`
+  - Date of birth is private personal information, so the table is protected by RLS and should not be publicly readable.
 - `avatar_url`
 - timestamps
 
-These fields are nullable so registration can begin with only an email and password. Date of birth is private personal information, so the table is protected by RLS and should not be publicly readable.
+These fields are nullable so registration can begin with only an email and password.
 
-The profile table is not the place for financial data. Future tables such as `financial_accounts` and `transactions` should have their own migrations and reference the authenticated user's ID.
+## Financial accounts
+
+`public.financial_accounts` holds the chequing, savings, and credit card accounts a user imports statements for. Transactions will reference an account.
+
+### Design
+
+- **`user_id` references `auth.users`, not `public.profiles`.**
+- `on delete cascade` means deleting a user removes their accounts, and later their transactions through the same chain. Front-end should HEAVILY warn upon deleting data / accounts.
+- **`account_type` is one of `chequing`, `savings`, or `credit_card`.** The type matters beyond display: credit card statements may invert the sign of every amount depending on the input format.
+- `name` is 1 to 100 characters and must arrive trimmed. The DB rejects a name with stray spaces; the API should trim before inserting.
+- `institution` is nullable and follows the same trim rule. Null means no bank recorded; the API maps a blank value to null before insert. The value is a label only; file mappings match on a statement’s signature, not on this column.
+- `currency` is a three-letter ISO 4217 code, default `CAD`. A check constraint keeps lowercase codes and symbols out; the API validates against the supported list.
+
+Deliberately left out:
+
+- A stored balance. The account carries no balance of its own; the API derives balances from the account's imported statements.
+
+### Security
+
+Row Level Security is enabled with select, insert, update, and delete policies, each scoped to `(select auth.uid()) = user_id`. The API bypasses RLS, so it must filter by the authenticated user itself.
 
 ## API and EF Core Ownership
 
-Supabase migrations own the creation of `public.profiles`, its policies, and its triggers. Later, the ASP.NET API can map that table with an EF Core entity and query it through `FinHubDbContext`.
+Supabase migrations own the creation of `public.profiles` and `public.financial_accounts`, their policies, and their triggers. The ASP.NET API maps these tables with EF Core entities and queries them through `FinHubDbContext`.
 
-Do not create a second EF Core migration for the same `profiles` table. EF Core should map and query the table; Supabase migrations should remain the source of truth for this Supabase-specific schema.
+Do not create EF Core migrations for these tables. EF Core should map and query them; Supabase migrations remain the source of truth for the schema.
