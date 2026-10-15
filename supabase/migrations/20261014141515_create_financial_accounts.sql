@@ -7,9 +7,9 @@ create table public.financial_accounts (
   currency text not null default 'CAD',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint financial_accounts_name_length check (name = btrim(name) and char_length(name) between 1 and 100),
+  constraint financial_accounts_name_length check (name = btrim(name, E' \t\r\n') and char_length(name) between 1 and 100),
   constraint financial_accounts_institution_length check (
-    institution is null or (institution = btrim(institution) and char_length(institution) between 1 and 100)
+    institution is null or (institution = btrim(institution, E' \t\r\n') and char_length(institution) between 1 and 100)
   ),
   constraint financial_accounts_account_type check (
     account_type in ('chequing', 'savings', 'credit_card')
