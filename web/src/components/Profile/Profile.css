@@ -1,11 +1,45 @@
 @import "../Register/Register.css";
 
 .profile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   padding-bottom: 4rem;
+}
+
+.profile-card,
+.password-card {
+  width: 100%;
+  max-width: 600px;
 }
 
 .profile-card {
   margin: 3rem auto 0;
+}
+
+.profile-shell > .site-footer {
+  width: auto;
+  margin: 6vh 8vh 0;
+}
+
+.profile-shell > .password-card {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 850px) {
+  .profile-shell {
+    padding: 24px 22px 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-shell {
+    padding: 18px 16px 30px;
+  }
+
+  .profile-shell > .site-footer {
+    margin: 8vh 2vh 0;
+  }
 }
 
 .password-card {
