@@ -148,6 +148,38 @@
   color: var(--color-slate);
 }
 
+.forgot-password-link {
+  position: relative;
+  align-self: flex-end;
+  padding: 0 !important;
+  color: var(--color-ink) !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.forgot-password-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+.forgot-password-link:hover {
+  background: transparent !important;
+  color: var(--color-bronze-hover) !important;
+}
+
+.forgot-password-link:hover::after {
+  transform: scaleX(1);
+}
+
 .auth-card .MuiIconButton-root {
   color: var(--color-slate);
 }

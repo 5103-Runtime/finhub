@@ -1,0 +1,32 @@
+.overview-page {
+  min-height: 100vh;
+  background: var(--color-ink);
+}
+
+.overview-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 28px 40px 54px;
+}
+
+.overview-shell > .site-footer {
+  width: auto;
+  margin: auto 8vh 0;
+}
+
+@media (max-width: 850px) {
+  .overview-shell {
+    padding: 24px 22px 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-shell {
+    padding: 18px 16px 30px;
+  }
+
+  .overview-shell > .site-footer {
+    margin: auto 2vh 0;
+  }
+}

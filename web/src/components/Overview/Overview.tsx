@@ -1,55 +1,14 @@
-import { Box, Button, Container, Typography } from "@mui/material";
-import { Link } from "react-router-dom";
-import { useLogout } from "@app/hooks/useLogout";
+import { Box, Container } from "@mui/material";
+import Footer from "@app/components/Footer";
+import Navbar from "@app/components/Navbar";
+import "./Overview.css";
 
-// TODO: Just a placeholder for now, will be replaced with the actual overview page once we have more features implemented.
 export default function Overview() {
-  const handleLogout = useLogout();
-
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "var(--color-ink)",
-        color: "var(--color-cream)",
-        p: 4,
-      }}
-    >
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Fin<span style={{ color: "var(--color-bronze)" }}>Hub</span>{" "}
-            Overview
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1.5 }}>
-            <Button
-              component={Link}
-              to="/profile"
-              variant="contained"
-              className="primary-action"
-            >
-              Profile
-            </Button>
-            <Button
-              variant="outlined"
-              className="auth-logout-button"
-              onClick={handleLogout}
-            >
-              Sign out
-            </Button>
-          </Box>
-        </Box>
-        <Typography variant="body1" sx={{ color: "var(--color-mist)" }}>
-          Welcome back! You are successfully signed in and viewing your account
-          overview.
-        </Typography>
+    <Box className="overview-page">
+      <Container maxWidth="xl" className="overview-shell">
+        <Navbar />
+        <Footer />
       </Container>
     </Box>
   );

@@ -1,5 +1,4 @@
 import { useEffect, useState, type ComponentProps } from "react";
-import { Link } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -14,7 +13,6 @@ import {
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
@@ -24,7 +22,8 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import { ApiError } from "@app/services/apiClient";
 import { updatePassword } from "@app/services/authApi";
 import { getProfile, updateProfile } from "@app/services/profileApi";
-import { useLogout } from "@app/hooks/useLogout";
+import Footer from "@app/components/Footer";
+import Navbar from "@app/components/Navbar";
 import {
   maximumDateOfBirth,
   minimumDateOfBirth,
@@ -96,7 +95,6 @@ export default function Profile() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false);
-  const handleLogout = useLogout();
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -170,34 +168,10 @@ export default function Profile() {
 
   return (
     <Box className="auth-page">
-      <Container maxWidth="md" className="auth-shell profile-shell">
-        <Box component="header" className="auth-topbar">
-          <Link to="/overview" className="auth-brand">
-            <span>
-              Fin<span>Hub</span>
-            </span>
-          </Link>
-          <Stack direction="row" spacing={1}>
-            <Button
-              component={Link}
-              to="/overview"
-              className="auth-back"
-              startIcon={<ArrowBackRounded />}
-            >
-              Overview
-            </Button>
-            <Button
-              type="button"
-              variant="outlined"
-              className="auth-logout-button"
-              onClick={handleLogout}
-            >
-              Sign out
-            </Button>
-          </Stack>
-        </Box>
+      <Container maxWidth="xl" className="auth-shell profile-shell">
+        <Navbar />
 
-        <Paper className="auth-card profile-card" elevation={0}>
+        <Paper className="auth-card profile-card profile-content" elevation={0}>
           <Box className="auth-card-heading">
             <Box className="lock-icon">
               <PersonOutlineRounded />
@@ -287,7 +261,6 @@ export default function Profile() {
             </Button>
           </Stack>
         </Paper>
-
         <Paper className="auth-card profile-card password-card" elevation={0}>
           <Button
             className="password-section-toggle"
@@ -384,6 +357,7 @@ export default function Profile() {
             </Stack>
           </Collapse>
         </Paper>
+        <Footer />
       </Container>
     </Box>
   );

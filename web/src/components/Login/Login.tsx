@@ -148,11 +148,7 @@ export default function Login() {
               component={Link}
               to="/forgot-password"
               size="small"
-              sx={{
-                alignSelf: "flex-end",
-                textTransform: "none",
-                color: "var(--color-bronze)",
-              }}
+              className="forgot-password-link"
             >
               Forgot password?
             </Button>
