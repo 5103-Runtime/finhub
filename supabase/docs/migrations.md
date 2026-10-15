@@ -22,7 +22,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 Create a new migration from the repository root:
 
 ```powershell
-npx supabase@latest migration new create_profiles
+npx supabase@latest migration new example_account_migration
 ```
 
 This creates a timestamped file under `supabase/migrations/`. Put the SQL schema change in that file, then commit the migration so every team member receives the same database change.
