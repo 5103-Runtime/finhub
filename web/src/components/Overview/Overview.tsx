@@ -149,7 +149,7 @@ export default function Overview() {
                 {formattedDate}
               </Typography>
               <Typography component="h1" className="overview-title">
-                Welcome back, <em>{profile?.firstName || "there"}</em>
+                Welcome back{profile?.firstName ? <>, <em>{profile.firstName}</em></> : ""}
               </Typography>
               <Typography className="overview-subtitle">
                 Here's a quick look at your finances.
