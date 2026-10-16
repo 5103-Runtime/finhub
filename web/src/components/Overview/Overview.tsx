@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
+import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
 import "./Overview.css";
 
 // TODO: Replace account balances and monthly spending with overview API data
@@ -83,15 +84,6 @@ const transactions = [
   },
 ];
 
-const currencyFormatter = new Intl.NumberFormat("en-CA", {
-  style: "currency",
-  currency: "CAD",
-});
-
-function getPercentageChange(currentValue: number, previousValue: number) {
-  return ((currentValue - previousValue) / previousValue) * 100;
-}
-
 export default function Overview() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
@@ -149,7 +141,14 @@ export default function Overview() {
                 {formattedDate}
               </Typography>
               <Typography component="h1" className="overview-title">
-                Welcome back{profile?.firstName ? <>, <em>{profile.firstName}</em></> : ""}
+                Welcome back
+                {profile?.firstName ? (
+                  <>
+                    , <em>{profile.firstName}</em>
+                  </>
+                ) : (
+                  ""
+                )}
               </Typography>
               <Typography className="overview-subtitle">
                 Here's a quick look at your finances.
