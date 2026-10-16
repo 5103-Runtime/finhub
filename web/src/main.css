@@ -15,6 +15,7 @@
   --color-mist: #b5bdc2;
   --color-danger: #b94b42;
   --color-success: #2e7d32;
+  --color-success-light: #9dcca1;
 
   --border-subtle: color-mix(in srgb, var(--color-slate) 50%, transparent);
   --border-accent: color-mix(in srgb, var(--color-bronze) 30%, transparent);
@@ -29,6 +30,11 @@
     in srgb,
     var(--color-success) 15%,
     var(--color-paper)
+  );
+  --color-danger-muted: color-mix(
+    in srgb,
+    var(--color-danger) 85%,
+    var(--color-cream)
   );
   --shadow-soft: color-mix(in srgb, var(--color-ink) 25%, transparent);
   --divider: color-mix(in srgb, var(--color-mist) 55%, transparent);
