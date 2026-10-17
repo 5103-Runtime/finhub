@@ -3,6 +3,7 @@ using FinHub.Api.Constants;
 using FinHub.Api.Data;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
+using FinHub.Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ namespace FinHub.Api.Controllers;
 public sealed class AuthController(
     SupabaseAuthClient authClient,
     FinHubDbContext dbContext,
-    ILogger<AuthController> logger) : ControllerBase
+    ILogger<AuthController> logger) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// Registers a new user with the provided registration details.
@@ -106,7 +107,7 @@ public sealed class AuthController(
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
-        string? refreshToken = GetRefreshToken();
+        string? refreshToken = Request.GetRefreshToken();
         if (refreshToken is null)
         {
             // Avoid returning 401 Unauthorized when the user 
@@ -146,8 +147,8 @@ public sealed class AuthController(
     [HttpGet("session")]
     public async Task<IActionResult> GetSession(CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
-        string? refreshToken = GetRefreshToken();
+        string? accessToken = Request.GetAccessToken();
+        string? refreshToken = Request.GetRefreshToken();
 
         // Anonymous visitors do not need a session refresh.
         if (accessToken is null && refreshToken is null)
@@ -224,7 +225,7 @@ public sealed class AuthController(
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
+        string? accessToken = Request.GetAccessToken();
         if (accessToken is not null)
         {
             await authClient.LogoutAsync(accessToken, cancellationToken);
@@ -246,10 +247,10 @@ public sealed class AuthController(
         [FromBody] UpdatePasswordRequest request,
         CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
+        string? accessToken = Request.GetAccessToken();
         if (accessToken is null)
         {
-            return Unauthorized(new { error = "Missing or invalid authorization token.", errorCode = "missing_token" });
+            return MissingTokenResponse();
         }
 
         AuthResult result = await authClient.UpdatePasswordAsync(accessToken, request, cancellationToken);
@@ -328,26 +329,6 @@ public sealed class AuthController(
     }
 
     /// <summary>
-    /// Retrieves the access token from the request cookies.
-    /// </summary>
-    /// <returns>The access token, or null if it is not found.</returns>
-    private string? GetAccessToken() =>
-        Request.Cookies.TryGetValue(AuthCookies.AccessToken, out string? token) &&
-        !string.IsNullOrWhiteSpace(token)
-            ? token
-            : null;
-
-    /// <summary>
-    /// Retrieves the refresh token from the request cookies.
-    /// </summary>
-    /// <returns>The refresh token, or null if it is not found.</returns>
-    private string? GetRefreshToken() =>
-        Request.Cookies.TryGetValue(AuthCookies.RefreshToken, out string? token) &&
-        !string.IsNullOrWhiteSpace(token)
-            ? token
-            : null;
-
-    /// <summary>
     /// Creates the response returned when no authenticated user is available.
     /// </summary>
     /// <returns>An unauthenticated session response.</returns>
@@ -386,18 +367,6 @@ public sealed class AuthController(
         error = "Authentication service returned an incomplete response.",
         errorCode = "invalid_auth_response"
     });
-
-    /// <summary>
-    /// Creates the response returned when the authentication service is unavailable.
-    /// </summary>
-    /// <returns>An unavailable-service response.</returns>
-    private ObjectResult AuthenticationServiceUnavailable() => StatusCode(
-        StatusCodes.Status503ServiceUnavailable,
-        new
-        {
-            error = "Authentication service is temporarily unavailable. Please try again.",
-            errorCode = "authentication_service_unavailable"
-        });
 
     /// <summary>
     /// Refreshes the current session and updates the authentication cookies when successful.

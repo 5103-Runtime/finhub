@@ -1,5 +1,4 @@
 using FinHub.Api.Data;
-using FinHub.Api.Constants;
 using FinHub.Api.DTOs.Profile;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
@@ -17,7 +16,7 @@ namespace FinHub.Api.Controllers;
 [Route("api/profile")]
 public sealed class ProfileController(
     FinHubDbContext dbContext,
-    SupabaseAuthClient authClient) : ControllerBase
+    SupabaseAuthClient authClient) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// Retrieves the authenticated user's profile.
@@ -28,38 +27,15 @@ public sealed class ProfileController(
     public async Task<ActionResult<ProfileResponse>> Get(
         CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
-        if (accessToken is null)
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
         {
-            return Unauthorized(new
-            {
-                error = "Missing or invalid authorization token.",
-                errorCode = "missing_token"
-            });
-        }
-
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
-        if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
-        {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
-            {
-                error = "Authentication service is temporarily unavailable. Please try again.",
-                errorCode = "authentication_service_unavailable"
-            });
-        }
-
-        if (userResult.UserId is null)
-        {
-            return Unauthorized(new
-            {
-                error = "The authorization token is invalid or expired.",
-                errorCode = "invalid_token"
-            });
+            return failure;
         }
 
         Profile? profile = await dbContext.Profiles
             .AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Id == userResult.UserId.Value, cancellationToken);
+            .SingleOrDefaultAsync(item => item.Id == userId!.Value, cancellationToken);
 
         if (profile?.FirstName is null ||
             profile.LastName is null ||
@@ -91,40 +67,17 @@ public sealed class ProfileController(
         [FromBody] UpdateProfileRequest request,
         CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
-        if (accessToken is null)
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
         {
-            return Unauthorized(new
-            {
-                error = "Missing or invalid authorization token.",
-                errorCode = "missing_token"
-            });
-        }
-
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
-        if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
-        {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
-            {
-                error = "Authentication service is temporarily unavailable. Please try again.",
-                errorCode = "authentication_service_unavailable"
-            });
-        }
-
-        if (userResult.UserId is null)
-        {
-            return Unauthorized(new
-            {
-                error = "The authorization token is invalid or expired.",
-                errorCode = "invalid_token"
-            });
+            return failure;
         }
 
         Profile profile = await dbContext.Profiles
-            .SingleOrDefaultAsync(item => item.Id == userResult.UserId.Value, cancellationToken)
+            .SingleOrDefaultAsync(item => item.Id == userId!.Value, cancellationToken)
             ?? new Profile
             {
-                Id = userResult.UserId.Value,
+                Id = userId!.Value,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -152,18 +105,4 @@ public sealed class ProfileController(
             profile.PreferredName,
             request.DateOfBirth));
     }
-
-    #region Private Helper Methods
-    /// <summary>
-    /// Retrieves the access token from the HttpOnly authentication cookie.
-    /// </summary>
-    /// <returns>The access token, or null if it is not found or is invalid.</returns>
-    private string? GetAccessToken()
-    {
-        return Request.Cookies.TryGetValue(AuthCookies.AccessToken, out string? token) &&
-            !string.IsNullOrWhiteSpace(token)
-                ? token
-                : null;
-    }
-    #endregion
 }
