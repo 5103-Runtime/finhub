@@ -33,7 +33,7 @@ public sealed class AuthController(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.RegisterAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.RegisterAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -70,7 +70,7 @@ public sealed class AuthController(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.LoginAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.LoginAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -115,7 +115,7 @@ public sealed class AuthController(
             return NoContent();
         }
 
-        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        AuthResult result = await AuthClient.RefreshAsync(refreshToken, cancellationToken);
         if (!result.Succeeded)
         {
             DeleteAuthCookiesIfRefreshTokenIsInvalid(result.StatusCode);
@@ -176,7 +176,7 @@ public sealed class AuthController(
         }
 
         // Validate the current access token with Supabase.
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken!, cancellationToken);
+        SupabaseUserResult userResult = await AuthClient.GetUserIdAsync(accessToken!, cancellationToken);
         if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
         {
             return AuthenticationServiceUnavailable();
@@ -196,7 +196,7 @@ public sealed class AuthController(
                 return IncompleteAuthResponse();
             }
 
-            userResult = await authClient.GetUserIdAsync(
+            userResult = await AuthClient.GetUserIdAsync(
                 refreshResult.Response.AccessToken,
                 cancellationToken);
             if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
@@ -228,7 +228,7 @@ public sealed class AuthController(
         string? accessToken = Request.GetAccessToken();
         if (accessToken is not null)
         {
-            await authClient.LogoutAsync(accessToken, cancellationToken);
+            await AuthClient.LogoutAsync(accessToken, cancellationToken);
         }
 
         Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
@@ -253,7 +253,7 @@ public sealed class AuthController(
             return MissingTokenResponse();
         }
 
-        AuthResult result = await authClient.UpdatePasswordAsync(accessToken, request, cancellationToken);
+        AuthResult result = await AuthClient.UpdatePasswordAsync(accessToken, request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -278,7 +278,7 @@ public sealed class AuthController(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.ForgotPasswordAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.ForgotPasswordAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -304,7 +304,7 @@ public sealed class AuthController(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.ResetPasswordAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.ResetPasswordAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -378,7 +378,7 @@ public sealed class AuthController(
         string refreshToken,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        AuthResult result = await AuthClient.RefreshAsync(refreshToken, cancellationToken);
         if (result.Succeeded && result.Response is not null)
         {
             SetAuthCookies(result.Response, refreshToken);

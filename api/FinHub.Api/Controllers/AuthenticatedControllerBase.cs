@@ -11,6 +11,11 @@ namespace FinHub.Api.Controllers;
 public abstract class AuthenticatedControllerBase(SupabaseAuthClient authClient) : ControllerBase
 {
     /// <summary>
+    /// Gets the authentication client.
+    /// </summary>
+    protected SupabaseAuthClient AuthClient { get; } = authClient;
+
+    /// <summary>
     /// Resolves the authenticated user's ID from the access token cookie.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -23,7 +28,7 @@ public abstract class AuthenticatedControllerBase(SupabaseAuthClient authClient)
             return (null, MissingTokenResponse());
         }
 
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken, cancellationToken);
+        SupabaseUserResult userResult = await AuthClient.GetUserIdAsync(accessToken, cancellationToken);
         if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
         {
             return (null, AuthenticationServiceUnavailable());
