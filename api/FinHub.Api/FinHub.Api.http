@@ -45,9 +45,7 @@ Content-Type: application/json
 
 {
   "name": "Main Chequing",
-  "institution": "RBC",
-  "accountType": "chequing",
-  "currency": "CAD"
+  "institution": "RBC"
 }
 
 ###

@@ -73,7 +73,7 @@ public sealed class AccountsController(
     /// <returns>The created account.</returns>
     [HttpPost]
     public async Task<ActionResult<AccountResponse>> Create(
-        [FromBody] AccountRequest request,
+        [FromBody] CreateAccountRequest request,
         CancellationToken cancellationToken)
     {
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
@@ -87,10 +87,12 @@ public sealed class AccountsController(
         {
             Id = Guid.NewGuid(),
             UserId = userId!.Value,
+            AccountType = request.AccountType,
+            Currency = request.Currency,
             CreatedAt = now,
             UpdatedAt = now
         };
-        Apply(request, account);
+        ApplyDetails(account, request.Name, request.Institution);
 
         dbContext.FinancialAccounts.Add(account);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -108,7 +110,7 @@ public sealed class AccountsController(
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<AccountResponse>> Update(
         Guid id,
-        [FromBody] AccountRequest request,
+        [FromBody] UpdateAccountRequest request,
         CancellationToken cancellationToken)
     {
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
@@ -123,7 +125,7 @@ public sealed class AccountsController(
             return AccountNotFound();
         }
 
-        Apply(request, account);
+        ApplyDetails(account, request.Name, request.Institution);
         account.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -160,18 +162,17 @@ public sealed class AccountsController(
     }
 
     /// <summary>
-    /// Copies the request fields onto the account, trimming text and blanking an empty institution.
+    /// Sets the account's descriptive fields, trimming text and blanking an empty institution.
     /// </summary>
-    /// <param name="request">The account request.</param>
     /// <param name="account">The account to update.</param>
-    private static void Apply(AccountRequest request, FinancialAccount account)
+    /// <param name="name">The display name of the account.</param>
+    /// <param name="institution">The institution that holds the account, if any.</param>
+    private static void ApplyDetails(FinancialAccount account, string name, string? institution)
     {
-        account.Name = request.Name.Trim();
-        account.Institution = string.IsNullOrWhiteSpace(request.Institution)
+        account.Name = name.Trim();
+        account.Institution = string.IsNullOrWhiteSpace(institution)
             ? null
-            : request.Institution.Trim();
-        account.AccountType = request.AccountType;
-        account.Currency = request.Currency;
+            : institution.Trim();
     }
 
     /// <summary>
