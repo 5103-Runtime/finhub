@@ -77,8 +77,7 @@ public sealed class ProfileController(
             .SingleOrDefaultAsync(item => item.Id == userId!.Value, cancellationToken)
             ?? new Profile
             {
-                Id = userId!.Value,
-                CreatedAt = DateTime.UtcNow
+                Id = userId!.Value
             };
 
         string firstName = request.FirstName.Trim();
@@ -89,7 +88,6 @@ public sealed class ProfileController(
             ? null
             : request.PreferredName.Trim();
         profile.DateOfBirth = request.DateOfBirth;
-        profile.UpdatedAt = DateTime.UtcNow;
 
         if (dbContext.Entry(profile).State == EntityState.Detached)
         {
