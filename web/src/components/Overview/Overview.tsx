@@ -26,7 +26,7 @@ import {
   accountTypeLabels,
   compareAccountsByName,
   formatAccountBalance,
-  getAccountBalance,
+  getAccountBalanceInCad,
 } from "@app/utils/accounts";
 import "./Overview.css";
 
@@ -105,7 +105,8 @@ export default function Overview() {
             [...loadedAccounts]
               .sort(
                 (left, right) =>
-                  getAccountBalance(right) - getAccountBalance(left),
+                  getAccountBalanceInCad(right) -
+                  getAccountBalanceInCad(left),
               )
               .slice(0, 3)
               .sort(compareAccountsByName),

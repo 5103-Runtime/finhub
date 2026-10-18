@@ -33,6 +33,9 @@ export const accountTypeIcons: Record<AccountType, SvgIconComponent> = {
   credit_card: CreditCardRounded,
 };
 
+// Temporary fallback until the API provides a trusted exchange rate.
+const USD_TO_CAD_EXCHANGE_RATE = 1.4;
+
 /**
  * Returns the current account balance until transaction-backed balances exist.
  * @param account The account whose balance should be read.
@@ -40,6 +43,17 @@ export const accountTypeIcons: Record<AccountType, SvgIconComponent> = {
  */
 export function getAccountBalance(account: AccountResponse): number {
   return account.balance ?? 0;
+}
+
+/**
+ * Converts an account balance to CAD for cross-currency comparisons.
+ * @param account The account whose balance should be converted.
+ * @returns The account balance represented in CAD.
+ */
+export function getAccountBalanceInCad(account: AccountResponse): number {
+  return account.currency === "USD"
+    ? getAccountBalance(account) * USD_TO_CAD_EXCHANGE_RATE
+    : getAccountBalance(account);
 }
 
 /**
