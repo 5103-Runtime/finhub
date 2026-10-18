@@ -1,0 +1,88 @@
+.app-form {
+  width: 100%;
+}
+
+.app-form .MuiFormControl-root {
+  background: var(--surface-input);
+}
+
+.app-form .MuiOutlinedInput-root {
+  border-radius: 12px;
+}
+
+.app-form .MuiInputLabel-root {
+  color: var(--color-slate);
+}
+
+.app-form .MuiInputBase-input {
+  color: var(--color-ink);
+}
+
+.app-form .MuiInputBase-input::placeholder {
+  color: var(--color-slate);
+  opacity: 1;
+}
+
+.app-form .MuiFormHelperText-root {
+  color: var(--color-slate);
+}
+
+.app-form .MuiFormHelperText-root.Mui-error {
+  color: var(--color-danger) !important;
+}
+
+.app-form .MuiIconButton-root {
+  color: var(--color-slate);
+}
+
+.app-form input[type="password"]::-ms-reveal {
+  display: none;
+}
+
+.auth-error,
+.auth-success {
+  border-radius: 11px;
+  font-size: 12px;
+}
+
+.auth-error {
+  align-items: flex-start;
+  margin-top: 2px;
+  border-color: var(--color-danger) !important;
+  background: var(--surface-danger) !important;
+  color: var(--color-danger) !important;
+}
+
+.auth-error .MuiAlert-icon {
+  margin-top: 2px;
+  color: var(--color-danger);
+}
+
+.auth-error-message {
+  margin-top: 3px !important;
+  color: var(--color-danger) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.auth-success {
+  align-items: flex-start;
+  margin-top: 2px;
+  border-color: var(--color-success) !important;
+  background: var(--surface-success) !important;
+  color: var(--color-success) !important;
+}
+
+.auth-success .MuiAlert-icon {
+  margin-top: 2px;
+  color: var(--color-success) !important;
+}
+
+.auth-success-message {
+  margin-top: 3px !important;
+  color: var(--color-success) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
