@@ -52,7 +52,7 @@ const refreshExcludedPaths = new Set([
  */
 async function sendJson<TBody, TResponse>(
   path: string,
-  method: "GET" | "POST" | "PUT" | "PATCH",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   body?: TBody,
   allowRefresh = true,
 ): Promise<TResponse> {
@@ -161,4 +161,14 @@ export function apiPatch<TBody, TResponse>(
   body: TBody,
 ): Promise<TResponse> {
   return sendJson<TBody, TResponse>(path, "PATCH", body);
+}
+
+/**
+ * Sends an authenticated DELETE request to the specified path.
+ * @param path The API endpoint path to send the request to.
+ * @returns A promise that resolves when the resource has been deleted.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
+ */
+export function apiDelete(path: string): Promise<void> {
+  return sendJson<undefined, void>(path, "DELETE");
 }

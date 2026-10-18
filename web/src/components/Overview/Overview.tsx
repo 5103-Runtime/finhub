@@ -6,22 +6,27 @@ import {
   CardContent,
   Container,
   Divider,
+  Alert,
   Stack,
   Typography,
 } from "@mui/material";
-import AddRounded from "@mui/icons-material/AddRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import AutoGraphRounded from "@mui/icons-material/AutoGraphRounded";
-import CreditCardRounded from "@mui/icons-material/CreditCardRounded";
-import SavingsRounded from "@mui/icons-material/SavingsRounded";
 import TrendingDownRounded from "@mui/icons-material/TrendingDownRounded";
 import TrendingUpRounded from "@mui/icons-material/TrendingUpRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { Link } from "react-router-dom";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
+import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
 import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
+import {
+  accountTypeIcons,
+  accountTypeLabels,
+  formatAccountBalance,
+  getAccountBalanceInCad,
+} from "@app/utils/accounts";
 import "./Overview.css";
 
 // TODO: Replace account balances and monthly spending with overview API data
@@ -29,28 +34,6 @@ const totalBalance = 15872.18;
 const monthlySpending = 1284.6;
 const previousTotalBalance = 14642.22;
 const previousMonthlySpending = 1470.15;
-
-// TODO: Replace with dynamic accounts once the accounts API is available
-const accounts = [
-  {
-    name: "Primary Account",
-    type: "Chequing",
-    amount: 4280.5,
-    icon: SavingsRounded,
-  },
-  {
-    name: "90-Day Savings",
-    type: "Savings",
-    amount: 12840,
-    icon: AutoGraphRounded,
-  },
-  {
-    name: "Rewards Card",
-    type: "Credit card",
-    amount: 1248.32,
-    icon: CreditCardRounded,
-  },
-];
 
 // TODO: Replace with dynamic transactions once the transactions API is available
 const transactions = [
@@ -86,6 +69,9 @@ const transactions = [
 
 export default function Overview() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState("");
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -99,6 +85,42 @@ export default function Overview() {
       .catch((error) => {
         if (isCurrentRequest) {
           console.error("Unable to load profile for overview:", error);
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    getAccounts()
+      .then((loadedAccounts) => {
+        if (isCurrentRequest) {
+          setAccounts(
+            // Keep the overview focused by showing the three highest balances.
+            [...loadedAccounts]
+              .sort(
+                (left, right) =>
+                  getAccountBalanceInCad(right) - getAccountBalanceInCad(left),
+              )
+              .slice(0, 3),
+          );
+        }
+      })
+      .catch((error) => {
+        if (isCurrentRequest) {
+          console.error("Unable to load accounts for overview:", error);
+          setAccountsError(
+            error instanceof Error ? error.message : "Unable to load accounts.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) {
+          setAccountsLoading(false);
         }
       });
 
@@ -229,48 +251,83 @@ export default function Overview() {
                     Accounts
                   </Typography>
                 </Box>
-                <Button
-                  component={Link}
-                  to="/accounts"
-                  className="text-action"
-                  startIcon={<AddRounded />}
-                >
-                  Add account
-                </Button>
+                {accounts.length > 0 && (
+                  <Button
+                    component={Link}
+                    to="/accounts"
+                    className="text-action"
+                    endIcon={<ArrowForwardRounded />}
+                  >
+                    View all accounts
+                  </Button>
+                )}
               </Box>
-              <Stack spacing={1.5}>
-                {accounts.map((account) => {
-                  const Icon = account.icon;
-                  // TODO: Replace with the account detail route when available
-                  return (
-                    <Card
+              {accountsError ? (
+                <Alert
+                  className="overview-accounts-error"
+                  severity="error"
+                  variant="outlined"
+                >
+                  {accountsError}
+                </Alert>
+              ) : accountsLoading ? (
+                <Typography className="overview-accounts-status">
+                  Loading accounts...
+                </Typography>
+              ) : accounts.length === 0 ? (
+                <Card className="overview-accounts-empty">
+                  <CardContent>
+                    <Typography className="overview-accounts-empty-title">
+                      No accounts yet
+                    </Typography>
+                    <Typography className="overview-accounts-status">
+                      Add your first account to get started.
+                    </Typography>
+                    <Button
                       component={Link}
                       to="/accounts"
-                      className="account-card"
-                      key={account.name}
+                      className="text-action"
+                      endIcon={<ArrowForwardRounded />}
                     >
-                      <CardContent>
-                        <Box
-                          className={`account-icon ${account.type.toLowerCase().replace(" ", "-")}`}
-                        >
-                          <Icon />
-                        </Box>
-                        <Box className="account-details">
-                          <Typography className="account-name">
-                            {account.name}
+                      Add account
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Stack spacing={1.5}>
+                  {accounts.map((account) => {
+                    const Icon = accountTypeIcons[account.accountType];
+                    // TODO: Replace with the account detail route when available
+                    return (
+                      <Card
+                        component={Link}
+                        to="/accounts"
+                        className="account-card"
+                        key={account.id}
+                      >
+                        <CardContent>
+                          <Box
+                            className={`account-icon ${account.accountType.replace("_", "-")}`}
+                          >
+                            <Icon />
+                          </Box>
+                          <Box className="account-details">
+                            <Typography className="account-name">
+                              {account.name}
+                            </Typography>
+                            <Typography className="account-type">
+                              {accountTypeLabels[account.accountType]}
+                            </Typography>
+                          </Box>
+                          <Typography className="account-amount">
+                            {formatAccountBalance(account)}
                           </Typography>
-                          <Typography className="account-type">
-                            {account.type}
-                          </Typography>
-                        </Box>
-                        <Typography className="account-amount">
-                          {currencyFormatter.format(account.amount)}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </Stack>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </Stack>
+              )}
             </Box>
 
             <Box
