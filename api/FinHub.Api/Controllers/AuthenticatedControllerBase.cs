@@ -62,10 +62,10 @@ public abstract class AuthenticatedControllerBase(SupabaseAuthClient authClient)
     /// </summary>
     /// <returns>An unavailable-service response.</returns>
     protected ObjectResult AuthenticationServiceUnavailable() => StatusCode(
-      StatusCodes.Status503ServiceUnavailable,
-      new
-      {
-          error = "Authentication service is temporarily unavailable. Please try again.",
-          errorCode = "authentication_service_unavailable"
-      });
+        StatusCodes.Status503ServiceUnavailable,
+        new
+        {
+            error = "Authentication service is temporarily unavailable. Please try again.",
+            errorCode = "authentication_service_unavailable"
+        });
 }
