@@ -24,7 +24,6 @@ import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
 import {
   accountTypeIcons,
   accountTypeLabels,
-  compareAccountsByName,
   formatAccountBalance,
   getAccountBalanceInCad,
 } from "@app/utils/accounts";
@@ -105,11 +104,9 @@ export default function Overview() {
             [...loadedAccounts]
               .sort(
                 (left, right) =>
-                  getAccountBalanceInCad(right) -
-                  getAccountBalanceInCad(left),
+                  getAccountBalanceInCad(right) - getAccountBalanceInCad(left),
               )
-              .slice(0, 3)
-              .sort(compareAccountsByName),
+              .slice(0, 3),
           );
         }
       })
