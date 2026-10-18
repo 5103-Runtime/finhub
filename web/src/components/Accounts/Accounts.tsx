@@ -59,6 +59,7 @@ export default function Accounts() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [accountToDelete, setAccountToDelete] =
     useState<AccountResponse | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serverError, setServerError] = useState("");
   const {
     register,
@@ -124,10 +125,13 @@ export default function Accounts() {
   const closeModal = (force = false) => {
     if (force || !isSubmitting) {
       setIsModalOpen(false);
-      setSelectedAccount(null);
-      reset(emptyAccountForm);
-      setServerError("");
     }
+  };
+
+  const handleModalExited = () => {
+    setSelectedAccount(null);
+    reset(emptyAccountForm);
+    setServerError("");
   };
 
   const onSubmit: SubmitHandler<AccountFormData> = async (data) => {
@@ -190,7 +194,7 @@ export default function Accounts() {
       if (selectedAccount?.id === account.id) {
         closeModal();
       }
-      setAccountToDelete(null);
+      setIsDeleteModalOpen(false);
     } catch (requestError) {
       setServerError(
         requestError instanceof Error
@@ -239,7 +243,10 @@ export default function Accounts() {
             <Button
               aria-label={`Delete ${account.name}`}
               className="account-icon-button delete"
-              onClick={() => setAccountToDelete(account)}
+              onClick={() => {
+                setAccountToDelete(account);
+                setIsDeleteModalOpen(true);
+              }}
               disabled={deletingId === account.id}
             >
               <DeleteOutlineRounded />
@@ -344,7 +351,9 @@ export default function Accounts() {
               </Stack>
             ) : (
               <Stack spacing={1.5}>
-                {[...accounts].sort(compareAccountsByName).map(renderAccountCard)}
+                {[...accounts]
+                  .sort(compareAccountsByName)
+                  .map(renderAccountCard)}
               </Stack>
             )}
           </Box>
@@ -355,6 +364,7 @@ export default function Accounts() {
       <Dialog
         open={isModalOpen}
         onClose={() => closeModal()}
+        slotProps={{ transition: { onExited: handleModalExited } }}
         fullWidth
         maxWidth="sm"
         className="account-dialog"
@@ -460,7 +470,6 @@ export default function Accounts() {
             <Button
               type="submit"
               className="accounts-primary-button"
-              startIcon={selectedAccount ? <EditRounded /> : <AddRounded />}
               loading={isSubmitting}
             >
               {selectedAccount ? "Save changes" : "Add account"}
@@ -470,11 +479,14 @@ export default function Accounts() {
       </Dialog>
 
       <Dialog
-        open={accountToDelete !== null}
+        open={isDeleteModalOpen}
         onClose={() => {
           if (deletingId === null) {
-            setAccountToDelete(null);
+            setIsDeleteModalOpen(false);
           }
+        }}
+        slotProps={{
+          transition: { onExited: () => setAccountToDelete(null) },
         }}
         maxWidth="xs"
         fullWidth
@@ -490,7 +502,7 @@ export default function Accounts() {
         <DialogActions>
           <Button
             className="accounts-cancel-button"
-            onClick={() => setAccountToDelete(null)}
+            onClick={() => setIsDeleteModalOpen(false)}
             disabled={deletingId !== null}
           >
             Cancel
