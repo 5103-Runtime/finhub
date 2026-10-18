@@ -303,7 +303,7 @@ export default function Overview() {
                         component={Link}
                         to="/accounts"
                         className="account-card"
-                        key={account.name}
+                        key={account.id}
                       >
                         <CardContent>
                           <Box
