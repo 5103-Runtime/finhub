@@ -17,4 +17,17 @@ export const accountSchema = z.object({
   currency: z.enum(["CAD", "USD"]),
 });
 
+/**
+ * The TypeScript type for the account create form data, derived from the accountSchema.
+ */
 export type AccountFormData = z.infer<typeof accountSchema>;
+
+/**
+ * Default values for the account create form.
+ */
+export const emptyAccountForm: AccountFormData = {
+  name: "",
+  institution: "",
+  accountType: "chequing",
+  currency: "CAD",
+};

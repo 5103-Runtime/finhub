@@ -10,6 +10,7 @@ import ProtectedRoute from "@app/routes/ProtectedRoute";
 import PublicRoute from "@app/routes/PublicRoute";
 import ForgotPassword from "@app/components/ForgotPassword";
 import ResetPassword from "@app/components/ResetPassword";
+import Accounts from "@app/components/Accounts";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/overview" element={<Overview />} />
         <Route path="/setup-profile" element={<SetupProfile />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/accounts" element={<Accounts />} />
       </Route>
 
       {/* 404 Catch-All */}

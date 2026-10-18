@@ -21,6 +21,8 @@ export interface AccountResponse {
   currency: AccountCurrency;
   createdAt: string;
   updatedAt: string;
+  // The calculated balance when transaction-backed totals are available
+  balance?: number;
 }
 
 /**
