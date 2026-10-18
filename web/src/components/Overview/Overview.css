@@ -57,6 +57,7 @@
   font-size: 13px !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  padding: 0 15px !important;
 }
 
 .import-statement-button:hover {

@@ -80,6 +80,7 @@
   font-size: 13px !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  padding: 0 15px !important;
 }
 
 .accounts-add-button:hover {
@@ -93,6 +94,7 @@
   color: var(--color-ink) !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  padding: 0 15px !important;
 }
 
 .accounts-primary-button:hover {
@@ -117,6 +119,7 @@
   color: var(--color-ink) !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  padding: 7px 15px !important;
 }
 
 .accounts-cancel-button:hover {
