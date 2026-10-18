@@ -52,6 +52,18 @@ export function formatAccountBalance(account: AccountResponse): string {
 }
 
 /**
+ * Compares accounts by display name using a case-insensitive alphabetical order.
+ */
+export function compareAccountsByName(
+  left: AccountResponse,
+  right: AccountResponse,
+): number {
+  return left.name.localeCompare(right.name, undefined, {
+    sensitivity: "base",
+  });
+}
+
+/**
  * Returns the plural display label for an account type.
  * @param accountType The account type to label.
  * @returns The plural account type label.

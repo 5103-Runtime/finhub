@@ -42,6 +42,7 @@ import {
   accountTypeLabels,
   accountTypeOrder,
   accountTypeIcons,
+  compareAccountsByName,
   formatAccountBalance,
   getAccountTypePluralLabel,
 } from "@app/utils/accounts";
@@ -333,14 +334,18 @@ export default function Accounts() {
                         {groupedAccounts.length})
                       </Typography>
                       <Stack spacing={1.5}>
-                        {groupedAccounts.map(renderAccountCard)}
+                        {[...groupedAccounts]
+                          .sort(compareAccountsByName)
+                          .map(renderAccountCard)}
                       </Stack>
                     </Box>
                   );
                 })}
               </Stack>
             ) : (
-              <Stack spacing={1.5}>{accounts.map(renderAccountCard)}</Stack>
+              <Stack spacing={1.5}>
+                {[...accounts].sort(compareAccountsByName).map(renderAccountCard)}
+              </Stack>
             )}
           </Box>
         </Box>
@@ -479,8 +484,7 @@ export default function Accounts() {
         <DialogContent>
           <Typography>
             Are you sure you want to delete{" "}
-            <strong>{accountToDelete?.name}</strong>? This action cannot be
-            undone.
+            <strong>{accountToDelete?.name}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
