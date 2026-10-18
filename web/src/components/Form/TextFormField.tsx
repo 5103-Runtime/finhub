@@ -1,0 +1,15 @@
+import { type FieldValues, type Path, useFormContext, Controller } from "react-hook-form";
+import { type TextFieldProps, TextField} from "@mui/material";
+
+export type Props<T extends FieldValues> = { name: Path<T> } & Omit<TextFieldProps, "name">;
+
+export function TextFormField<T extends FieldValues>({ name, helperText, ...props }: Props<T>) {
+  const { control } = useFormContext<T>();
+  return (
+    <Controller name={name} control={control} render={({ field, fieldState }) => (
+      <TextField {...props} {...field}
+        error={Boolean(fieldState.error)}
+        helperText={fieldState.error?.message ?? helperText} />
+    )} />
+  );
+}
