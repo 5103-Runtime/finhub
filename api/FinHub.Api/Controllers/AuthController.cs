@@ -3,6 +3,7 @@ using FinHub.Api.Constants;
 using FinHub.Api.Data;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
+using FinHub.Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ namespace FinHub.Api.Controllers;
 public sealed class AuthController(
     SupabaseAuthClient authClient,
     FinHubDbContext dbContext,
-    ILogger<AuthController> logger) : ControllerBase
+    ILogger<AuthController> logger) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// Registers a new user with the provided registration details.
@@ -32,7 +33,7 @@ public sealed class AuthController(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.RegisterAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.RegisterAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -69,7 +70,7 @@ public sealed class AuthController(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.LoginAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.LoginAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -106,7 +107,7 @@ public sealed class AuthController(
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
-        string? refreshToken = GetRefreshToken();
+        string? refreshToken = Request.GetRefreshToken();
         if (refreshToken is null)
         {
             // Avoid returning 401 Unauthorized when the user 
@@ -114,7 +115,7 @@ public sealed class AuthController(
             return NoContent();
         }
 
-        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        AuthResult result = await AuthClient.RefreshAsync(refreshToken, cancellationToken);
         if (!result.Succeeded)
         {
             DeleteAuthCookiesIfRefreshTokenIsInvalid(result.StatusCode);
@@ -146,8 +147,8 @@ public sealed class AuthController(
     [HttpGet("session")]
     public async Task<IActionResult> GetSession(CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
-        string? refreshToken = GetRefreshToken();
+        string? accessToken = Request.GetAccessToken();
+        string? refreshToken = Request.GetRefreshToken();
 
         // Anonymous visitors do not need a session refresh.
         if (accessToken is null && refreshToken is null)
@@ -175,7 +176,7 @@ public sealed class AuthController(
         }
 
         // Validate the current access token with Supabase.
-        SupabaseUserResult userResult = await authClient.GetUserIdAsync(accessToken!, cancellationToken);
+        SupabaseUserResult userResult = await AuthClient.GetUserIdAsync(accessToken!, cancellationToken);
         if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
         {
             return AuthenticationServiceUnavailable();
@@ -195,7 +196,7 @@ public sealed class AuthController(
                 return IncompleteAuthResponse();
             }
 
-            userResult = await authClient.GetUserIdAsync(
+            userResult = await AuthClient.GetUserIdAsync(
                 refreshResult.Response.AccessToken,
                 cancellationToken);
             if (userResult.Status == SupabaseUserLookupStatus.ServiceUnavailable)
@@ -224,10 +225,10 @@ public sealed class AuthController(
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
+        string? accessToken = Request.GetAccessToken();
         if (accessToken is not null)
         {
-            await authClient.LogoutAsync(accessToken, cancellationToken);
+            await AuthClient.LogoutAsync(accessToken, cancellationToken);
         }
 
         Response.Cookies.Delete(AuthCookies.AccessToken, CookieOptions());
@@ -246,13 +247,13 @@ public sealed class AuthController(
         [FromBody] UpdatePasswordRequest request,
         CancellationToken cancellationToken)
     {
-        string? accessToken = GetAccessToken();
+        string? accessToken = Request.GetAccessToken();
         if (accessToken is null)
         {
-            return Unauthorized(new { error = "Missing or invalid authorization token.", errorCode = "missing_token" });
+            return MissingTokenResponse();
         }
 
-        AuthResult result = await authClient.UpdatePasswordAsync(accessToken, request, cancellationToken);
+        AuthResult result = await AuthClient.UpdatePasswordAsync(accessToken, request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -277,7 +278,7 @@ public sealed class AuthController(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.ForgotPasswordAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.ForgotPasswordAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -303,7 +304,7 @@ public sealed class AuthController(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.ResetPasswordAsync(request, cancellationToken);
+        AuthResult result = await AuthClient.ResetPasswordAsync(request, cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -326,26 +327,6 @@ public sealed class AuthController(
 
         return Ok(new { message = "Your password has been updated." });
     }
-
-    /// <summary>
-    /// Retrieves the access token from the request cookies.
-    /// </summary>
-    /// <returns>The access token, or null if it is not found.</returns>
-    private string? GetAccessToken() =>
-        Request.Cookies.TryGetValue(AuthCookies.AccessToken, out string? token) &&
-        !string.IsNullOrWhiteSpace(token)
-            ? token
-            : null;
-
-    /// <summary>
-    /// Retrieves the refresh token from the request cookies.
-    /// </summary>
-    /// <returns>The refresh token, or null if it is not found.</returns>
-    private string? GetRefreshToken() =>
-        Request.Cookies.TryGetValue(AuthCookies.RefreshToken, out string? token) &&
-        !string.IsNullOrWhiteSpace(token)
-            ? token
-            : null;
 
     /// <summary>
     /// Creates the response returned when no authenticated user is available.
@@ -388,18 +369,6 @@ public sealed class AuthController(
     });
 
     /// <summary>
-    /// Creates the response returned when the authentication service is unavailable.
-    /// </summary>
-    /// <returns>An unavailable-service response.</returns>
-    private ObjectResult AuthenticationServiceUnavailable() => StatusCode(
-        StatusCodes.Status503ServiceUnavailable,
-        new
-        {
-            error = "Authentication service is temporarily unavailable. Please try again.",
-            errorCode = "authentication_service_unavailable"
-        });
-
-    /// <summary>
     /// Refreshes the current session and updates the authentication cookies when successful.
     /// </summary>
     /// <param name="refreshToken">The refresh token used to renew the session.</param>
@@ -409,7 +378,7 @@ public sealed class AuthController(
         string refreshToken,
         CancellationToken cancellationToken)
     {
-        AuthResult result = await authClient.RefreshAsync(refreshToken, cancellationToken);
+        AuthResult result = await AuthClient.RefreshAsync(refreshToken, cancellationToken);
         if (result.Succeeded && result.Response is not null)
         {
             SetAuthCookies(result.Response, refreshToken);
