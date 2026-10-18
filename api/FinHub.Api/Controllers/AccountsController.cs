@@ -82,15 +82,12 @@ public sealed class AccountsController(
             return failure;
         }
 
-        DateTime now = DateTime.UtcNow;
         FinancialAccount account = new()
         {
             Id = Guid.NewGuid(),
             UserId = userId!.Value,
             AccountType = request.AccountType,
-            Currency = request.Currency,
-            CreatedAt = now,
-            UpdatedAt = now
+            Currency = request.Currency
         };
         ApplyDetails(account, request.Name, request.Institution);
 
@@ -126,7 +123,6 @@ public sealed class AccountsController(
         }
 
         ApplyDetails(account, request.Name, request.Institution);
-        account.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(ToResponse(account));

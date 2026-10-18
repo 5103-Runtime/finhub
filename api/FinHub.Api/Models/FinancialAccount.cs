@@ -18,7 +18,7 @@ public sealed class FinancialAccount
     /// <summary>
     /// Gets or sets the display name of the account.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = "";
 
     /// <summary>
     /// Gets or sets the institution that holds the account, if any.
@@ -28,7 +28,7 @@ public sealed class FinancialAccount
     /// <summary>
     /// Gets or sets the account type: chequing, savings, or credit_card.
     /// </summary>
-    public string AccountType { get; set; } = string.Empty;
+    public string AccountType { get; set; } = "";
 
     /// <summary>
     /// Gets or sets the ISO 4217 currency code of the account.

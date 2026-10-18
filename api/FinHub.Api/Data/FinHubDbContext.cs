@@ -35,8 +35,8 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(profile => profile.LastName).HasColumnName("last_name").HasMaxLength(100);
             entity.Property(profile => profile.PreferredName).HasColumnName("preferred_name").HasMaxLength(100);
             entity.Property(profile => profile.DateOfBirth).HasColumnName("date_of_birth");
-            entity.Property(profile => profile.CreatedAt).HasColumnName("created_at");
-            entity.Property(profile => profile.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(profile => profile.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(profile => profile.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
         });
 
         modelBuilder.Entity<FinancialAccount>(entity =>
@@ -49,8 +49,8 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(account => account.Institution).HasColumnName("institution").HasMaxLength(100);
             entity.Property(account => account.AccountType).HasColumnName("account_type");
             entity.Property(account => account.Currency).HasColumnName("currency");
-            entity.Property(account => account.CreatedAt).HasColumnName("created_at");
-            entity.Property(account => account.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(account => account.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(account => account.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
             entity.HasIndex(account => account.UserId);
         });
     }
