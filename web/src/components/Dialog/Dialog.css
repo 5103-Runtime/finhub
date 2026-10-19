@@ -1,0 +1,63 @@
+.app-dialog .MuiDialog-paper {
+  border: 1px solid var(--border-subtle);
+  border-radius: 25px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 28px 80px var(--shadow-soft);
+}
+
+.app-dialog .MuiDialogTitle-root,
+.app-dialog .MuiDialogContent-root,
+.app-dialog .MuiDialogActions-root {
+  color: var(--color-ink);
+}
+
+.app-dialog .MuiDialogTitle-root {
+  padding: 37px 37px 12px;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.app-dialog .MuiDialogContent-root {
+  padding: 12px 37px 8px;
+}
+
+.app-dialog .MuiDialogActions-root {
+  gap: 8px;
+  padding: 12px 37px 30px;
+}
+
+.dialog-cancel-button {
+  color: var(--color-ink) !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  padding: 7px 15px !important;
+}
+
+.dialog-cancel-button:hover {
+  background: color-mix(in srgb, var(--color-ink) 9%, transparent) !important;
+}
+
+.dialog-primary-button {
+  min-height: 42px !important;
+  border-radius: 10px !important;
+  background: var(--color-bronze) !important;
+  color: var(--color-ink) !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  padding: 0 15px !important;
+}
+
+.dialog-primary-button:hover {
+  background: var(--color-bronze-hover) !important;
+}
+
+.dialog-delete-button {
+  min-height: 42px !important;
+  border-radius: 10px !important;
+  background: var(--color-danger) !important;
+  color: var(--color-cream) !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
