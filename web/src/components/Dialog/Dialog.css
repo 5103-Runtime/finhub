@@ -53,7 +53,7 @@
   background: var(--color-bronze-hover) !important;
 }
 
-.dialog-delete-button {
+.dialog-danger-button {
   min-height: 42px !important;
   border-radius: 10px !important;
   background: var(--color-danger) !important;
