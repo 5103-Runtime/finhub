@@ -1,6 +1,6 @@
 # Financial accounts
 
-`public.financial_accounts` holds the chequing, savings, and credit card accounts a user imports statements for. Transactions will reference an account.
+`public.financial_accounts` holds the chequing, savings, and credit card accounts a user imports statements for. Transactions reference an account; see [Transactions](./transactions.md).
 
 ## Design
 

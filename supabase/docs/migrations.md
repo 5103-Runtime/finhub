@@ -16,6 +16,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_create_financial_accounts` creates `public.financial_accounts`, described under [Financial accounts](./financial-accounts.md).
 - `_use_now_for_timestamps` switches the `created_at` and `updated_at` defaults on both tables, and `set_updated_at()`, from `timezone('utc', now())` to `now()`. The old form returns a timestamp without a zone that Postgres casts back using the session time zone; `now()` is already a `timestamptz`.
 - `_restrict_table_access_to_api` revokes `anon` and `authenticated` access to the tables, functions, and sequences in `public`, present and future, so the API, connecting as `postgres`, is the only allowed client.
+- `_create_transactions` creates `public.transactions`, described under [Transactions](./transactions.md), and revokes `anon` and `authenticated` access to any sequences already in `public`.
 
 ## Create a migration
 
@@ -62,6 +63,6 @@ Do not run `db reset --linked`. It resets the shared public database and destroy
 
 ## API and EF Core Ownership
 
-Supabase migrations own the creation of `public.profiles` and `public.financial_accounts`, their policies, and their triggers. The ASP.NET API maps these tables with EF Core entities and queries them through `FinHubDbContext`.
+Supabase migrations own the creation of `public.profiles`, `public.financial_accounts`, and `public.transactions`, their policies, and their triggers. The ASP.NET API maps these tables with EF Core entities and queries them through `FinHubDbContext`.
 
 Do not create EF Core migrations for these tables. EF Core should map and query them; Supabase migrations remain the source of truth for the schema.
