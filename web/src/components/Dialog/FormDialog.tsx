@@ -38,6 +38,7 @@ export function FormDialog<T extends FieldValues>({
             form={formId}
             className="dialog-primary-button"
             variant="text"
+            loading={isSubmitting}
           >
             {submitLabel}
           </SubmitButton>
