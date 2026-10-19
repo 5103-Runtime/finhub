@@ -1,54 +1,44 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, requestPasswordReset } from "@app/services/authApi";
-import z from "zod";
+import {
+  Form,
+  FormAlert,
+  SubmitButton,
+  TextFormField,
+} from "@app/components/Form";
+import {
+  emailFormSchema,
+  type EmailFormData,
+} from "@app/validators/emailSchema";
 import "@app/components/Login/Login.css";
-
-const forgotPasswordSchema = z.object({
-  email: z
-    .email("Enter a valid email address")
-    .max(254, "Email must be 254 characters or less"),
-});
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPassword() {
   const [serverError, setServerError] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
-  const {
-    register: registerField,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
+
+  const form = useForm<EmailFormData>({
+    resolver: zodResolver(emailFormSchema),
+    defaultValues: { email: "" },
   });
 
-  const onSubmit: SubmitHandler<ForgotPasswordFormData> = async (data) => {
+  const onSubmit: SubmitHandler<EmailFormData> = async (data) => {
     setServerError("");
     try {
       await requestPasswordReset({ email: data.email });
       setSubmittedEmail(data.email);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setServerError(err.message);
-      } else {
-        setServerError("Something went wrong. Please try again.");
-      }
+      setServerError(
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     }
   };
 
@@ -70,27 +60,23 @@ export default function ForgotPassword() {
             Back to sign in
           </Button>
         </Box>
+
         <Paper className="auth-card auth-page-card" elevation={0}>
           <Box className="auth-card-heading">
             <Box className="lock-icon">
               <LockRounded />
             </Box>
-            <Typography className="auth-card-title" component="h2">Forgot your password?</Typography>
+            <Typography className="auth-card-title" component="h2">
+              Forgot your password?
+            </Typography>
           </Box>
 
           {submittedEmail ? (
             <Stack spacing={2.25}>
-              <Alert
-                className="auth-success"
-                severity="success"
-                variant="outlined"
-                role="status"
-              >
-                <Typography className="auth-success-message">
-                  If an account exists for {submittedEmail}, we've sent a link
-                  to reset your password. Check your inbox.
-                </Typography>
-              </Alert>
+              <FormAlert severity="success">
+                If an account exists for {submittedEmail}, we've sent a link to
+                reset your password. Check your inbox.
+              </FormAlert>
               <Button
                 component={Link}
                 to="/login"
@@ -101,47 +87,24 @@ export default function ForgotPassword() {
               </Button>
             </Stack>
           ) : (
-            <Stack
-              component="form"
-              spacing={2.25}
-              onSubmit={handleSubmit(onSubmit)}
-              noValidate
-            >
-              <Typography>
-                Enter your email and we'll send you a link to reset your
-                password.
-              </Typography>
-              <TextField
-                id="email"
-                label="Email address"
-                type="email"
-                autoComplete="email"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                {...registerField("email")}
-              />
-              {serverError && (
-                <Alert
-                  className="auth-error"
-                  severity="error"
-                  variant="outlined"
-                  role="alert"
-                >
-                  <Typography className="auth-error-message">
-                    {serverError}
-                  </Typography>
-                </Alert>
-              )}
-              <Button
-                type="submit"
-                variant="contained"
-                className="primary-action"
-                loading={isSubmitting}
-                endIcon={<ArrowForwardRounded />}
-              >
-                Send reset link
-              </Button>
-            </Stack>
+            <Form form={form} onSubmit={onSubmit}>
+              <Stack spacing={2.25}>
+                <Typography>
+                  Enter your email and we'll send you a link to reset your
+                  password.
+                </Typography>
+                <TextFormField<EmailFormData>
+                  name="email"
+                  label="Email address"
+                  type="email"
+                  autoComplete="email"
+                />
+                <FormAlert severity="error">{serverError}</FormAlert>
+                <SubmitButton endIcon={<ArrowForwardRounded />}>
+                  Send reset link
+                </SubmitButton>
+              </Stack>
+            </Form>
           )}
         </Paper>
       </Container>
