@@ -11,6 +11,7 @@ export const loginSchema = z.object({
     .min(1, "Password is required")
     .max(128, "Password must be 128 characters or less"),
 });
+
 /**
  * The TypeScript type for the account login form data, derived from the loginSchema.
  */

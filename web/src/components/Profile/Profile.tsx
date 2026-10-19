@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import Collapse from "@mui/material/Collapse";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
@@ -59,12 +66,17 @@ export default function Profile() {
   useEffect(() => {
     getProfile()
       .then((profile) =>
-        resetProfile({ ...profile, preferredName: profile.preferredName ?? "" }),
+        resetProfile({
+          ...profile,
+          preferredName: profile.preferredName ?? "",
+        }),
       )
       .catch((err) => {
         console.error("Profile retrieval failed:", err);
         setProfileError(
-          err instanceof ApiError ? err.message : "Failed to load your profile.",
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load your profile.",
         );
       });
   }, [resetProfile]);
@@ -81,7 +93,9 @@ export default function Profile() {
     } catch (err) {
       console.error("Profile update failed:", err);
       setProfileError(
-        err instanceof ApiError ? err.message : "Failed to update your profile.",
+        err instanceof ApiError
+          ? err.message
+          : "Failed to update your profile.",
       );
     }
   };
@@ -99,7 +113,9 @@ export default function Profile() {
     } catch (err) {
       console.error("Password update failed:", err);
       setPasswordError(
-        err instanceof ApiError ? err.message : "Failed to update your password.",
+        err instanceof ApiError
+          ? err.message
+          : "Failed to update your password.",
       );
     }
   };

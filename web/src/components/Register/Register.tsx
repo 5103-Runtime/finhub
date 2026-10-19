@@ -1,15 +1,31 @@
 // Contributor: Marlon Gonzalez
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, register } from "@app/services/authApi";
-import { Form, FormAlert, PasswordField, SubmitButton, TextFormField} from "@app/components/Form";
-import { registerSchema, type RegisterFormData,} from "@app/validators/registerSchema";
+import {
+  Form,
+  FormAlert,
+  PasswordField,
+  SubmitButton,
+  TextFormField,
+} from "@app/components/Form";
+import {
+  registerSchema,
+  type RegisterFormData,
+} from "@app/validators/registerSchema";
 import "./Register.css";
 
 function Register() {
@@ -26,9 +42,9 @@ function Register() {
     setServerError("");
     try {
       await register({
-          email: data.email, 
-          password: data.password,
-        });
+        email: data.email,
+        password: data.password,
+      });
       navigate("/setup-profile");
     } catch (err) {
       if (err instanceof ApiError) {

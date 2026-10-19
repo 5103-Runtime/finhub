@@ -1,4 +1,4 @@
-import type {FieldValues, UseFormSetError, Path } from "react-hook-form";
+import type { FieldValues, UseFormSetError, Path } from "react-hook-form";
 import { ApiError } from "@app/services/apiClient";
 
 /**
@@ -36,7 +36,9 @@ export function getErrorMessage(err: unknown, fallback: string) {
  * }
  */
 export function applyFieldErrors<T extends FieldValues>(
-  err: unknown, setError: UseFormSetError<T>, knownFields: string[],
+  err: unknown,
+  setError: UseFormSetError<T>,
+  knownFields: string[],
 ) {
   if (!(err instanceof ApiError) || !err.fieldErrors) return;
   for (const [field, messages] of Object.entries(err.fieldErrors)) {

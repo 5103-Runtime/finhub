@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
-import { Dialog, DialogActions, DialogContent,DialogTitle, type DialogProps } from "@mui/material";
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  type DialogProps,
+} from "@mui/material";
 import "./Dialog.css";
-
 
 export type DialogBaseProps = {
   open: boolean;

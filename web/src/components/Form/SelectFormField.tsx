@@ -1,6 +1,18 @@
 import { useId, type ReactNode } from "react";
-import { Controller, useFormContext, type FieldValues, type Path } from "react-hook-form";
-import { FormControl, FormHelperText, InputLabel, MenuItem, Select, type FormControlProps } from "@mui/material";
+import {
+  Controller,
+  useFormContext,
+  type FieldValues,
+  type Path,
+} from "react-hook-form";
+import {
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  type FormControlProps,
+} from "@mui/material";
 
 export type SelectOption = { value: string; label: string };
 
@@ -35,7 +47,9 @@ export function SelectFormField<T extends FieldValues>({
               </MenuItem>
             ))}
           </Select>
-          <FormHelperText>{fieldState.error?.message ?? helperText}</FormHelperText>
+          <FormHelperText>
+            {fieldState.error?.message ?? helperText}
+          </FormHelperText>
         </FormControl>
       )}
     />

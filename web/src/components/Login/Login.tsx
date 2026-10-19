@@ -1,13 +1,26 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, login } from "@app/services/authApi";
-import { Form, FormAlert, PasswordField, SubmitButton, TextFormField } from "@app/components/Form";
+import {
+  Form,
+  FormAlert,
+  PasswordField,
+  SubmitButton,
+  TextFormField,
+} from "@app/components/Form";
 import { loginSchema, type LoginFormData } from "@app/validators/loginSchema";
 import "./Login.css";
 
@@ -17,7 +30,7 @@ export default function Login() {
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" }
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {

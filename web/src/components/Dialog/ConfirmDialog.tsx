@@ -14,8 +14,14 @@ type ConfirmDialogProps = {
 };
 
 export function ConfirmDialog({
-  open, title, message, confirmLabel, loading = false,
-  onConfirm, onCancel, onExited,
+  open,
+  title,
+  message,
+  confirmLabel,
+  loading = false,
+  onConfirm,
+  onCancel,
+  onExited,
 }: ConfirmDialogProps) {
   return (
     <DialogBase
@@ -27,10 +33,18 @@ export function ConfirmDialog({
       onExited={onExited}
       actions={
         <>
-          <Button className="dialog-cancel-button" onClick={onCancel} disabled={loading}>
+          <Button
+            className="dialog-cancel-button"
+            onClick={onCancel}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button className="dialog-danger-button" onClick={onConfirm} loading={loading}>
+          <Button
+            className="dialog-danger-button"
+            onClick={onConfirm}
+            loading={loading}
+          >
             {confirmLabel}
           </Button>
         </>

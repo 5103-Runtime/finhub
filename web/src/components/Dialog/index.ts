@@ -1,3 +1,3 @@
 export { FormDialog } from "./FormDialog";
 export { ConfirmDialog } from "./ConfirmDialog";
-export { DialogBase } from "./DialogBase"
+export { DialogBase } from "./DialogBase";

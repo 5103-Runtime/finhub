@@ -54,7 +54,6 @@ export default function Accounts() {
     useState<AccountResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serverError, setServerError] = useState("");
- 
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -85,46 +84,46 @@ export default function Accounts() {
     };
   }, []);
 
-    const form = useForm<AccountFormData>({
-      resolver: zodResolver(accountSchema),
-      defaultValues: emptyAccountForm,
-      mode: "onTouched",
+  const form = useForm<AccountFormData>({
+    resolver: zodResolver(accountSchema),
+    defaultValues: emptyAccountForm,
+    mode: "onTouched",
+  });
+
+  const accountTypeOptions = Object.entries(accountTypeLabels).map(
+    ([value, label]) => ({ value, label }),
+  );
+  const currencyOptions = [
+    { value: "CAD", label: "CAD" },
+    { value: "USD", label: "USD" },
+  ];
+
+  const openCreateModal = () => {
+    setSelectedAccount(null);
+    form.reset(emptyAccountForm);
+    setServerError("");
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (account: AccountResponse) => {
+    setSelectedAccount(account);
+    form.reset({
+      name: account.name,
+      institution: account.institution ?? "",
+      accountType: account.accountType,
+      currency: account.currency,
     });
+    setServerError("");
+    setIsModalOpen(true);
+  };
 
-    const accountTypeOptions = Object.entries(accountTypeLabels).map(
-      ([value, label]) => ({ value, label }),
-    );
-    const currencyOptions = [
-      { value: "CAD", label: "CAD" },
-      { value: "USD", label: "USD" },
-    ];
+  const closeModal = () => setIsModalOpen(false);
 
-    const openCreateModal = () => {
-      setSelectedAccount(null);
-      form.reset(emptyAccountForm);
-      setServerError("");
-      setIsModalOpen(true);
-    };
-
-    const openEditModal = (account: AccountResponse) => {
-      setSelectedAccount(account);
-      form.reset({
-        name: account.name,
-        institution: account.institution ?? "",
-        accountType: account.accountType,
-        currency: account.currency,
-      });
-      setServerError("");
-      setIsModalOpen(true);
-    };
-
-    const closeModal = () => setIsModalOpen(false);
-
-    const handleModalExited = () => {
-      setSelectedAccount(null);
-      form.reset(emptyAccountForm);
-      setServerError("");
-    };
+  const handleModalExited = () => {
+    setSelectedAccount(null);
+    form.reset(emptyAccountForm);
+    setServerError("");
+  };
 
   const onSubmit: SubmitHandler<AccountFormData> = async (data) => {
     setServerError("");
@@ -135,7 +134,7 @@ export default function Accounts() {
           institution: data.institution || undefined,
         });
         setAccounts((currentAccounts) =>
-          currentAccounts.map((account) => 
+          currentAccounts.map((account) =>
             account.id === updatedAccount.id ? updatedAccount : account,
           ),
         );
@@ -150,8 +149,14 @@ export default function Accounts() {
       }
       closeModal();
     } catch (requestError) {
-      applyFieldErrors(requestError, form.setError, Object.keys(emptyAccountForm));
-      setServerError(getErrorMessage(requestError, "Unable to save the account."));
+      applyFieldErrors(
+        requestError,
+        form.setError,
+        Object.keys(emptyAccountForm),
+      );
+      setServerError(
+        getErrorMessage(requestError, "Unable to save the account."),
+      );
     }
   };
 
@@ -338,7 +343,7 @@ export default function Accounts() {
         <Footer />
       </Container>
 
-     <FormDialog
+      <FormDialog
         open={isModalOpen}
         title={selectedAccount ? "Update account" : "Add an account"}
         form={form}
@@ -382,7 +387,8 @@ export default function Accounts() {
         title="Delete account?"
         message={
           <>
-            Are you sure you want to delete <strong>{accountToDelete?.name}</strong>?
+            Are you sure you want to delete{" "}
+            <strong>{accountToDelete?.name}</strong>?
           </>
         }
         confirmLabel="Delete account"

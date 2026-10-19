@@ -1,6 +1,10 @@
 import { useId, type ReactNode } from "react";
 import { Button, Stack } from "@mui/material";
-import type { FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
+import type {
+  FieldValues,
+  SubmitHandler,
+  UseFormReturn,
+} from "react-hook-form";
 import { Form } from "@app/components/Form/Form";
 import { FormAlert } from "@app/components/Form/FormAlert";
 import { SubmitButton } from "@app/components/Form/SubmitButton";
@@ -18,20 +22,29 @@ type FormDialogProps<T extends FieldValues> = Omit<
 };
 
 export function FormDialog<T extends FieldValues>({
-  form, onSubmit, submitLabel, error, onClose, children, ...dialogProps
+  form,
+  onSubmit,
+  submitLabel,
+  error,
+  onClose,
+  children,
+  ...dialogProps
 }: FormDialogProps<T>) {
   const formId = useId();
   const { isSubmitting } = form.formState;
 
   return (
-
     <DialogBase
       {...dialogProps}
       onClose={onClose}
       busy={isSubmitting}
       actions={
         <>
-          <Button className="dialog-cancel-button" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            className="dialog-cancel-button"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <SubmitButton
