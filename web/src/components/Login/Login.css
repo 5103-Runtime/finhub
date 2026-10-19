@@ -119,35 +119,6 @@
   line-height: 1.2 !important;
 }
 
-.auth-card .MuiTextField-root {
-  background: var(--surface-input);
-}
-
-.auth-card input[type="password"]::-ms-reveal {
-  display: none;
-}
-
-.auth-card .MuiOutlinedInput-root {
-  border-radius: 12px;
-}
-
-.auth-card .MuiInputLabel-root {
-  color: var(--color-slate);
-}
-
-.auth-card .MuiInputBase-input {
-  color: var(--color-ink);
-}
-
-.auth-card .MuiInputBase-input::placeholder {
-  color: var(--color-slate);
-  opacity: 1;
-}
-
-.auth-card .MuiFormHelperText-root {
-  color: var(--color-slate);
-}
-
 .forgot-password-link {
   position: relative;
   align-self: flex-end;
@@ -178,57 +149,6 @@
 
 .forgot-password-link:hover::after {
   transform: scaleX(1);
-}
-
-.auth-card .MuiIconButton-root {
-  color: var(--color-slate);
-}
-
-.auth-card .MuiAlert-root {
-  border-radius: 11px;
-  font-size: 12px;
-}
-
-.auth-error {
-  align-items: flex-start;
-  margin-top: 2px;
-  border-color: var(--color-danger) !important;
-  background: var(--surface-danger) !important;
-  color: var(--color-danger) !important;
-}
-
-.auth-error .MuiAlert-icon {
-  color: var(--color-danger);
-  margin-top: 2px;
-}
-
-.auth-error-message {
-  margin-top: 3px !important;
-  color: var(--color-danger) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  line-height: 1.4 !important;
-}
-
-.auth-success {
-  align-items: flex-start;
-  margin-top: 2px;
-  border-color: var(--color-success) !important;
-  background: var(--surface-success) !important;
-  color: var(--color-success) !important;
-}
-
-.auth-success .MuiAlert-icon {
-  color: var(--color-success) !important;
-  margin-top: 2px;
-}
-
-.auth-success-message {
-  margin-top: 3px !important;
-  color: var(--color-success) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  line-height: 1.4 !important;
 }
 
 .auth-divider {

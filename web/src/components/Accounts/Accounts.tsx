@@ -6,17 +6,7 @@ import {
   Card,
   CardContent,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
@@ -32,7 +22,6 @@ import {
   updateAccount,
   type AccountResponse,
 } from "@app/services/accountsApi";
-import { ApiError } from "@app/services/apiClient";
 import {
   accountSchema,
   emptyAccountForm,
@@ -47,7 +36,11 @@ import {
   getAccountTypePluralLabel,
 } from "@app/utils/accounts";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { SelectFormField, TextFormField } from "@app/components/Form";
+import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
+import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
+import { useForm, type SubmitHandler } from "react-hook-form";
+
 import "./Accounts.css";
 
 export default function Accounts() {
@@ -61,18 +54,6 @@ export default function Accounts() {
     useState<AccountResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serverError, setServerError] = useState("");
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<AccountFormData>({
-    resolver: zodResolver(accountSchema),
-    defaultValues: emptyAccountForm,
-    mode: "onTouched",
-  });
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -103,16 +84,30 @@ export default function Accounts() {
     };
   }, []);
 
+  const form = useForm<AccountFormData>({
+    resolver: zodResolver(accountSchema),
+    defaultValues: emptyAccountForm,
+    mode: "onTouched",
+  });
+
+  const accountTypeOptions = Object.entries(accountTypeLabels).map(
+    ([value, label]) => ({ value, label }),
+  );
+  const currencyOptions = [
+    { value: "CAD", label: "CAD" },
+    { value: "USD", label: "USD" },
+  ];
+
   const openCreateModal = () => {
     setSelectedAccount(null);
-    reset(emptyAccountForm);
+    form.reset(emptyAccountForm);
     setServerError("");
     setIsModalOpen(true);
   };
 
   const openEditModal = (account: AccountResponse) => {
     setSelectedAccount(account);
-    reset({
+    form.reset({
       name: account.name,
       institution: account.institution ?? "",
       accountType: account.accountType,
@@ -122,15 +117,11 @@ export default function Accounts() {
     setIsModalOpen(true);
   };
 
-  const closeModal = (force = false) => {
-    if (force || !isSubmitting) {
-      setIsModalOpen(false);
-    }
-  };
+  const closeModal = () => setIsModalOpen(false);
 
   const handleModalExited = () => {
     setSelectedAccount(null);
-    reset(emptyAccountForm);
+    form.reset(emptyAccountForm);
     setServerError("");
   };
 
@@ -154,26 +145,17 @@ export default function Accounts() {
           accountType: data.accountType,
           currency: data.currency,
         });
-        setAccounts((currentAccounts) => [...currentAccounts, createdAccount]);
+        setAccounts((current) => [...current, createdAccount]);
       }
-      closeModal(true);
+      closeModal();
     } catch (requestError) {
-      if (requestError instanceof ApiError && requestError.fieldErrors) {
-        Object.entries(requestError.fieldErrors).forEach(
-          ([field, messages]) => {
-            if (field in emptyAccountForm && messages[0]) {
-              setError(field as keyof AccountFormData, {
-                type: "server",
-                message: messages[0],
-              });
-            }
-          },
-        );
-      }
+      applyFieldErrors(
+        requestError,
+        form.setError,
+        Object.keys(emptyAccountForm),
+      );
       setServerError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Unable to save the account.",
+        getErrorMessage(requestError, "Unable to save the account."),
       );
     }
   };
@@ -361,161 +343,60 @@ export default function Accounts() {
         <Footer />
       </Container>
 
-      <Dialog
+      <FormDialog
         open={isModalOpen}
-        onClose={() => closeModal()}
-        slotProps={{ transition: { onExited: handleModalExited } }}
-        fullWidth
-        maxWidth="sm"
-        className="account-dialog"
+        title={selectedAccount ? "Update account" : "Add an account"}
+        form={form}
+        onSubmit={onSubmit}
+        onClose={closeModal}
+        onExited={handleModalExited}
+        submitLabel={selectedAccount ? "Save changes" : "Add account"}
+        error={serverError}
       >
-        <DialogTitle>
-          {selectedAccount ? "Update account" : "Add an account"}
-        </DialogTitle>
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <DialogContent>
-            <Stack spacing={2.25} className="account-form">
-              <TextField
-                label="Account name"
-                required
-                fullWidth
-                error={Boolean(errors.name)}
-                helperText={errors.name?.message}
-                {...register("name")}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-              />
-              <TextField
-                label="Institution"
-                fullWidth
-                error={Boolean(errors.institution)}
-                helperText={errors.institution?.message}
-                {...register("institution")}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-              />
-              {!selectedAccount && (
-                <Stack direction="row" spacing={1.5}>
-                  <Controller
-                    name="accountType"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl
-                        fullWidth
-                        error={Boolean(errors.accountType)}
-                      >
-                        <InputLabel id="account-type-label">Type</InputLabel>
-                        <Select
-                          {...field}
-                          labelId="account-type-label"
-                          label="Type"
-                        >
-                          {Object.entries(accountTypeLabels).map(
-                            ([value, label]) => (
-                              <MenuItem key={value} value={value}>
-                                {label}
-                              </MenuItem>
-                            ),
-                          )}
-                        </Select>
-                        <FormHelperText>
-                          {errors.accountType?.message}
-                        </FormHelperText>
-                      </FormControl>
-                    )}
-                  />
-                  <Controller
-                    name="currency"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth error={Boolean(errors.currency)}>
-                        <InputLabel id="account-currency-label">
-                          Currency
-                        </InputLabel>
-                        <Select
-                          {...field}
-                          labelId="account-currency-label"
-                          label="Currency"
-                        >
-                          <MenuItem value="CAD">CAD</MenuItem>
-                          <MenuItem value="USD">USD</MenuItem>
-                        </Select>
-                        <FormHelperText>
-                          {errors.currency?.message}
-                        </FormHelperText>
-                      </FormControl>
-                    )}
-                  />
-                </Stack>
-              )}
-              {serverError && (
-                <Alert
-                  className="auth-error"
-                  severity="error"
-                  variant="outlined"
-                  role="alert"
-                >
-                  <Typography className="auth-error-message">
-                    {serverError}
-                  </Typography>
-                </Alert>
-              )}
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              className="accounts-cancel-button"
-              onClick={() => closeModal()}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="accounts-primary-button"
-              loading={isSubmitting}
-            >
-              {selectedAccount ? "Save changes" : "Add account"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+        <TextFormField<AccountFormData>
+          name="name"
+          label="Account name"
+          required
+          fullWidth
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+        <TextFormField<AccountFormData>
+          name="institution"
+          label="Institution"
+          fullWidth
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+        {!selectedAccount && (
+          <Stack direction="row" spacing={1.5}>
+            <SelectFormField<AccountFormData>
+              name="accountType"
+              label="Type"
+              options={accountTypeOptions}
+            />
+            <SelectFormField<AccountFormData>
+              name="currency"
+              label="Currency"
+              options={currencyOptions}
+            />
+          </Stack>
+        )}
+      </FormDialog>
 
-      <Dialog
+      <ConfirmDialog
         open={isDeleteModalOpen}
-        onClose={() => {
-          if (deletingId === null) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
-        slotProps={{
-          transition: { onExited: () => setAccountToDelete(null) },
-        }}
-        maxWidth="xs"
-        fullWidth
-        className="account-dialog"
-      >
-        <DialogTitle>Delete account?</DialogTitle>
-        <DialogContent>
-          <Typography>
+        title="Delete account?"
+        message={
+          <>
             Are you sure you want to delete{" "}
             <strong>{accountToDelete?.name}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            className="accounts-cancel-button"
-            onClick={() => setIsDeleteModalOpen(false)}
-            disabled={deletingId !== null}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="accounts-delete-button"
-            onClick={() => void handleDelete()}
-            loading={deletingId !== null}
-          >
-            Delete account
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        confirmLabel="Delete account"
+        loading={deletingId !== null}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        onExited={() => setAccountToDelete(null)}
+      />
     </Box>
   );
 }
