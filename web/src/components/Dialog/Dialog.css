@@ -22,6 +22,9 @@
 .app-dialog .MuiDialogContent-root {
   padding: 12px 37px 8px;
 }
+.app-dialog .app-form {
+  padding-top: 12px;
+}
 
 .app-dialog .MuiDialogActions-root {
   gap: 8px;
