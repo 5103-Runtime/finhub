@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { Button, Stack } from "@mui/material";
-import type { FieldValues, SubmitHandler, UseFormReturn, FormProvider} from "react-hook-form";
+import type { FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
 import { Form } from "@app/components/Form/Form";
 import { FormAlert } from "@app/components/Form/FormAlert";
 import { SubmitButton } from "@app/components/Form/SubmitButton";
@@ -24,7 +24,7 @@ export function FormDialog<T extends FieldValues>({
   const { isSubmitting } = form.formState;
 
   return (
-    
+
     <DialogBase
       {...dialogProps}
       onClose={onClose}
