@@ -21,6 +21,11 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     public DbSet<FinancialAccount> FinancialAccounts => Set<FinancialAccount>();
 
     /// <summary>
+    /// gets the DbSet of transactions in the database.
+    /// </summary>
+    public DbSet<Transaction> Transactions => Set<Transaction>(); 
+
+    /// <summary>
     /// Configures the model for the FinHub database context, including entity mappings and relationships.
     /// </summary>
     /// <param name="modelBuilder">The ModelBuilder instance used to configure the model.</param>
@@ -52,6 +57,22 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(account => account.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(account => account.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
             entity.HasIndex(account => account.UserId);
+        });
+
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            entity.ToTable("transactions", "public");
+            entity.HasKey(transaction => transaction.Id);
+            entity.Property(transaction => transaction.Id).HasColumnName("id");
+            entity.Property(transaction => transaction.AccountId).HasColumnName("account_id");
+            entity.Property(transaction => transaction.TransactionDate).HasColumnName("transaction_date");
+            entity.Property(transaction => transaction.Description).HasColumnName("description").HasMaxLength(500);
+            entity.Property(transaction => transaction.Amount).HasColumnName("amount").HasPrecision(14, 2);
+            entity.Property(transaction => transaction.BalanceAfter).HasColumnName("balance_after").HasPrecision(14, 2);
+            entity.Property(transaction => transaction.StatementLine).HasColumnName("statement_line");
+            entity.Property(transaction => transaction.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(transaction => transaction.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
+            entity.HasIndex(transaction => transaction.AccountId);
         });
     }
 }
