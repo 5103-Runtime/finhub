@@ -23,6 +23,10 @@ builder.Services.AddRateLimiter(options =>
         }));
     options.OnRejected = async (context, cancellationToken) =>
     {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString();
+        }
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
             error = "Too many attempts. Please try again in a minute.",
