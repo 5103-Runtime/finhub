@@ -246,6 +246,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The authentication response.</returns>
     [HttpPatch("password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdatePassword(
         [FromBody] UpdatePasswordRequest request,
         CancellationToken cancellationToken)
