@@ -30,6 +30,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The authentication response.</returns>
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
