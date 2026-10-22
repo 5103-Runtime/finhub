@@ -14,6 +14,10 @@ builder.Services.AddDbContext<FinHubDbContext>(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Keyed on the TCP peer, which is the proxy once the project is hosted.
+    // Before deploying, enable forwarded headers or every user will share one bucket
+    // (ASPNETCORE_FORWARDEDHEADERS_ENABLED=true on Azure App Service,
+    // or UseForwardedHeaders with the proxy in KnownProxies before UseRateLimiter).
     options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
