@@ -11,3 +11,9 @@ obj/
 
 # Test credentials file
 credentials.json
+
+# Reqnroll auto-generated files
+*.feature.cs
+
+# Reqnroll test results
+TestResults/
