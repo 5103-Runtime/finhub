@@ -92,8 +92,9 @@ public sealed class TransactionsController(
             return failure;
         }
 
+        Guid accountId = request.AccountId!.Value;
         bool ownsAccount = await OwnedAccountIds(userId!.Value)
-            .AnyAsync(id => id == request.AccountId, cancellationToken);
+            .AnyAsync(id => id == accountId, cancellationToken);
         if (!ownsAccount)
         {
             return AccountNotFound();
@@ -102,9 +103,13 @@ public sealed class TransactionsController(
         Transaction transaction = new()
         {
             Id = Guid.NewGuid(),
-            AccountId = request.AccountId
+            AccountId = accountId
         };
-        ApplyDetails(transaction, request.TransactionDate, request.Description, request.Amount);
+        ApplyDetails(
+            transaction,
+            request.TransactionDate!.Value,
+            request.Description,
+            request.Amount!.Value);
 
         dbContext.Transactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -137,7 +142,11 @@ public sealed class TransactionsController(
             return TransactionNotFound();
         }
 
-        ApplyDetails(transaction, request.TransactionDate, request.Description, request.Amount);
+        ApplyDetails(
+            transaction,
+            request.TransactionDate!.Value,
+            request.Description,
+            request.Amount!.Value);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(ToResponse(transaction));
