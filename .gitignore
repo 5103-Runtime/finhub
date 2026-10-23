@@ -8,3 +8,6 @@ obj/
 .env
 .env.*
 !.env.template
+
+# Test credentials file
+credentials.json
