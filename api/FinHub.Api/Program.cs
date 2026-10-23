@@ -1,6 +1,5 @@
 using System.Threading.RateLimiting;
 using FinHub.Api.Data;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
