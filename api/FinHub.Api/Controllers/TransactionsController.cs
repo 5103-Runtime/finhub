@@ -196,7 +196,7 @@ public sealed class TransactionsController(
     {
         transaction.TransactionDate = transactionDate;
         transaction.Description = description.Trim();
-        transaction.Amount = amount;
+        transaction.Amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>
