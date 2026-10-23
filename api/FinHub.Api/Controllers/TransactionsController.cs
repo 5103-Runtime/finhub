@@ -241,7 +241,6 @@ public sealed class TransactionsController(
     /// <param name="userId">The ID of the owning user.</param>
     /// <returns>A query of the user's account IDs.</returns>
     private IQueryable<Guid> OwnedAccountIds(Guid userId) => dbContext.FinancialAccounts
-        .AsNoTracking()
         .Where(account => account.UserId == userId)
         .Select(account => account.Id);
 
