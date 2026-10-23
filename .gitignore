@@ -9,9 +9,6 @@ obj/
 .env.*
 !.env.template
 
-# Test credentials file
-credentials.json
-
 # Reqnroll auto-generated files
 *.feature.cs
 
