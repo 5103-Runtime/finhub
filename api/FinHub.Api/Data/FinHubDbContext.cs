@@ -21,9 +21,9 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     public DbSet<FinancialAccount> FinancialAccounts => Set<FinancialAccount>();
 
     /// <summary>
-    /// gets the DbSet of transactions in the database.
+    /// Gets the DbSet of transactions in the database.
     /// </summary>
-    public DbSet<Transaction> Transactions => Set<Transaction>(); 
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     /// <summary>
     /// Configures the model for the FinHub database context, including entity mappings and relationships.
