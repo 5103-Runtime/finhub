@@ -4,6 +4,7 @@ using FinHub.Api.Data;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
 using FinHub.Api.Extensions;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,6 +30,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The authentication response.</returns>
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
@@ -66,6 +68,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The authentication response.</returns>
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
@@ -243,6 +246,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The authentication response.</returns>
     [HttpPatch("password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdatePassword(
         [FromBody] UpdatePasswordRequest request,
         CancellationToken cancellationToken)
@@ -274,6 +278,7 @@ public sealed class AuthController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A confirmation message.</returns>
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
