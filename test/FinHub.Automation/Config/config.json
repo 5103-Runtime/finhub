@@ -2,5 +2,6 @@
   "TestEnvironment": "QA",
   "Browser": "Chrome",
   "DefaultTimeout": 15,
-  "Headless": false
+  "Headless": false,
+  "TargetProject": "FinHub"
 }
