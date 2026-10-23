@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables"
+            Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+        <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+        <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+        <PackageReference Include="Reqnroll.MSTest" Version="3.3.4" />
+        <PackageReference Include="Selenium.WebDriver" Version="4.49.0" />
+        <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="153.0.8010.5200" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FinHub.Automation.Core\FinHub.Automation.Core.csproj" />
+    </ItemGroup>
+
+</Project>

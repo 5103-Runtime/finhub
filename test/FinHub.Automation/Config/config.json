@@ -1,0 +1,6 @@
+{
+  "TestEnvironment": "QA",
+  "Browser": "Chrome",
+  "DefaultTimeout": 15,
+  "Headless": false
+}
