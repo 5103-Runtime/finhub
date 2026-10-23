@@ -4,13 +4,13 @@ using FinHub.Automation.Models;
 namespace FinHub.Automation.Helpers;
 
 /// <summary>
-/// A class that handles parsing and retrieving FinHub credentials from credentials.json.
+/// A class that handles retrieving FinHub credentials from environment variables.
 /// </summary>
 internal static class CredentialManager
 {
     // Private attributes
     private static readonly Lazy<Credentials> _credentials;
-    private const string CredentialsFileName = "credentials.json";
+    private const string EnvironmentVariablePrefix = "FinHubAutomation__";
 
     // Public properties
     private static Credentials CredentialSet => _credentials.Value;
@@ -33,7 +33,6 @@ internal static class CredentialManager
         return role.Trim().ToLowerInvariant() switch
         {
             "user" => ValidateCredentials(CredentialSet.User, role),
-            "admin" => ValidateCredentials(CredentialSet.Admin, role),
             _ => throw new KeyNotFoundException($"[ERROR] Role '{role}' not found in credentials.")
         };
     }
@@ -57,38 +56,28 @@ internal static class CredentialManager
     }
 
     /// <summary>
-    /// Loads the credentials from the credentials.json file located in the project root directory.
+    /// Loads the credentials from environment variables.
     /// </summary>
     /// <returns>The loaded credentials.</returns>
-    /// <exception cref="FileNotFoundException">Thrown when the credentials.json file is not found.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the credentials are invalid.</exception>
     private static Credentials LoadCredentials()
     {
-        try
+        IConfigurationRoot configEngine = new ConfigurationBuilder()
+            .AddUserSecrets(typeof(CredentialManager).Assembly, optional: true)
+            .AddEnvironmentVariables(EnvironmentVariablePrefix)
+            .Build();
+
+        Credentials credentials = new();
+        configEngine.Bind(credentials);
+
+        if (string.IsNullOrWhiteSpace(credentials.User.Email) ||
+            string.IsNullOrWhiteSpace(credentials.User.Password))
         {
-            // Determine the path to the credentials.json file on the project root directory
-            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
-            string jsonPath = Path.Combine(projectRoot, CredentialsFileName);
-
-            if (!File.Exists(jsonPath))
-            {
-                throw new FileNotFoundException($"[ERROR] Could not find {CredentialsFileName} at: {jsonPath}");
-            }
-
-            // Build the configuration from the credentials.json file
-            IConfigurationRoot configEngine = new ConfigurationBuilder()
-                .SetBasePath(projectRoot)
-                .AddJsonFile(CredentialsFileName, optional: false, reloadOnChange: true)
-                .Build();
-
-            Credentials credentials = new();
-            configEngine.Bind(credentials);
-
-            return credentials;
+            throw new InvalidOperationException(
+                $"[ERROR] Test credentials are incomplete. Set {EnvironmentVariablePrefix}User__Email, " +
+                $"{EnvironmentVariablePrefix}User__Password.");
         }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"[ERROR] Failed to load credentials: {ex.Message}", ex);
-        }
+
+        return credentials;
     }
 }

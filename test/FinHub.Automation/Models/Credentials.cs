@@ -1,7 +1,7 @@
 namespace FinHub.Automation.Models;
 
 /// <summary>
-/// Contains the credentials for each application role.
+/// Contains the credentials for the application user.
 /// </summary>
 internal sealed class Credentials
 {
@@ -9,11 +9,6 @@ internal sealed class Credentials
     /// The credentials for the user role.
     /// </summary>
     public RoleCredentials User { get; set; } = new();
-
-    /// <summary>
-    /// The credentials for the admin role.
-    /// </summary>
-    public RoleCredentials Admin { get; set; } = new();
 }
 
 /// <summary>
