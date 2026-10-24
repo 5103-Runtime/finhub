@@ -30,7 +30,10 @@ export const transactionSchema = z.object({
 });
 
 /**
- * @brief the Typscript type for the transaction create form data.
+/**
+ * @brief the Typescript type for the transaction create form data.
+ */
+export type TransactionFormData = z.infer<typeof transactionSchema>;
  */
 export type TransactionFormData = z.infer<typeof transactionSchema>;
 
@@ -56,5 +59,6 @@ export function getEmptyTransactionForm(): TransactionFormData {
     transactionDate: getTodayDate(),
     description: "",
     amount: "",
+  };
   };
 }

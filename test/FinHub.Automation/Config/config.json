@@ -1,0 +1,8 @@
+{
+  "BaseUrl": "http://localhost:5173",
+  "TestEnvironment": "QA",
+  "Browser": "Chrome",
+  "DefaultTimeout": 15,
+  "Headless": false,
+  "TargetProject": "FinHub"
+}

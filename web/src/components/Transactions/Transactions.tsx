@@ -81,12 +81,15 @@ export default function Transactions() {
     mode: "onTouched",
   });
 
-  const accountsById = new Map(accounts.map((account) => [account.id, account]));
+  const accountsById = new Map(
+    accounts.map((account) => [account.id, account]),
+  );
   const accountOptions = accounts.map((account) => ({
     value: account.id,
     label: account.name,
   }));
 
+  // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async () => {
     try {
       setTransactions(await getTransactions());
@@ -109,6 +112,7 @@ export default function Transactions() {
     setEditingId(null);
     setIsModalOpen(true);
   };
+  // Clear the error too, so a failed add does not leave a stale page banner.
   const closeModal = () => {
     setIsModalOpen(false);
     setServerError("");
@@ -136,6 +140,7 @@ export default function Transactions() {
       );
     }
   };
+  // Errors are thrown on purpose: the edit row catches them and shows them inline.
   const handleSaveEdit = async (
     id: string,
     data: TransactionEditFormData,
@@ -157,6 +162,8 @@ export default function Transactions() {
         </Typography>
       );
     }
+    // A failed load leaves the lists empty, so don't show the "no accounts" or
+    // "no transactions" empty states, which would be wrong.
     if (loadFailed) {
       return (
         <Typography className="accounts-empty">

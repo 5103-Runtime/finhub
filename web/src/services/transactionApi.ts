@@ -1,29 +1,32 @@
 import { apiGet, apiPost, apiPut } from "./apiClient";
 
-
 /**
  * @brief Response returned for a ledger transaction
  */
 export interface TransactionResponse {
-    id: string;
-    accountId: string;
-    transactionDate: string;
-    description: string;
-    amount: number;
-    balanceAfter: number | null;
-    statementLine: number | null;
-    createdAt: string;
-    updatedAt: string;
+export interface TransactionResponse {
+  id: string;
+  accountId: string;
+  transactionDate: string;
+  description: string;
+  amount: number;
+  balanceAfter: number | null;
+  statementLine: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
 }
 
 /**
  * @brief Request body used to manually create a transaction
  */
 export interface CreateTransactionRequest {
-    accountId: string;
-    transactionDate: string;
-    description: string;
-    amount: number;
+export interface CreateTransactionRequest {
+  accountId: string;
+  transactionDate: string;
+  description: string;
+  amount: number;
+}
 }
 
 /**
@@ -31,18 +34,18 @@ export interface CreateTransactionRequest {
  * The account a transaction belongs to cannot be changed.
  */
 export interface UpdateTransactionRequest {
-    transactionDate: string;
-    description: string;
-    amount: number;
-}
-
 /**
- * @brief Retreives the authenticated user's transactions, newest first.
+ * @brief Retrieves the authenticated user's transactions, newest first.
+ * @returns A promise containing the user's transactions.
+ * @throws ApiError If the request fails or the user is not authenticated.
+ */
  * @returns A promise containing the user's transactions.
  * @throws ApiError If the request fails or the user is not authenticated.
  */
 export function getTransactions(): Promise<TransactionResponse[]> {
-    return apiGet<TransactionResponse[]>("/api/transactions");
+export function getTransactions(): Promise<TransactionResponse[]> {
+  return apiGet<TransactionResponse[]>("/api/transactions");
+}
 }
 
 /**

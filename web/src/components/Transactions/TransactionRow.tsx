@@ -27,7 +27,9 @@ type TransactionRowProps = {
 };
 
 /**
+/**
  * @brief Read-only ledger row with an edit button.
+ */
  */
 export function TransactionRow({
   transaction,
@@ -77,7 +79,11 @@ type TransactionEditRowProps = {
 };
 
 /**
+/**
  * @brief Ledger row turned into a form. Enter or the check button saves,
+ * Escape or the close button cancels. It is only mounted while editing,
+ * so its form always starts from the transaction's current values.
+ */
  * Escape or the close button cancels. It is only mounted while editing,
  * so its form always starts from the transaction's current values.
  */
@@ -137,7 +143,9 @@ export function TransactionEditRow({
         size="small"
         fullWidth
         autoFocus
-        slotProps={{ htmlInput: { "aria-label": "Description", maxLength: 500 } }}
+        slotProps={{
+          htmlInput: { "aria-label": "Description", maxLength: 500 },
+        }}
       />
       <Typography className="transaction-account">
         {account?.name ?? "Unknown account"}

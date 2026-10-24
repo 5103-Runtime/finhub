@@ -8,3 +8,9 @@ obj/
 .env
 .env.*
 !.env.template
+
+# Reqnroll auto-generated files
+*.feature.cs
+
+# Reqnroll test results
+TestResults/
