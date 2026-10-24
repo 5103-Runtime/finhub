@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="parallel.runsettings" />
+    <File Path="sequential.runsettings" />
+  </Folder>
+  <Project Path="FinHub.Automation.Core/FinHub.Automation.Core.csproj" Id="becfb68e-e6e3-4424-80e5-76111f01fdf7" />
+  <Project Path="FinHub.Automation/FinHub.Automation.csproj" />
+</Solution>
