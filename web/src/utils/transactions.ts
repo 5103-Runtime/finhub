@@ -40,7 +40,10 @@ export function formatTransactionDate(isoDate: string) {
  * @param currency The account's currency.
  * @returns A formatted currency string.
  */
-export function formatSignedCurrency(amount: number, currency: AccountCurrency) {
+export function formatSignedCurrency(
+  amount: number,
+  currency: AccountCurrency,
+) {
   // Check the rounded value so tiny negatives don't show "-$0.00".
   const sign = Math.round(amount * 100) < 0 ? "-" : "";
   return `${sign}${formatCurrency(Math.abs(amount), currency)}`;

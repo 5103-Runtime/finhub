@@ -137,7 +137,9 @@ export function TransactionEditRow({
         size="small"
         fullWidth
         autoFocus
-        slotProps={{ htmlInput: { "aria-label": "Description", maxLength: 500 } }}
+        slotProps={{
+          htmlInput: { "aria-label": "Description", maxLength: 500 },
+        }}
       />
       <Typography className="transaction-account">
         {account?.name ?? "Unknown account"}

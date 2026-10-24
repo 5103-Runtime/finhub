@@ -94,8 +94,12 @@
   border-color: var(--border-subtle);
 }
 
-.transaction-edit-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
-.transaction-edit-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+.transaction-edit-form
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline,
+.transaction-edit-form
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-bronze);
 }
 

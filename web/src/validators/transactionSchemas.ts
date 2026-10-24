@@ -1,7 +1,7 @@
 import z from "zod";
 import { getTodayDate } from "@app/utils/transactions";
 
-const MAX_AMOUNT = 999999999999.99; //For Future ref, look for different way to set
+const MAX_AMOUNT = 999999999999.99; // For Future ref, look for different way to set
 
 /**
  * @brief Validates the fields used to create a transaction.
@@ -30,7 +30,7 @@ export const transactionSchema = z.object({
 });
 
 /**
- * @brief the Typscript type for the transaction create form data.
+ * @brief the Typescript type for the transaction create form data.
  */
 export type TransactionFormData = z.infer<typeof transactionSchema>;
 

@@ -81,7 +81,9 @@ export default function Transactions() {
     mode: "onTouched",
   });
 
-  const accountsById = new Map(accounts.map((account) => [account.id, account]));
+  const accountsById = new Map(
+    accounts.map((account) => [account.id, account]),
+  );
   const accountOptions = accounts.map((account) => ({
     value: account.id,
     label: account.name,
@@ -141,10 +143,7 @@ export default function Transactions() {
   };
 
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
-  const handleSaveEdit = async (
-    id: string,
-    data: TransactionEditFormData,
-  ) => {
+  const handleSaveEdit = async (id: string, data: TransactionEditFormData) => {
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,

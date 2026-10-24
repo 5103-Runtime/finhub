@@ -24,7 +24,6 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-
       </Route>
 
       {/* Protected Routes (authentication is validated by the API cookie session) */}
