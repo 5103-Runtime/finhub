@@ -70,7 +70,7 @@ internal class TestHooks
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] BeforeTestRun Error: {ex.Message}");
+            throw new InvalidOperationException("BeforeTestRun failed.", ex);
         }
     }
 
@@ -140,7 +140,7 @@ internal class TestHooks
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] BeforeFeature Error: {ex.Message}");
+            throw new InvalidOperationException($"BeforeFeature failed for '{featureContext.FeatureInfo.Title}'.", ex);
         }
     }
 
@@ -213,7 +213,7 @@ internal class TestHooks
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] BeforeScenario Error: {ex.Message}");
+            throw new InvalidOperationException($"BeforeScenario failed for '{_scenarioContext.ScenarioInfo.Title}'.", ex);
         }
     }
 
