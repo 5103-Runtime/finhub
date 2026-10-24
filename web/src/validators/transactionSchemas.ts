@@ -1,7 +1,7 @@
 import z from "zod";
 import { getTodayDate } from "@app/utils/transactions";
 
-const MAX_AMOUNT = 999999999999.99; //For Future ref, look for different way to set
+const MAX_AMOUNT = 999999999999.99;
 
 /**
  * @brief Validates the fields used to create a transaction.
