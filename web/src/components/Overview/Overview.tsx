@@ -20,7 +20,9 @@ import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
+import {getTransactions, type TransactionResponse,} from "@app/services/transactionApi";
 import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
+import { formatSignedCurrency,formatTransactionDate } from "@app/utils/transactions";
 import {
   accountTypeIcons,
   accountTypeLabels,
@@ -36,42 +38,18 @@ const previousTotalBalance = 14642.22;
 const previousMonthlySpending = 1470.15;
 
 // TODO: Replace with dynamic transactions once the transactions API is available
-const transactions = [
-  {
-    merchant: "Costco",
-    category: "Groceries",
-    date: "Today, 11:42 AM",
-    amount: -254.47,
-    color: "groceries",
-  },
-  {
-    merchant: "Rogers",
-    category: "Bills & Utilities",
-    date: "Yesterday",
-    amount: -85.49,
-    color: "utilities",
-  },
-  {
-    merchant: "Paycheque Deposit",
-    category: "Income",
-    date: "Oct 10, 2026",
-    amount: 2450,
-    color: "income",
-  },
-  {
-    merchant: "London Transit",
-    category: "Transport",
-    date: "Oct 09, 2026",
-    amount: -48,
-    color: "transport",
-  },
-];
+const RECENT_TRANSACTION_COUNT = 4;
 
 export default function Overview() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState("");
+  const [accountsById, setAccountsById] = useState<Map<string, AccountResponse>>(new Map());
+  const [recentTransactions, setRecentTransactions] = useState<TransactionResponse[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionError, setTransactionsError] = useState("");
+
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -99,6 +77,8 @@ export default function Overview() {
     getAccounts()
       .then((loadedAccounts) => {
         if (isCurrentRequest) {
+          setAccountsById(new Map(loadedAccounts.map((account)=>[account.id,account])),
+          );
           setAccounts(
             // Keep the overview focused by showing the three highest balances.
             [...loadedAccounts]
@@ -121,6 +101,39 @@ export default function Overview() {
       .finally(() => {
         if (isCurrentRequest) {
           setAccountsLoading(false);
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    getTransactions()
+      .then((loadedTransactions) => {
+        if (isCurrentRequest) {
+          //API returns newest first
+          setRecentTransactions(
+            loadedTransactions.slice(0, RECENT_TRANSACTION_COUNT),
+          );
+        }
+      })
+      .catch((error) => {
+        if (isCurrentRequest) {
+          console.error("Unable to load transactions for overview:", error);
+          setTransactionsError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load transactions.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) {
+          setTransactionsLoading(false);
         }
       });
 
@@ -395,31 +408,74 @@ export default function Overview() {
                 View all transactions
               </Button>
             </Box>
-            <Card className="transactions-card">
-              {transactions.map((transaction, index) => (
-                <Box
-                  key={`${transaction.merchant}-${transaction.date}`}
-                  className="transaction-row"
+                        <Card className="transactions-card">
+              {transactionError ? (
+                <Alert
+                  className="overview-accounts-error"
+                  severity="error"
+                  variant="outlined"
                 >
-                  <Box className={`transaction-icon ${transaction.color}`}>
-                    <Typography>{transaction.merchant.charAt(0)}</Typography>
-                  </Box>
-                  <Box className="transaction-details">
-                    <Typography className="transaction-merchant">
-                      {transaction.merchant}
-                    </Typography>
-                    <Typography className="transaction-meta">
-                      {transaction.category} · {transaction.date}
-                    </Typography>
-                  </Box>
-                  <Typography
-                    className={`transaction-amount ${transaction.amount > 0 ? "positive" : ""}`}
-                  >
-                    {currencyFormatter.format(transaction.amount)}
+                  {transactionError}
+                </Alert>
+              ) : transactionsLoading ? (
+                <CardContent>
+                  <Typography className="overview-accounts-status">
+                    Loading transactions...
                   </Typography>
-                  {index < transactions.length - 1 && <Divider />}
-                </Box>
-              ))}
+                </CardContent>
+              ) : recentTransactions.length === 0 ? (
+                <CardContent>
+                  <Typography className="overview-accounts-empty-title">
+                    No transactions yet
+                  </Typography>
+                  <Typography className="overview-accounts-status">
+                    Add your first transaction to get started.
+                  </Typography>
+                  <Button
+                    component={Link}
+                    to="/transactions"
+                    className="text-action"
+                    endIcon={<ArrowForwardRounded />}
+                  >
+                    Add transaction
+                  </Button>
+                </CardContent>
+              ) : (
+                recentTransactions.map((transaction, index) => {
+                  const account = accountsById.get(transaction.accountId);
+                  const isIncome = transaction.amount > 0;
+
+                  return (
+                    <Box key={transaction.id} className="transaction-row">
+                      <Box
+                        className={`transaction-icon ${isIncome ? "income" : ""}`}
+                      >
+                        <Typography>
+                          {transaction.description.charAt(0).toUpperCase()}
+                        </Typography>
+                      </Box>
+                      <Box className="transaction-details">
+                        <Typography className="transaction-merchant">
+                          {transaction.description}
+                        </Typography>
+                        <Typography className="transaction-meta">
+                          {account?.name ?? "Unknown account"} ·{" "}
+                          {formatTransactionDate(transaction.transactionDate)}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        className={`transaction-amount ${isIncome ? "positive" : ""}`}
+                      >
+                        {formatSignedCurrency(
+                          transaction.amount,
+                          account?.currency ?? "CAD",
+                        )}
+                      </Typography>
+                      {index < recentTransactions.length - 1 && <Divider />}
+                    </Box>
+                  );
+                })
+              )}
             </Card>
           </Box>
         </Box>
