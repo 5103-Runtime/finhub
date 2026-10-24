@@ -1,11 +1,12 @@
 import z from "zod";
 import { getTodayDate } from "@app/utils/transactions";
 
-const MAX_AMOUNT = 999999999999.99;
+// Matches the range the API accepts for an amount.
+const MAX_AMOUNT = 999999999999.99; // For future ref, look for a different way to set
 
 /**
  * @brief Validates the fields used to create a transaction.
- * the amount stays as text in the form and is converted to a number on submit
+ * The amount stays as text in the form and is converted to a number on submit.
  */
 export const transactionSchema = z.object({
   accountId: z.string().min(1, "Choose an account."),
@@ -30,10 +31,7 @@ export const transactionSchema = z.object({
 });
 
 /**
-/**
- * @brief the Typescript type for the transaction create form data.
- */
-export type TransactionFormData = z.infer<typeof transactionSchema>;
+ * @brief The TypeScript type for the transaction create form data.
  */
 export type TransactionFormData = z.infer<typeof transactionSchema>;
 
@@ -59,6 +57,5 @@ export function getEmptyTransactionForm(): TransactionFormData {
     transactionDate: getTodayDate(),
     description: "",
     amount: "",
-  };
   };
 }

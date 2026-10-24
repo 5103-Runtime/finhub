@@ -1,32 +1,30 @@
 import { apiGet, apiPost, apiPut } from "./apiClient";
 
 /**
- * @brief Response returned for a ledger transaction
+ * @brief Response returned for a ledger transaction.
  */
-export interface TransactionResponse {
 export interface TransactionResponse {
   id: string;
   accountId: string;
+  // Date only, formatted as YYYY-MM-DD
   transactionDate: string;
   description: string;
+  // Signed amount: positive for money in, negative for money out
   amount: number;
   balanceAfter: number | null;
   statementLine: number | null;
   createdAt: string;
   updatedAt: string;
 }
-}
 
 /**
- * @brief Request body used to manually create a transaction
+ * @brief Request body used to manually create a transaction.
  */
-export interface CreateTransactionRequest {
 export interface CreateTransactionRequest {
   accountId: string;
   transactionDate: string;
   description: string;
   amount: number;
-}
 }
 
 /**
@@ -34,25 +32,25 @@ export interface CreateTransactionRequest {
  * The account a transaction belongs to cannot be changed.
  */
 export interface UpdateTransactionRequest {
+  transactionDate: string;
+  description: string;
+  amount: number;
+}
+
 /**
  * @brief Retrieves the authenticated user's transactions, newest first.
  * @returns A promise containing the user's transactions.
  * @throws ApiError If the request fails or the user is not authenticated.
  */
- * @returns A promise containing the user's transactions.
- * @throws ApiError If the request fails or the user is not authenticated.
- */
-export function getTransactions(): Promise<TransactionResponse[]> {
 export function getTransactions(): Promise<TransactionResponse[]> {
   return apiGet<TransactionResponse[]>("/api/transactions");
-}
 }
 
 /**
  * @brief Manually creates a transaction in one of the authenticated user's accounts.
- * @param request the transaction details to create.
- * @returns A promise containing the created transaction
- * @throws ApiError If validation fails, the account is not found, or the request failed
+ * @param request The transaction details to create.
+ * @returns A promise containing the created transaction.
+ * @throws ApiError If validation fails, the account is not found, or the request fails.
  */
 export function createTransaction(
   request: CreateTransactionRequest,
