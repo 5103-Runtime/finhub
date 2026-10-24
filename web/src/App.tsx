@@ -11,6 +11,7 @@ import PublicRoute from "@app/routes/PublicRoute";
 import ForgotPassword from "@app/components/ForgotPassword";
 import ResetPassword from "@app/components/ResetPassword";
 import Accounts from "@app/components/Accounts";
+import Transactions from "@app/components/Transactions";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/setup-profile" element={<SetupProfile />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
+        <Route path="/transactions" element={<Transactions />} />
       </Route>
 
       {/* 404 Catch-All */}
