@@ -10,8 +10,7 @@ Reqnroll and Selenium end-to-end tests for the FinHub web application.
 
 ## Local test credentials
 
-The automation tests use .NET user secrets. They do not read credentials from a
-file, so passwords are not stored in the repository.
+The automation tests use .NET user secrets. They do not read credentials from a file, so passwords are not stored in the repository.
 
 From the repository root, set the local test credentials with the .NET CLI:
 
@@ -28,10 +27,10 @@ For CI or another environment that cannot use the local user-secrets store,
 provide environment variables instead. Environment variables are loaded after
 user secrets and therefore take precedence:
 
-| Environment variable                | Configuration value |
-| ----------------------------------- | ------------------- |
-| `FinHubAutomation__User__Email`     | `User:Email`        |
-| `FinHubAutomation__User__Password`  | `User:Password`     |
+| Environment variable               | Configuration value |
+| ---------------------------------- | ------------------- |
+| `FinHubAutomation__User__Email`    | `User:Email`        |
+| `FinHubAutomation__User__Password` | `User:Password`     |
 
 For example, set them for the current PowerShell session:
 
@@ -40,8 +39,7 @@ $env:FinHubAutomation__User__Email = "<USER_EMAIL>"
 $env:FinHubAutomation__User__Password = "<USER_PASSWORD>"
 ```
 
-Never commit real credentials or include them in pull requests, logs, screenshots,
-or test reports. Use dedicated test accounts with the minimum required access.
+Never commit real credentials or include them in pull requests, logs, screenshots, or test reports. Use a dedicated test account with the minimum required access and complete its profile setup before running the tests; newly created users are redirected to `/setup-profile` instead of `/overview`.
 
 ## Running tests
 
@@ -63,7 +61,6 @@ Run only the smoke scenarios:
 dotnet test test/FinHub.Automation.slnx --settings test/sequential.runsettings --filter TestCategory=smoke
 ```
 
-The browser runs headlessly in CI. To run it visibly during local debugging,
-set `HEADLESS=false` before running the tests.
+The browser runs headlessly in CI. For local runs, set `HEADLESS=true` when a visible browser is not available or when you want to run without opening a browser window; headless mode is otherwise disabled by default.
 
 See the [root README](../README.md) to start the API and web application.
