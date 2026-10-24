@@ -1,4 +1,5 @@
 using FinHub.Automation.Core.Extensions;
+using FinHub.Automation.Config;
 using FinHub.Automation.Helpers;
 using FinHub.Automation.Models;
 
@@ -11,7 +12,7 @@ public class LoginPage : BasePage
 {
     #region Public Properties
     // URL
-    public override string PageUrl => "http://localhost:5173/login";
+    public override string PageUrl => $"{ConfigManager.BaseUrl}/login";
 
     // Registry
     public enum ValidationKey
@@ -41,7 +42,7 @@ public class LoginPage : BasePage
     {
         Registry = new()
         {
-            { ValidationKey.SuccessfulLoginUrl, "http://localhost:5173/overview" }
+            { ValidationKey.SuccessfulLoginUrl, $"{ConfigManager.BaseUrl}/overview" }
         };
     }
     #endregion
@@ -77,11 +78,26 @@ public class LoginPage : BasePage
     public string GetErrorMessage() => ErrorMessageContainer.Text;
 
     /// <summary>
-    /// Waits until the login is successful by checking if the current URL contains the expected successful login URL.
+    /// Waits until the login succeeds or an error is displayed, then reports login failures immediately.
     /// </summary>
     public void WaitUntilLoginIsSuccessful()
     {
-        _wait.Until(driver => !driver.Url.Contains(PageUrl));
+        string expectedUrl = Registry[ValidationKey.SuccessfulLoginUrl];
+
+        _wait.Until(driver =>
+            driver.Url.Contains(expectedUrl, StringComparison.OrdinalIgnoreCase) ||
+            driver.FindElements(_errorMessageContainerLocator).Any(element => element.Displayed));
+
+        if (!_driver.Url.Contains(expectedUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            string? errorMessage = _driver.FindElements(_errorMessageContainerLocator)
+                .FirstOrDefault(element => element.Displayed)?.Text;
+
+            throw new InvalidOperationException(
+                string.IsNullOrWhiteSpace(errorMessage)
+                    ? $"Login did not navigate to the expected URL '{expectedUrl}'. Current URL: '{_driver.Url}'."
+                    : $"Login failed: {errorMessage}");
+        }
     }
     #endregion
 }

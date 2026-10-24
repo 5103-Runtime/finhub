@@ -14,6 +14,11 @@ internal static class ConfigManager
 
     #region Public Properties
     /// <summary>
+    /// Gets the base URL of the application under test.
+    /// </summary>
+    public static string BaseUrl => GetValue(nameof(BaseUrl), "http://localhost:5173").TrimEnd('/');
+
+    /// <summary>
     /// Gets the configured environment, defaulting to "QA" if not specified.
     /// </summary>
     public static string TestEnvironment => GetValue(nameof(TestEnvironment), "QA");
