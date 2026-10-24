@@ -1,0 +1,134 @@
+/* Page layout, headings, buttons and empty states reuse the classes in Accounts.css. */
+
+.transactions-list {
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink));
+}
+
+.transactions-head,
+.transaction-row,
+.transaction-row.transaction-edit-form {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 150px 150px 88px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+}
+
+.transactions-head {
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--color-bronze);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.transactions-head-amount {
+  text-align: right;
+}
+
+.transaction-row + .transaction-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.transaction-date,
+.transaction-account {
+  overflow: hidden;
+  color: var(--color-mist) !important;
+  font-size: 13px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-description {
+  overflow: hidden;
+  color: var(--color-cream) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-amount {
+  color: var(--color-cream) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.transaction-amount.positive {
+  color: var(--color-success) !important;
+}
+
+.transaction-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.transaction-icon-button {
+  color: var(--color-bronze) !important;
+}
+
+.transaction-row-error {
+  grid-column: 1 / -1;
+}
+
+/* Inline edit inputs sit on the dark card, so they need light text. */
+.transaction-edit-form .MuiInputBase-input {
+  color: var(--color-cream);
+}
+
+.transaction-edit-form input[type="date"] {
+  color-scheme: dark;
+}
+
+.transaction-edit-form input[inputmode="decimal"] {
+  text-align: right;
+}
+
+.transaction-edit-form .MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-subtle);
+}
+
+.transaction-edit-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.transaction-edit-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze);
+}
+
+.transaction-edit-form .MuiFormHelperText-root.Mui-error {
+  color: var(--color-danger-muted);
+}
+
+@media (max-width: 850px) {
+  .transactions-head {
+    display: none;
+  }
+
+  .transaction-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+
+  .transaction-amount {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .transaction-actions {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .transaction-row.transaction-edit-form {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .transaction-edit-form .transaction-actions {
+    justify-content: flex-start;
+  }
+}
