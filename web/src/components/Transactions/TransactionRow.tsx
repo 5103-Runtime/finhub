@@ -22,7 +22,7 @@ import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 
 type TransactionRowProps = {
   transaction: TransactionResponse;
-  account: AccountResponse | undefined;
+  account: AccountResponse;
   onEdit: () => void;
 };
 
@@ -35,31 +35,26 @@ export function TransactionRow({
   onEdit,
 }: TransactionRowProps) {
   const amountClass =
-    transaction.amount > 0
-      ? "transaction-amount positive"
-      : "transaction-amount";
+    transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
 
   return (
-    <Box className="transaction-row">
-      <Typography className="transaction-date">
+    <Box className="ledger-row">
+      <Typography className="ledger-date">
         {formatTransactionDate(transaction.transactionDate)}
       </Typography>
       <Typography
-        className="transaction-description"
+        className="ledger-description"
         title={transaction.description}
       >
         {transaction.description}
       </Typography>
-      <Typography className="transaction-account">
-        {account?.name ?? "Unknown account"}
-      </Typography>
       <Typography className={amountClass}>
-        {formatSignedCurrency(transaction.amount, account?.currency ?? "CAD")}
+        {formatSignedCurrency(transaction.amount, account.currency)}
       </Typography>
-      <Box className="transaction-actions">
+      <Box className="ledger-actions">
         <IconButton
           aria-label={`Edit ${transaction.description}`}
-          className="transaction-icon-button"
+          className="ledger-icon-button"
           onClick={onEdit}
         >
           <EditRounded />
@@ -71,7 +66,6 @@ export function TransactionRow({
 
 type TransactionEditRowProps = {
   transaction: TransactionResponse;
-  account: AccountResponse | undefined;
   onCancel: () => void;
   onSave: (data: TransactionEditFormData) => Promise<void>;
 };
@@ -83,7 +77,6 @@ type TransactionEditRowProps = {
  */
 export function TransactionEditRow({
   transaction,
-  account,
   onCancel,
   onSave,
 }: TransactionEditRowProps) {
@@ -119,7 +112,7 @@ export function TransactionEditRow({
     <Form
       form={form}
       onSubmit={onSubmit}
-      className="transaction-row transaction-edit-form"
+      className="ledger-row ledger-edit-form"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           onCancel();
@@ -141,9 +134,6 @@ export function TransactionEditRow({
           htmlInput: { "aria-label": "Description", maxLength: 500 },
         }}
       />
-      <Typography className="transaction-account">
-        {account?.name ?? "Unknown account"}
-      </Typography>
       <TextFormField<TransactionEditFormData>
         name="amount"
         size="small"
@@ -152,18 +142,18 @@ export function TransactionEditRow({
           htmlInput: { "aria-label": "Amount", inputMode: "decimal" },
         }}
       />
-      <Box className="transaction-actions">
+      <Box className="ledger-actions">
         <IconButton
           type="submit"
           aria-label="Save changes"
-          className="transaction-icon-button"
+          className="ledger-icon-button ledger-save"
           disabled={isSubmitting}
         >
           <CheckRounded />
         </IconButton>
         <IconButton
           aria-label="Cancel editing"
-          className="transaction-icon-button"
+          className="ledger-icon-button ledger-cancel"
           onClick={onCancel}
           disabled={isSubmitting}
         >
@@ -171,7 +161,7 @@ export function TransactionEditRow({
         </IconButton>
       </Box>
       {serverError && (
-        <Box className="transaction-row-error">
+        <Box className="ledger-row-error">
           <FormAlert severity="error">{serverError}</FormAlert>
         </Box>
       )}

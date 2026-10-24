@@ -4,13 +4,16 @@ import {
   Alert,
   Box,
   Button,
+  ButtonBase,
   Card,
   CardContent,
+  Collapse,
   Container,
   Stack,
   Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -31,6 +34,12 @@ import {
   type TransactionEditFormData,
   type TransactionFormData,
 } from "@app/validators/transactionSchemas";
+import {
+  accountTypeIcons,
+  accountTypeOrder,
+  compareAccountsByName,
+  getAccountTypePluralLabel,
+} from "@app/utils/accounts";
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 
@@ -44,6 +53,9 @@ export default function Transactions() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [collapsedAccountIds, setCollapsedAccountIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [serverError, setServerError] = useState("");
 
   useEffect(() => {
@@ -81,13 +93,31 @@ export default function Transactions() {
     mode: "onTouched",
   });
 
-  const accountsById = new Map(
-    accounts.map((account) => [account.id, account]),
-  );
   const accountOptions = accounts.map((account) => ({
     value: account.id,
     label: account.name,
   }));
+
+  // Group the transactions by account. The API order (newest first) is kept
+  // inside each account.
+  const transactionsByAccount = new Map<string, TransactionResponse[]>();
+  for (const transaction of transactions) {
+    const accountTransactions = transactionsByAccount.get(
+      transaction.accountId,
+    );
+    if (accountTransactions) {
+      accountTransactions.push(transaction);
+    } else {
+      transactionsByAccount.set(transaction.accountId, [transaction]);
+    }
+  }
+
+  // Same rule as the Accounts page: only add type headings when there are
+  // several account types to separate.
+  const accountTypeCount = new Set(
+    accounts.map((account) => account.accountType),
+  ).size;
+  const shouldGroupAccounts = accounts.length > 1 && accountTypeCount > 1;
 
   // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async () => {
@@ -103,6 +133,18 @@ export default function Transactions() {
     }
   };
 
+  const toggleAccount = (accountId: string) => {
+    setCollapsedAccountIds((current) => {
+      const next = new Set(current);
+      if (next.has(accountId)) {
+        next.delete(accountId);
+      } else {
+        next.add(accountId);
+      }
+      return next;
+    });
+  };
+
   const openCreateModal = () => {
     form.reset({
       ...getEmptyTransactionForm(),
@@ -112,6 +154,7 @@ export default function Transactions() {
     setEditingId(null);
     setIsModalOpen(true);
   };
+
   // Clear the error too, so a failed add does not leave a stale page banner.
   const closeModal = () => {
     setIsModalOpen(false);
@@ -128,6 +171,12 @@ export default function Transactions() {
         amount: Number(data.amount),
       });
       closeModal();
+      // Make sure the account the new transaction belongs to is open.
+      setCollapsedAccountIds((current) => {
+        const next = new Set(current);
+        next.delete(data.accountId);
+        return next;
+      });
       await reloadTransactions();
     } catch (requestError) {
       applyFieldErrors(
@@ -140,11 +189,9 @@ export default function Transactions() {
       );
     }
   };
+
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
-  const handleSaveEdit = async (
-    id: string,
-    data: TransactionEditFormData,
-  ) => {
+  const handleSaveEdit = async (id: string, data: TransactionEditFormData) => {
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,
@@ -152,6 +199,79 @@ export default function Transactions() {
     });
     setEditingId(null);
     await reloadTransactions();
+  };
+
+  // One collapsible card per account, holding that account's transactions.
+  const renderAccountSection = (account: AccountResponse) => {
+    const accountTransactions = transactionsByAccount.get(account.id) ?? [];
+    const isCollapsed = collapsedAccountIds.has(account.id);
+    const Icon = accountTypeIcons[account.accountType];
+    const panelId = `ledger-account-${account.id}`;
+
+    return (
+      <Box key={account.id} className="ledger-account">
+        <ButtonBase
+          className="ledger-account-header"
+          onClick={() => toggleAccount(account.id)}
+          aria-expanded={!isCollapsed}
+          aria-controls={panelId}
+        >
+          <Box className={`account-management-icon ${account.accountType}`}>
+            <Icon />
+          </Box>
+          <Box className="ledger-account-info">
+            <Typography className="ledger-account-name">
+              {account.name}
+            </Typography>
+            <Typography className="ledger-account-count">
+              {accountTransactions.length}{" "}
+              {accountTransactions.length === 1
+                ? "transaction"
+                : "transactions"}
+            </Typography>
+          </Box>
+          <ExpandMoreRounded
+            className={`ledger-chevron${isCollapsed ? " collapsed" : ""}`}
+          />
+        </ButtonBase>
+        <Collapse in={!isCollapsed} id={panelId}>
+          {accountTransactions.length === 0 ? (
+            <Typography className="ledger-account-empty">
+              No transactions in this account yet.
+            </Typography>
+          ) : (
+            <Box className="ledger-list">
+              <Box className="ledger-head">
+                <span>Date</span>
+                <span>Description</span>
+                <span className="ledger-head-amount">Amount</span>
+                <span aria-hidden="true" />
+              </Box>
+              {accountTransactions.map((transaction) =>
+                editingId === transaction.id ? (
+                  <TransactionEditRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    onCancel={() => setEditingId(null)}
+                    onSave={(data) => handleSaveEdit(transaction.id, data)}
+                  />
+                ) : (
+                  <TransactionRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    account={account}
+                    onEdit={() => {
+                      setServerError("");
+                      setEditingId(transaction.id);
+                    }}
+                  />
+                ),
+              )}
+            </Box>
+          )}
+        </Collapse>
+      </Box>
+    );
   };
 
   const renderContent = () => {
@@ -162,6 +282,7 @@ export default function Transactions() {
         </Typography>
       );
     }
+
     // A failed load leaves the lists empty, so don't show the "no accounts" or
     // "no transactions" empty states, which would be wrong.
     if (loadFailed) {
@@ -214,39 +335,36 @@ export default function Transactions() {
       );
     }
 
-    return (
-      <Box className="transactions-list">
-        <Box className="transactions-head">
-          <span>Date</span>
-          <span>Description</span>
-          <span>Account</span>
-          <span className="transactions-head-amount">Amount</span>
-          <span aria-hidden="true" />
-        </Box>
-        {transactions.map((transaction) => {
-          const account = accountsById.get(transaction.accountId);
+    if (shouldGroupAccounts) {
+      return (
+        <Stack spacing={4}>
+          {accountTypeOrder.map((accountType) => {
+            const groupedAccounts = accounts
+              .filter((account) => account.accountType === accountType)
+              .sort(compareAccountsByName);
+            if (groupedAccounts.length === 0) {
+              return null;
+            }
+            return (
+              <Box key={accountType} className="account-group">
+                <Typography className="account-group-title">
+                  {getAccountTypePluralLabel(accountType)} (
+                  {groupedAccounts.length})
+                </Typography>
+                <Stack spacing={1.5}>
+                  {groupedAccounts.map(renderAccountSection)}
+                </Stack>
+              </Box>
+            );
+          })}
+        </Stack>
+      );
+    }
 
-          return editingId === transaction.id ? (
-            <TransactionEditRow
-              key={transaction.id}
-              transaction={transaction}
-              account={account}
-              onCancel={() => setEditingId(null)}
-              onSave={(data) => handleSaveEdit(transaction.id, data)}
-            />
-          ) : (
-            <TransactionRow
-              key={transaction.id}
-              transaction={transaction}
-              account={account}
-              onEdit={() => {
-                setServerError("");
-                setEditingId(transaction.id);
-              }}
-            />
-          );
-        })}
-      </Box>
+    return (
+      <Stack spacing={1.5}>
+        {[...accounts].sort(compareAccountsByName).map(renderAccountSection)}
+      </Stack>
     );
   };
 
