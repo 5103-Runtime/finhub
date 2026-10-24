@@ -16,3 +16,5 @@ jobs:
     uses: ./.github/workflows/api.yml
   web:
     uses: ./.github/workflows/web.yml
+  automation:
+    uses: ./.github/workflows/test.yml
