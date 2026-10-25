@@ -34,7 +34,9 @@ import {
   compareAccountsByName,
   formatAccountBalance,
   getAccountTypePluralLabel,
+  withTransactionBalances,
 } from "@app/utils/accounts";
+import { getTransactions } from "@app/services/transactionApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectFormField, TextFormField } from "@app/components/Form";
 import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
@@ -58,10 +60,12 @@ export default function Accounts() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    getAccounts()
-      .then((loadedAccounts) => {
+    Promise.all([getAccounts(), getTransactions()])
+      .then(([loadedAccounts, loadedTransactions]) => {
         if (isCurrentRequest) {
-          setAccounts(loadedAccounts);
+          setAccounts(
+            withTransactionBalances(loadedAccounts, loadedTransactions),
+          );
         }
       })
       .catch((requestError) => {

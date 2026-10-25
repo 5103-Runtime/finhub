@@ -34,16 +34,16 @@ import {
   accountTypeLabels,
   formatAccountBalance,
   getAccountBalanceInCad,
+  withTransactionBalances,
 } from "@app/utils/accounts";
 import "./Overview.css";
 
-// TODO: Replace account balances and monthly spending with overview API data
+// TODO: Replace monthly spending and comparison values with overview API data
 const totalBalance = 15872.18;
 const monthlySpending = 1284.6;
 const previousTotalBalance = 14642.22;
 const previousMonthlySpending = 1470.15;
 
-// TODO: Replace with dynamic transactions once the transactions API is available
 const RECENT_TRANSACTION_COUNT = 4;
 
 export default function Overview() {
@@ -83,15 +83,25 @@ export default function Overview() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    getAccounts()
-      .then((loadedAccounts) => {
+    Promise.all([getAccounts(), getTransactions()])
+      .then(([loadedAccounts, loadedTransactions]) => {
         if (isCurrentRequest) {
+          const accountsWithBalances = withTransactionBalances(
+            loadedAccounts,
+            loadedTransactions,
+          );
           setAccountsById(
-            new Map(loadedAccounts.map((account) => [account.id, account])),
+            new Map(
+              accountsWithBalances.map((account) => [account.id, account]),
+            ),
+          );
+          // API returns newest first.
+          setRecentTransactions(
+            loadedTransactions.slice(0, RECENT_TRANSACTION_COUNT),
           );
           setAccounts(
             // Keep the overview focused by showing the three highest balances.
-            [...loadedAccounts]
+            [...accountsWithBalances]
               .sort(
                 (left, right) =>
                   getAccountBalanceInCad(right) - getAccountBalanceInCad(left),
@@ -103,46 +113,17 @@ export default function Overview() {
       .catch((error) => {
         if (isCurrentRequest) {
           console.error("Unable to load accounts for overview:", error);
-          setAccountsError(
-            error instanceof Error ? error.message : "Unable to load accounts.",
-          );
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unable to load overview data.";
+          setAccountsError(message);
+          setTransactionsError(message);
         }
       })
       .finally(() => {
         if (isCurrentRequest) {
           setAccountsLoading(false);
-        }
-      });
-
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isCurrentRequest = true;
-
-    getTransactions()
-      .then((loadedTransactions) => {
-        if (isCurrentRequest) {
-          //API returns newest first
-          setRecentTransactions(
-            loadedTransactions.slice(0, RECENT_TRANSACTION_COUNT),
-          );
-        }
-      })
-      .catch((error) => {
-        if (isCurrentRequest) {
-          console.error("Unable to load transactions for overview:", error);
-          setTransactionsError(
-            error instanceof Error
-              ? error.message
-              : "Unable to load transactions.",
-          );
-        }
-      })
-      .finally(() => {
-        if (isCurrentRequest) {
           setTransactionsLoading(false);
         }
       });

@@ -2,7 +2,7 @@ import z from "zod";
 import { getTodayDate } from "@app/utils/transactions";
 
 // Matches the range the API accepts for an amount.
-const MAX_AMOUNT = 999999999999.99; // For future ref, look for a different way to set
+const MAX_AMOUNT = 999_999_999_999.99; // For future reference, look for a different way to set
 
 /**
  * @brief Validates the fields used to create a transaction.
