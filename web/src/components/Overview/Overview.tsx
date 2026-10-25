@@ -20,9 +20,15 @@ import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
-import {getTransactions, type TransactionResponse,} from "@app/services/transactionApi";
+import {
+  getTransactions,
+  type TransactionResponse,
+} from "@app/services/transactionApi";
 import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
-import { formatSignedCurrency,formatTransactionDate } from "@app/utils/transactions";
+import {
+  formatSignedCurrency,
+  formatTransactionDate,
+} from "@app/utils/transactions";
 import {
   accountTypeIcons,
   accountTypeLabels,
@@ -45,11 +51,14 @@ export default function Overview() {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState("");
-  const [accountsById, setAccountsById] = useState<Map<string, AccountResponse>>(new Map());
-  const [recentTransactions, setRecentTransactions] = useState<TransactionResponse[]>([]);
+  const [accountsById, setAccountsById] = useState<
+    Map<string, AccountResponse>
+  >(new Map());
+  const [recentTransactions, setRecentTransactions] = useState<
+    TransactionResponse[]
+  >([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionError, setTransactionsError] = useState("");
-
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -77,7 +86,8 @@ export default function Overview() {
     getAccounts()
       .then((loadedAccounts) => {
         if (isCurrentRequest) {
-          setAccountsById(new Map(loadedAccounts.map((account)=>[account.id,account])),
+          setAccountsById(
+            new Map(loadedAccounts.map((account) => [account.id, account])),
           );
           setAccounts(
             // Keep the overview focused by showing the three highest balances.
@@ -408,7 +418,7 @@ export default function Overview() {
                 View all transactions
               </Button>
             </Box>
-                        <Card className="transactions-card">
+            <Card className="transactions-card">
               {transactionError ? (
                 <Alert
                   className="overview-accounts-error"
@@ -444,15 +454,22 @@ export default function Overview() {
                 recentTransactions.map((transaction, index) => {
                   const account = accountsById.get(transaction.accountId);
                   const isIncome = transaction.amount > 0;
+                  const AccountIcon = account
+                    ? accountTypeIcons[account.accountType]
+                    : null;
 
                   return (
                     <Box key={transaction.id} className="transaction-row">
                       <Box
-                        className={`transaction-icon ${isIncome ? "income" : ""}`}
+                        className={`transaction-icon ${account?.accountType.replace("_", "-") ?? ""}`}
                       >
-                        <Typography>
-                          {transaction.description.charAt(0).toUpperCase()}
-                        </Typography>
+                        {AccountIcon ? (
+                          <AccountIcon />
+                        ) : (
+                          <Typography>
+                            {transaction.description.charAt(0).toUpperCase()}
+                          </Typography>
+                        )}
                       </Box>
                       <Box className="transaction-details">
                         <Typography className="transaction-merchant">

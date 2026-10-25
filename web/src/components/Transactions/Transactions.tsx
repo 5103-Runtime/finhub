@@ -57,6 +57,9 @@ export default function Transactions() {
     new Set(),
   );
   const [serverError, setServerError] = useState("");
+  const [successTransactionId, setSuccessTransactionId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -120,9 +123,10 @@ export default function Transactions() {
   const shouldGroupAccounts = accounts.length > 1 && accountTypeCount > 1;
 
   // Refetch after a save so the list keeps the API's ordering (newest first).
-  const reloadTransactions = async () => {
+  const reloadTransactions = async (): Promise<boolean> => {
     try {
       setTransactions(await getTransactions());
+      return true;
     } catch (requestError) {
       setServerError(
         getErrorMessage(
@@ -130,6 +134,7 @@ export default function Transactions() {
           "Saved, but unable to refresh the transactions.",
         ),
       );
+      return false;
     }
   };
 
@@ -151,6 +156,7 @@ export default function Transactions() {
       accountId: accounts[0]?.id ?? "",
     });
     setServerError("");
+    setSuccessTransactionId(null);
     setEditingId(null);
     setIsModalOpen(true);
   };
@@ -163,6 +169,7 @@ export default function Transactions() {
 
   const onSubmit: SubmitHandler<TransactionFormData> = async (data) => {
     setServerError("");
+    setSuccessTransactionId(null);
     try {
       await createTransaction({
         accountId: data.accountId,
@@ -192,13 +199,19 @@ export default function Transactions() {
 
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
   const handleSaveEdit = async (id: string, data: TransactionEditFormData) => {
+    setServerError("");
+    setSuccessTransactionId(null);
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
     });
-    setEditingId(null);
-    await reloadTransactions();
+    if (await reloadTransactions()) {
+      setEditingId(null);
+      setSuccessTransactionId(id);
+    } else {
+      throw new Error("Saved, but unable to refresh the transactions.");
+    }
   };
 
   // One collapsible card per account, holding that account's transactions.
@@ -260,8 +273,14 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     account={account}
+                    successMessage={
+                      successTransactionId === transaction.id
+                        ? "Transaction updated successfully."
+                        : undefined
+                    }
                     onEdit={() => {
                       setServerError("");
+                      setSuccessTransactionId(null);
                       setEditingId(transaction.id);
                     }}
                   />

@@ -24,6 +24,7 @@ type TransactionRowProps = {
   transaction: TransactionResponse;
   account: AccountResponse;
   onEdit: () => void;
+  successMessage?: string;
 };
 
 /**
@@ -33,34 +34,40 @@ export function TransactionRow({
   transaction,
   account,
   onEdit,
+  successMessage,
 }: TransactionRowProps) {
   const amountClass =
     transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
 
   return (
-    <Box className="ledger-row">
-      <Typography className="ledger-date">
-        {formatTransactionDate(transaction.transactionDate)}
-      </Typography>
-      <Typography
-        className="ledger-description"
-        title={transaction.description}
-      >
-        {transaction.description}
-      </Typography>
-      <Typography className={amountClass}>
-        {formatSignedCurrency(transaction.amount, account.currency)}
-      </Typography>
-      <Box className="ledger-actions">
-        <IconButton
-          aria-label={`Edit ${transaction.description}`}
-          className="ledger-icon-button"
-          onClick={onEdit}
+    <>
+      <Box className="ledger-row">
+        <Typography className="ledger-date">
+          {formatTransactionDate(transaction.transactionDate)}
+        </Typography>
+        <Typography
+          className="ledger-description"
+          title={transaction.description}
         >
-          <EditRounded />
-        </IconButton>
+          {transaction.description}
+        </Typography>
+        <Typography className={amountClass}>
+          {formatSignedCurrency(transaction.amount, account.currency)}
+        </Typography>
+        <Box className="ledger-actions">
+          <IconButton
+            aria-label={`Edit ${transaction.description}`}
+            className="ledger-icon-button"
+            onClick={onEdit}
+          >
+            <EditRounded />
+          </IconButton>
+        </Box>
       </Box>
-    </Box>
+      <Box className="ledger-row-feedback">
+        <FormAlert severity="success">{successMessage}</FormAlert>
+      </Box>
+    </>
   );
 }
 

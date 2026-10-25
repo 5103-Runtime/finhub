@@ -377,24 +377,23 @@
   font-weight: 800;
 }
 
-.transaction-icon.groceries {
-  background: #4d5b50;
-  color: #b5d2ad;
+.transaction-icon svg {
+  width: 20px;
 }
 
-.transaction-icon.utilities {
-  background: #5a4e59;
-  color: #d0a9ca;
+.transaction-icon.chequing {
+  background: color-mix(in srgb, #83a9a4 25%, transparent);
+  color: #9dccc5;
 }
 
-.transaction-icon.income {
-  background: #465b5a;
-  color: #a7d0c3;
+.transaction-icon.savings {
+  background: color-mix(in srgb, var(--color-bronze) 25%, transparent);
+  color: var(--color-bronze);
 }
 
-.transaction-icon.transport {
-  background: #5e5647;
-  color: #ddc595;
+.transaction-icon.credit-card {
+  background: color-mix(in srgb, #8f93bd 25%, transparent);
+  color: #afb3e2;
 }
 
 .transaction-details {
@@ -409,7 +408,7 @@
 }
 
 .transaction-amount.positive {
-  color: #9dcca1;
+  color: var(--color-success-light);
 }
 
 @media (max-width: 850px) {

@@ -82,6 +82,10 @@
   padding: 14px 20px;
 }
 
+.ledger-row.ledger-edit-form {
+  align-items: start;
+}
+
 .ledger-head {
   border-bottom: 1px solid var(--border-subtle);
   color: var(--color-bronze);
@@ -125,12 +129,16 @@
 }
 
 .ledger-amount.positive {
-  color: var(--color-success) !important;
+  color: var(--color-success-light) !important;
 }
 
 .ledger-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.ledger-edit-form .ledger-actions {
+  padding-top: 4px;
 }
 
 .ledger-icon-button {
@@ -143,7 +151,11 @@
 }
 
 .ledger-icon-button.ledger-save:hover {
-  background: color-mix(in srgb, var(--color-success) 14%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-success) 14%,
+    transparent
+  ) !important;
 }
 
 .ledger-icon-button.ledger-cancel {
@@ -151,26 +163,50 @@
 }
 
 .ledger-icon-button.ledger-cancel:hover {
-  background: color-mix(in srgb, var(--color-danger) 14%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 14%,
+    transparent
+  ) !important;
 }
 
 .ledger-row-error {
   grid-column: 1 / -1;
 }
 
+.ledger-row-feedback {
+  padding: 0 20px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ledger-row-feedback .auth-success {
+  margin-top: 12px;
+}
+
 /* Inline edit inputs sit on the dark card, so they need light text. All three
    inputs share one radius, height and border so they look like one set. */
 .ledger-edit-form .MuiInputBase-input {
-  color: var(--color-cream);
+  color: var(--color-ink) !important;
+}
+
+.ledger-edit-form .MuiFormControl-root {
+  background: transparent !important;
 }
 
 .ledger-edit-form .MuiOutlinedInput-root {
+  min-height: 40px;
   border-radius: 10px !important;
-  background: color-mix(in srgb, var(--color-ink) 45%, transparent);
+  background: var(--color-cream);
+}
+
+.ledger-edit-form .MuiOutlinedInput-input {
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 8px 12px;
 }
 
 .ledger-edit-form input[type="date"] {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 .ledger-edit-form input[inputmode="decimal"] {
@@ -179,12 +215,15 @@
 
 .ledger-edit-form .MuiOutlinedInput-notchedOutline {
   border-radius: 10px !important;
-  border-color: var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--color-slate) 35%, transparent);
 }
 
 .ledger-edit-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
-.ledger-edit-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: var(--color-bronze);
+.ledger-edit-form
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze) !important;
+  border-width: 1px !important;
 }
 
 .ledger-edit-form .MuiFormHelperText-root.Mui-error {
