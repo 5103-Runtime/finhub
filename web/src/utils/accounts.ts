@@ -1,5 +1,6 @@
 import type { AccountType } from "@app/services/accountsApi";
 import type { AccountResponse } from "@app/services/accountsApi";
+import type { TransactionResponse } from "@app/services/transactionApi";
 import { formatCurrency } from "@app/utils/finance";
 import AccountBalanceRounded from "@mui/icons-material/AccountBalanceRounded";
 import AutoGraphRounded from "@mui/icons-material/AutoGraphRounded";
@@ -43,6 +44,31 @@ const USD_TO_CAD_EXCHANGE_RATE = 1.4;
  */
 export function getAccountBalance(account: AccountResponse): number {
   return account.balance ?? 0;
+}
+
+/**
+ * Calculates an account balance from its transaction amounts.
+ */
+export function getTransactionBalance(
+  accountId: string,
+  transactions: TransactionResponse[],
+): number {
+  return transactions
+    .filter((transaction) => transaction.accountId === accountId)
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
+/**
+ * Applies transaction-backed balances to a collection of accounts.
+ */
+export function withTransactionBalances(
+  accounts: AccountResponse[],
+  transactions: TransactionResponse[],
+): AccountResponse[] {
+  return accounts.map((account) => ({
+    ...account,
+    balance: getTransactionBalance(account.id, transactions),
+  }));
 }
 
 /**

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Login from "@app/components/Login";
 import Register from "@app/components/Register";
 import Home from "@app/components/Home";
@@ -11,6 +11,12 @@ import PublicRoute from "@app/routes/PublicRoute";
 import ForgotPassword from "@app/components/ForgotPassword";
 import ResetPassword from "@app/components/ResetPassword";
 import Accounts from "@app/components/Accounts";
+import Transactions from "@app/components/Transactions";
+
+function TransactionsRoute() {
+  const location = useLocation();
+  return <Transactions key={`${location.pathname}${location.search}`} />;
+}
 
 function App() {
   return (
@@ -23,7 +29,6 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-
       </Route>
 
       {/* Protected Routes (authentication is validated by the API cookie session) */}
@@ -32,6 +37,7 @@ function App() {
         <Route path="/setup-profile" element={<SetupProfile />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
+        <Route path="/transactions" element={<TransactionsRoute />} />
       </Route>
 
       {/* 404 Catch-All */}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -34,7 +35,9 @@ import {
   compareAccountsByName,
   formatAccountBalance,
   getAccountTypePluralLabel,
+  withTransactionBalances,
 } from "@app/utils/accounts";
+import { getTransactions } from "@app/services/transactionApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectFormField, TextFormField } from "@app/components/Form";
 import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
@@ -58,10 +61,12 @@ export default function Accounts() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    getAccounts()
-      .then((loadedAccounts) => {
+    Promise.all([getAccounts(), getTransactions()])
+      .then(([loadedAccounts, loadedTransactions]) => {
         if (isCurrentRequest) {
-          setAccounts(loadedAccounts);
+          setAccounts(
+            withTransactionBalances(loadedAccounts, loadedTransactions),
+          );
         }
       })
       .catch((requestError) => {
@@ -192,7 +197,12 @@ export default function Accounts() {
     const Icon = accountTypeIcons[account.accountType];
     const showAccountType = !shouldGroupAccounts;
     return (
-      <Card key={account.id} className="account-management-card">
+      <Card
+        component={Link}
+        to={`/transactions?accountId=${account.id}`}
+        key={account.id}
+        className="account-management-card"
+      >
         <CardContent>
           <Box className={`account-management-icon ${account.accountType}`}>
             <Icon />
@@ -218,14 +228,20 @@ export default function Accounts() {
             <Button
               aria-label={`Edit ${account.name}`}
               className="account-icon-button"
-              onClick={() => openEditModal(account)}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openEditModal(account);
+              }}
             >
               <EditRounded />
             </Button>
             <Button
               aria-label={`Delete ${account.name}`}
               className="account-icon-button delete"
-              onClick={() => {
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 setAccountToDelete(account);
                 setIsDeleteModalOpen(true);
               }}
@@ -384,7 +400,7 @@ export default function Accounts() {
 
       <ConfirmDialog
         open={isDeleteModalOpen}
-        title="Delete account?"
+        title="Delete account"
         message={
           <>
             Are you sure you want to delete{" "}
