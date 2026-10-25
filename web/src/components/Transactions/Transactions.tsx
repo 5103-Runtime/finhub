@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -48,6 +48,8 @@ import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 
 export default function Transactions() {
+  const [searchParams] = useSearchParams();
+  const selectedAccountId = searchParams.get("accountId");
   const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,18 @@ export default function Transactions() {
         if (isCurrentRequest) {
           setTransactions(loadedTransactions);
           setAccounts(loadedAccounts);
+          if (
+            selectedAccountId &&
+            loadedAccounts.some((account) => account.id === selectedAccountId)
+          ) {
+            setCollapsedAccountIds(
+              new Set(
+                loadedAccounts
+                  .map((account) => account.id)
+                  .filter((accountId) => accountId !== selectedAccountId),
+              ),
+            );
+          }
         }
       })
       .catch((requestError) => {
@@ -93,7 +107,18 @@ export default function Transactions() {
     return () => {
       isCurrentRequest = false;
     };
-  }, []);
+  }, [selectedAccountId]);
+
+  useEffect(() => {
+    if (!selectedAccountId || loading || !accounts.length) {
+      return;
+    }
+
+    const accountSection = document.getElementById(
+      `ledger-account-${selectedAccountId}`,
+    );
+    accountSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [accounts, loading, selectedAccountId]);
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -250,7 +275,11 @@ export default function Transactions() {
     const panelId = `ledger-account-${account.id}`;
 
     return (
-      <Box key={account.id} className="ledger-account">
+      <Box
+        id={`ledger-account-${account.id}`}
+        key={account.id}
+        className="ledger-account"
+      >
         <ButtonBase
           className="ledger-account-header"
           onClick={() => toggleAccount(account.id)}

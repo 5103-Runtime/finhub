@@ -301,11 +301,10 @@ export default function Overview() {
                 <Stack spacing={1.5}>
                   {accounts.map((account) => {
                     const Icon = accountTypeIcons[account.accountType];
-                    // TODO: Replace with the account detail route when available
                     return (
                       <Card
                         component={Link}
-                        to="/accounts"
+                        to={`/transactions?accountId=${account.id}`}
                         className="account-card"
                         key={account.id}
                       >

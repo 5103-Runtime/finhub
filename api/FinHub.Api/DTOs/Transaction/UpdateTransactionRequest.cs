@@ -11,5 +11,5 @@ namespace FinHub.Api.DTOs.Transaction;
 public sealed record UpdateTransactionRequest(
     [Required] DateOnly? TransactionDate,
     [Required, StringLength(500)] string Description,
-    [Required, Range(typeof(decimal), "-999_999_999_999.99", "999_999_999_999.99")] decimal? Amount
+    [Required, Range(typeof(decimal), "-999999999999.99", "999999999999.99")] decimal? Amount
 );
