@@ -384,7 +384,7 @@ export default function Accounts() {
 
       <ConfirmDialog
         open={isDeleteModalOpen}
-        title="Delete account?"
+        title="Delete account"
         message={
           <>
             Are you sure you want to delete{" "}

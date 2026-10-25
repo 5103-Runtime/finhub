@@ -170,6 +170,18 @@
   ) !important;
 }
 
+.ledger-icon-button.ledger-delete {
+  color: var(--color-danger) !important;
+}
+
+.ledger-icon-button.ledger-delete:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 14%,
+    transparent
+  ) !important;
+}
+
 .ledger-row-error {
   grid-column: 1 / -1;
 }

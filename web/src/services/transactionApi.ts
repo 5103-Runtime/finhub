@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "./apiClient";
+import { apiDelete, apiGet, apiPost, apiPut } from "./apiClient";
 
 /**
  * @brief Response returned for a ledger transaction.
@@ -76,4 +76,14 @@ export function updateTransaction(
     `/api/transactions/${id}`,
     request,
   );
+}
+
+/**
+ * @brief Deletes one of the authenticated user's transactions.
+ * @param id The ID of the transaction to delete.
+ * @returns A promise that resolves when the transaction has been deleted.
+ * @throws ApiError If the transaction is not found or the request fails.
+ */
+export function deleteTransaction(id: string): Promise<void> {
+  return apiDelete(`/api/transactions/${id}`);
 }

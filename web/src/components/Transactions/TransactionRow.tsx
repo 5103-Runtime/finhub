@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, IconButton, Typography } from "@mui/material";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +25,8 @@ type TransactionRowProps = {
   transaction: TransactionResponse;
   account: AccountResponse;
   onEdit: () => void;
+  onDelete: () => void;
+  deleting?: boolean;
   successMessage?: string;
 };
 
@@ -34,6 +37,8 @@ export function TransactionRow({
   transaction,
   account,
   onEdit,
+  onDelete,
+  deleting = false,
   successMessage,
 }: TransactionRowProps) {
   const amountClass =
@@ -59,8 +64,17 @@ export function TransactionRow({
             aria-label={`Edit ${transaction.description}`}
             className="ledger-icon-button"
             onClick={onEdit}
+            disabled={deleting}
           >
             <EditRounded />
+          </IconButton>
+          <IconButton
+            aria-label={`Delete ${transaction.description}`}
+            className="ledger-icon-button ledger-delete"
+            onClick={onDelete}
+            disabled={deleting}
+          >
+            <DeleteOutlineRounded />
           </IconButton>
         </Box>
       </Box>

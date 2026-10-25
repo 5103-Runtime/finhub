@@ -19,11 +19,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
-import { FormDialog } from "@app/components/Dialog";
+import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
 import { SelectFormField, TextFormField } from "@app/components/Form";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import {
   createTransaction,
+  deleteTransaction,
   getTransactions,
   updateTransaction,
   type TransactionResponse,
@@ -60,6 +61,10 @@ export default function Transactions() {
   const [successTransactionId, setSuccessTransactionId] = useState<
     string | null
   >(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [transactionToDelete, setTransactionToDelete] =
+    useState<TransactionResponse | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -214,6 +219,29 @@ export default function Transactions() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!transactionToDelete) {
+      return;
+    }
+
+    const transaction = transactionToDelete;
+    setDeletingId(transaction.id);
+    setServerError("");
+    try {
+      await deleteTransaction(transaction.id);
+      setTransactions((current) =>
+        current.filter((item) => item.id !== transaction.id),
+      );
+      setIsDeleteModalOpen(false);
+    } catch (requestError) {
+      setServerError(
+        getErrorMessage(requestError, "Unable to delete the transaction."),
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // One collapsible card per account, holding that account's transactions.
   const renderAccountSection = (account: AccountResponse) => {
     const accountTransactions = transactionsByAccount.get(account.id) ?? [];
@@ -273,6 +301,13 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     account={account}
+                    onDelete={() => {
+                      setServerError("");
+                      setSuccessTransactionId(null);
+                      setTransactionToDelete(transaction);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    deleting={deletingId === transaction.id}
                     successMessage={
                       successTransactionId === transaction.id
                         ? "Transaction updated successfully."
@@ -472,6 +507,22 @@ export default function Transactions() {
           slotProps={{ htmlInput: { maxLength: 500 } }}
         />
       </FormDialog>
+
+      <ConfirmDialog
+        open={isDeleteModalOpen}
+        title="Delete transaction"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <strong>{transactionToDelete?.description}</strong>?
+          </>
+        }
+        confirmLabel="Delete transaction"
+        loading={deletingId !== null}
+        onConfirm={handleDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        onExited={() => setTransactionToDelete(null)}
+      />
     </Box>
   );
 }
