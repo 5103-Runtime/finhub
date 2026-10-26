@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FinHub.Api.DTOs.Transaction;
 
 /// <summary>
@@ -22,5 +24,7 @@ public sealed record TransactionResponse(
     decimal? BalanceAfter,
     int? StatementLine,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? PotentialDuplicate = null
 );

@@ -100,6 +100,25 @@ public sealed class TransactionsController(
             return AccountNotFound();
         }
 
+        DateOnly transactionDate = request.TransactionDate!.Value;
+        string description = request.Description.Trim();
+        decimal amount = Math.Round(
+            request.Amount!.Value, 2, MidpointRounding.AwayFromZero
+        );
+
+        Transaction? duplicate = await FindDuplicateTransactionAsync(
+            accountId,
+            transactionDate,
+            description,
+            amount,
+            excludeTransactionId: null,
+            cancellationToken
+        );
+        if (duplicate is not null && !request.ConfirmPotentialDuplicate)
+        {
+            return PotentialDuplicateConflict(duplicate);
+        }
+
         Transaction transaction = new()
         {
             Id = Guid.NewGuid(),
@@ -107,14 +126,17 @@ public sealed class TransactionsController(
         };
         ApplyDetails(
             transaction,
-            request.TransactionDate!.Value,
-            request.Description,
-            request.Amount!.Value);
+            transactionDate,
+            description,
+            amount);
 
         dbContext.Transactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(Get), new { id = transaction.Id }, ToResponse(transaction));
+        return CreatedAtAction(
+            nameof(Get),
+            new { id = transaction.Id },
+            ToResponse(transaction, duplicate is not null));
     }
 
     /// <summary>
@@ -142,14 +164,33 @@ public sealed class TransactionsController(
             return TransactionNotFound();
         }
 
+        DateOnly transactionDate = request.TransactionDate!.Value;
+        string description = request.Description.Trim();
+        decimal amount = Math.Round(
+            request.Amount!.Value, 2, MidpointRounding.AwayFromZero
+        );
+
+        Transaction? duplicate = await FindDuplicateTransactionAsync(
+            transaction.AccountId,
+            transactionDate,
+            description,
+            amount,
+            excludeTransactionId: transaction.Id,
+            cancellationToken
+        );
+        if (duplicate is not null && !request.ConfirmPotentialDuplicate)
+        {
+            return PotentialDuplicateConflict(duplicate);
+        }
+
         ApplyDetails(
             transaction,
-            request.TransactionDate!.Value,
-            request.Description,
-            request.Amount!.Value);
+            transactionDate,
+            description,
+            amount);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(ToResponse(transaction));
+        return Ok(ToResponse(transaction, duplicate is not null));
     }
 
     /// <summary>
@@ -200,11 +241,54 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
+    /// Checks whether another transaction has the same date, description,
+    /// and amount on the same account.
+    /// </summary>
+    private async Task<Transaction?> FindDuplicateTransactionAsync(
+        Guid accountId,
+        DateOnly transactionDate,
+        string description,
+        decimal amount,
+        Guid? excludeTransactionId,
+        CancellationToken cancellationToken)
+    {
+        IQueryable<Transaction> query = dbContext.Transactions
+            .AsNoTracking()
+            .Where(transaction =>
+                transaction.AccountId == accountId &&
+                transaction.TransactionDate == transactionDate &&
+                transaction.Description == description &&
+                transaction.Amount == amount);
+
+        // Exclude the current transaction when checking an update.
+        if (excludeTransactionId.HasValue)
+        {
+            query = query.Where(
+                transaction => transaction.Id != excludeTransactionId.Value);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates the response returned when confirmation is required before saving a potential duplicate.
+    /// </summary>
+    /// <param name="duplicate">The existing matching transaction.</param>
+    /// <returns>A conflict response describing the potential duplicate.</returns>
+    private ConflictObjectResult PotentialDuplicateConflict(Transaction duplicate) => Conflict(new
+    {
+        error = "This transaction may be a duplicate. Set confirmPotentialDuplicate to true to save it.",
+        errorCode = "potential_duplicate",
+        potentialDuplicate = true,
+        existingTransaction = ToResponse(duplicate)
+    });
+
+    /// <summary>
     /// Converts a transaction to its response representation.
     /// </summary>
     /// <param name="transaction">The transaction.</param>
     /// <returns>The transaction response.</returns>
-    private static TransactionResponse ToResponse(Transaction transaction) => new(
+    private static TransactionResponse ToResponse(Transaction transaction, bool? potentialDuplicate = null) => new(
         transaction.Id,
         transaction.AccountId,
         transaction.TransactionDate,
@@ -213,7 +297,8 @@ public sealed class TransactionsController(
         transaction.BalanceAfter,
         transaction.StatementLine,
         transaction.CreatedAt,
-        transaction.UpdatedAt);
+        transaction.UpdatedAt,
+        potentialDuplicate);
 
     /// <summary>
     /// Creates the response returned when no transaction matches the ID for the authenticated user.
