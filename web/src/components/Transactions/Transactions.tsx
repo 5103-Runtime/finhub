@@ -67,6 +67,7 @@ export default function Transactions() {
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -201,7 +202,7 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     try {
-      await createTransaction({
+       const response = await createTransaction({
         accountId: data.accountId,
         transactionDate: data.transactionDate,
         description: data.description,
@@ -215,6 +216,9 @@ export default function Transactions() {
         return next;
       });
       await reloadTransactions();
+
+      setDuplicateWarning(response.potentialDuplicate);
+
     } catch (requestError) {
       applyFieldErrors(
         requestError,
@@ -346,7 +350,9 @@ export default function Transactions() {
                       setServerError("");
                       setSuccessTransactionId(null);
                       setEditingId(transaction.id);
+                      setDuplicateWarning(transaction.potentialDuplicate);
                     }}
+                    potentialDuplicate = {duplicateWarning}
                   />
                 ),
               )}

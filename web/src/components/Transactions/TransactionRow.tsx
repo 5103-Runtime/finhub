@@ -28,6 +28,7 @@ type TransactionRowProps = {
   onDelete: () => void;
   deleting?: boolean;
   successMessage?: string;
+  potentialDuplicate?: boolean;
 };
 
 /**
@@ -40,6 +41,7 @@ export function TransactionRow({
   onDelete,
   deleting = false,
   successMessage,
+  potentialDuplicate,
 }: TransactionRowProps) {
   const amountClass =
     transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
@@ -47,6 +49,7 @@ export function TransactionRow({
   return (
     <>
       <Box className="ledger-row">
+        
         <Typography className="ledger-date">
           {formatTransactionDate(transaction.transactionDate)}
         </Typography>
@@ -56,6 +59,7 @@ export function TransactionRow({
         >
           {transaction.description}
         </Typography>
+        
         <Typography className={amountClass}>
           {formatSignedCurrency(transaction.amount, account.currency)}
         </Typography>
@@ -79,7 +83,17 @@ export function TransactionRow({
         </Box>
       </Box>
       <Box className="ledger-row-feedback">
-        <FormAlert severity="success">{successMessage}</FormAlert>
+        {potentialDuplicate && (
+          <FormAlert severity="error">
+            This transaction may be a duplicate of an existing transaction.
+            Please review your transactions.
+          </FormAlert>
+        )}
+        {successMessage && (
+          <FormAlert severity="success">
+            {successMessage}
+          </FormAlert>
+        )}
       </Box>
     </>
   );
