@@ -18,6 +18,7 @@ type FormDialogProps<T extends FieldValues> = Omit<
   onSubmit: SubmitHandler<T>;
   submitLabel: string;
   error?: string;
+  errorSeverity?: "error" | "warning";
   children: ReactNode;
 };
 
@@ -26,6 +27,7 @@ export function FormDialog<T extends FieldValues>({
   onSubmit,
   submitLabel,
   error,
+  errorSeverity = "error",
   onClose,
   children,
   ...dialogProps
@@ -61,7 +63,7 @@ export function FormDialog<T extends FieldValues>({
       <Form id={formId} form={form} onSubmit={onSubmit}>
         <Stack spacing={2.25}>
           {children}
-          <FormAlert severity="error">{error}</FormAlert>
+          <FormAlert severity={errorSeverity}>{error}</FormAlert>
         </Stack>
       </Form>
     </DialogBase>

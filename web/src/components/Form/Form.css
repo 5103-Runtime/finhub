@@ -40,6 +40,7 @@
 }
 
 .auth-error,
+.auth-warning,
 .auth-success {
   border-radius: 11px;
   font-size: 12px;
@@ -82,6 +83,27 @@
 .auth-success-message {
   margin-top: 3px !important;
   color: var(--color-success) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.auth-warning {
+  align-items: flex-start;
+  margin-top: 2px;
+  border-color: var(--color-warning) !important;
+  background: var(--surface-warning) !important;
+  color: var(--color-warning) !important;
+}
+
+.auth-warning .MuiAlert-icon {
+  margin-top: 2px;
+  color: var(--color-warning) !important;
+}
+
+.auth-warning-message {
+  margin-top: 3px !important;
+  color: var(--color-warning) !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   line-height: 1.4 !important;

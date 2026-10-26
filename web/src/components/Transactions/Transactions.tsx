@@ -205,7 +205,7 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     try {
-        await createTransaction({
+      await createTransaction({
         accountId: data.accountId,
         transactionDate: data.transactionDate,
         description: data.description,
@@ -222,14 +222,17 @@ export default function Transactions() {
       await reloadTransactions();
 
       setIsDuplicate(false);
-
     } catch (requestError) {
-      if(requestError instanceof ApiError && requestError.errorCode === "potential_duplicate"){
-        setServerError("This transaction might be a duplicate. Submit again if you still wish to add transaction.");
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "potential_duplicate"
+      ) {
+        setServerError(
+          "This transaction might be a duplicate. Submit again if you still wish to add transaction.",
+        );
         setIsDuplicate(true);
         return;
       }
-
 
       applyFieldErrors(
         requestError,
@@ -243,15 +246,18 @@ export default function Transactions() {
   };
 
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
-  const handleSaveEdit = async (id: string, data: TransactionEditFormData, confirmPotentialDuplicate: boolean) => {
+  const handleSaveEdit = async (
+    id: string,
+    data: TransactionEditFormData,
+    confirmPotentialDuplicate: boolean,
+  ) => {
     setServerError("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
-      confirmPotentialDuplicate
-
+      confirmPotentialDuplicate,
     });
     if (await reloadTransactions()) {
       setEditingId(null);
@@ -340,7 +346,13 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     onCancel={() => setEditingId(null)}
-                    onSave={(data, confirmPotentialDuplicate) => handleSaveEdit(transaction.id, data, confirmPotentialDuplicate)}
+                    onSave={(data, confirmPotentialDuplicate) =>
+                      handleSaveEdit(
+                        transaction.id,
+                        data,
+                        confirmPotentialDuplicate,
+                      )
+                    }
                   />
                 ) : (
                   <TransactionRow
@@ -522,6 +534,7 @@ export default function Transactions() {
         onClose={closeModal}
         submitLabel="Add transaction"
         error={serverError}
+        errorSeverity={isDuplicate ? "warning" : "error"}
       >
         <SelectFormField<TransactionFormData>
           name="accountId"
