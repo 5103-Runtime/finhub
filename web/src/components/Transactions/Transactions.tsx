@@ -46,6 +46,7 @@ import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
+import { ApiError } from "@app/services/apiClient";
 
 export default function Transactions() {
   const [searchParams] = useSearchParams();
@@ -67,6 +68,7 @@ export default function Transactions() {
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -188,6 +190,7 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     setEditingId(null);
+    setIsDuplicate(false);
     setIsModalOpen(true);
   };
 
@@ -195,6 +198,7 @@ export default function Transactions() {
   const closeModal = () => {
     setIsModalOpen(false);
     setServerError("");
+    setIsDuplicate(false);
   };
 
   const onSubmit: SubmitHandler<TransactionFormData> = async (data) => {
@@ -206,6 +210,7 @@ export default function Transactions() {
         transactionDate: data.transactionDate,
         description: data.description,
         amount: Number(data.amount),
+        confirmPotentialDuplicate: isDuplicate,
       });
       closeModal();
       // Make sure the account the new transaction belongs to is open.
@@ -215,7 +220,20 @@ export default function Transactions() {
         return next;
       });
       await reloadTransactions();
+
+      setIsDuplicate(false);
     } catch (requestError) {
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "potential_duplicate"
+      ) {
+        setServerError(
+          "This transaction might be a duplicate. Submit again if you still wish to add transaction.",
+        );
+        setIsDuplicate(true);
+        return;
+      }
+
       applyFieldErrors(
         requestError,
         form.setError,
@@ -228,13 +246,18 @@ export default function Transactions() {
   };
 
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
-  const handleSaveEdit = async (id: string, data: TransactionEditFormData) => {
+  const handleSaveEdit = async (
+    id: string,
+    data: TransactionEditFormData,
+    confirmPotentialDuplicate: boolean,
+  ) => {
     setServerError("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
+      confirmPotentialDuplicate,
     });
     if (await reloadTransactions()) {
       setEditingId(null);
@@ -323,7 +346,13 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     onCancel={() => setEditingId(null)}
-                    onSave={(data) => handleSaveEdit(transaction.id, data)}
+                    onSave={(data, confirmPotentialDuplicate) =>
+                      handleSaveEdit(
+                        transaction.id,
+                        data,
+                        confirmPotentialDuplicate,
+                      )
+                    }
                   />
                 ) : (
                   <TransactionRow
@@ -347,6 +376,7 @@ export default function Transactions() {
                       setSuccessTransactionId(null);
                       setEditingId(transaction.id);
                     }}
+                    potentialDuplicate={transaction.potentialDuplicate}
                   />
                 ),
               )}
@@ -504,6 +534,7 @@ export default function Transactions() {
         onClose={closeModal}
         submitLabel="Add transaction"
         error={serverError}
+        errorSeverity={isDuplicate ? "warning" : "error"}
       >
         <SelectFormField<TransactionFormData>
           name="accountId"

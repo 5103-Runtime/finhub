@@ -5,23 +5,20 @@ export function FormAlert({
   severity,
   children,
 }: {
-  severity: "error" | "success";
+  severity: "error" | "warning" | "success";
   children?: ReactNode;
 }) {
   if (!children) return null;
   const isError = severity === "error";
+  const className = `auth-${severity}`;
   return (
     <Alert
-      className={isError ? "auth-error" : "auth-success"}
+      className={className}
       severity={severity}
       variant="outlined"
       role={isError ? "alert" : "status"}
     >
-      <Typography
-        className={isError ? "auth-error-message" : "auth-success-message"}
-      >
-        {children}
-      </Typography>
+      <Typography className={`${className}-message`}>{children}</Typography>
     </Alert>
   );
 }

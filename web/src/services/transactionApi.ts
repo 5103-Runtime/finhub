@@ -15,6 +15,7 @@ export interface TransactionResponse {
   statementLine: number | null;
   createdAt: string;
   updatedAt: string;
+  potentialDuplicate: boolean;
 }
 
 /**
@@ -25,6 +26,7 @@ export interface CreateTransactionRequest {
   transactionDate: string;
   description: string;
   amount: number;
+  confirmPotentialDuplicate?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export interface UpdateTransactionRequest {
   transactionDate: string;
   description: string;
   amount: number;
+  confirmPotentialDuplicate?: boolean;
 }
 
 /**
