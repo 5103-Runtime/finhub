@@ -26,6 +26,7 @@ export interface CreateTransactionRequest {
   transactionDate: string;
   description: string;
   amount: number;
+  confirmPotentialDuplicate?: boolean;
 }
 
 /**
