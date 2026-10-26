@@ -43,26 +43,12 @@ public sealed class TransactionsController(
             query = query.Where(transaction => transaction.AccountId == accountId.Value);
         }
 
-        List<Transaction> transactionEntities = await query
-        .OrderByDescending(transaction => transaction.TransactionDate)
-        .ThenByDescending(transaction => transaction.StatementLine)
-        .ThenByDescending(transaction => transaction.CreatedAt)
-        .ToListAsync(cancellationToken);
-
-        List<TransactionResponse> transactions = new();
-
-        foreach (Transaction transaction in transactionEntities)
-        {
-            bool isDuplicate = await HasDuplicateTransactionAsync(
-                transaction.AccountId,
-                transaction.TransactionDate,
-                transaction.Description,
-                transaction.Amount,
-                transaction.Id,
-                cancellationToken);
-
-            transactions.Add(ToResponse(transaction, isDuplicate));
-        }
+        List<TransactionResponse> transactions = await query
+            .OrderByDescending(transaction => transaction.TransactionDate)
+            .ThenByDescending(transaction => transaction.StatementLine)
+            .ThenByDescending(transaction => transaction.CreatedAt)
+            .Select(transaction => ToResponse(transaction))
+            .ToListAsync(cancellationToken);
 
         return Ok(transactions);
     }
@@ -117,7 +103,7 @@ public sealed class TransactionsController(
         DateOnly transactionDate = request.TransactionDate!.Value;
         string description = request.Description.Trim();
         decimal amount = Math.Round(
-            request.Amount!.Value, 2 ,MidpointRounding.AwayFromZero
+            request.Amount!.Value, 2, MidpointRounding.AwayFromZero
         );
 
         bool isDuplicate = await HasDuplicateTransactionAsync(
@@ -145,8 +131,6 @@ public sealed class TransactionsController(
 
         return CreatedAtAction(nameof(Get), new { id = transaction.Id }, ToResponse(transaction, isDuplicate));
     }
-
-    
 
     /// <summary>
     /// Updates one of the authenticated user's transactions.
@@ -245,7 +229,6 @@ public sealed class TransactionsController(
         transaction.Amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 
-    
     /// <summary>
     /// Checks whether another transaction has the same date, description,
     /// and amount on the same account.
@@ -275,13 +258,12 @@ public sealed class TransactionsController(
         return await query.AnyAsync(cancellationToken);
     }
 
-
     /// <summary>
     /// Converts a transaction to its response representation.
     /// </summary>
     /// <param name="transaction">The transaction.</param>
     /// <returns>The transaction response.</returns>
-    private static TransactionResponse ToResponse(Transaction transaction, bool potentialDuplicate = false) => new(
+    private static TransactionResponse ToResponse(Transaction transaction, bool? potentialDuplicate = null) => new(
         transaction.Id,
         transaction.AccountId,
         transaction.TransactionDate,
