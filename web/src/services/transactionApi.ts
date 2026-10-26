@@ -37,6 +37,7 @@ export interface UpdateTransactionRequest {
   transactionDate: string;
   description: string;
   amount: number;
+  confirmPotentialDuplicate?: boolean;
 }
 
 /**

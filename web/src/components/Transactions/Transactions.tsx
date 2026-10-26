@@ -243,13 +243,15 @@ export default function Transactions() {
   };
 
   // Errors are thrown on purpose: the edit row catches them and shows them inline.
-  const handleSaveEdit = async (id: string, data: TransactionEditFormData) => {
+  const handleSaveEdit = async (id: string, data: TransactionEditFormData, confirmPotentialDuplicate: boolean) => {
     setServerError("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
+      confirmPotentialDuplicate
+
     });
     if (await reloadTransactions()) {
       setEditingId(null);
@@ -338,7 +340,7 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     onCancel={() => setEditingId(null)}
-                    onSave={(data) => handleSaveEdit(transaction.id, data)}
+                    onSave={(data, confirmPotentialDuplicate) => handleSaveEdit(transaction.id, data, confirmPotentialDuplicate)}
                   />
                 ) : (
                   <TransactionRow

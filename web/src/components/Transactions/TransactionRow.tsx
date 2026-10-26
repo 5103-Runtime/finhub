@@ -20,6 +20,7 @@ import {
   formatTransactionDate,
 } from "@app/utils/transactions";
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
+import { ApiError } from "@app/services/apiClient";
 
 type TransactionRowProps = {
   transaction: TransactionResponse;
@@ -102,7 +103,7 @@ export function TransactionRow({
 type TransactionEditRowProps = {
   transaction: TransactionResponse;
   onCancel: () => void;
-  onSave: (data: TransactionEditFormData) => Promise<void>;
+  onSave: (data: TransactionEditFormData, confirmPotentialDuplicate: boolean) => Promise<void>;
 };
 
 /**
@@ -116,6 +117,7 @@ export function TransactionEditRow({
   onSave,
 }: TransactionEditRowProps) {
   const [serverError, setServerError] = useState("");
+  const [confirmPotentialDuplicate, setConfirmPotentialDuplicate] = useState(false);
   const form = useForm<TransactionEditFormData>({
     resolver: zodResolver(transactionEditSchema),
     defaultValues: {
@@ -130,8 +132,13 @@ export function TransactionEditRow({
   const onSubmit: SubmitHandler<TransactionEditFormData> = async (data) => {
     setServerError("");
     try {
-      await onSave(data);
+      await onSave(data, confirmPotentialDuplicate);
     } catch (requestError) {
+      if(requestError instanceof ApiError && requestError.errorCode === "potential_duplicate"){
+        setServerError("This transaction might be a duplicate. Submit again if you still wish to add transaction.");
+        setConfirmPotentialDuplicate(true);
+        return;
+        }
       applyFieldErrors(requestError, form.setError, [
         "transactionDate",
         "description",
