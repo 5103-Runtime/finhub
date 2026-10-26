@@ -22,5 +22,6 @@ public sealed record TransactionResponse(
     decimal? BalanceAfter,
     int? StatementLine,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    bool PotentialDuplicate = false
 );
