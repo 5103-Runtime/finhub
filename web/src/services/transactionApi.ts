@@ -15,6 +15,7 @@ export interface TransactionResponse {
   statementLine: number | null;
   createdAt: string;
   updatedAt: string;
+  potentialDuplicate: boolean;
 }
 
 /**
