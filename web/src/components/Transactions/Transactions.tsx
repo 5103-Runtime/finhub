@@ -46,6 +46,7 @@ import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
+import { ApiError } from "@app/services/apiClient";
 
 export default function Transactions() {
   const [searchParams] = useSearchParams();
@@ -67,7 +68,7 @@ export default function Transactions() {
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -189,6 +190,7 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     setEditingId(null);
+    setIsDuplicate(false);
     setIsModalOpen(true);
   };
 
@@ -196,17 +198,19 @@ export default function Transactions() {
   const closeModal = () => {
     setIsModalOpen(false);
     setServerError("");
+    setIsDuplicate(false);
   };
 
   const onSubmit: SubmitHandler<TransactionFormData> = async (data) => {
     setServerError("");
     setSuccessTransactionId(null);
     try {
-       const response = await createTransaction({
+        await createTransaction({
         accountId: data.accountId,
         transactionDate: data.transactionDate,
         description: data.description,
         amount: Number(data.amount),
+        confirmPotentialDuplicate: isDuplicate,
       });
       closeModal();
       // Make sure the account the new transaction belongs to is open.
@@ -217,9 +221,16 @@ export default function Transactions() {
       });
       await reloadTransactions();
 
-      setDuplicateWarning(response.potentialDuplicate);
+      setIsDuplicate(false);
 
     } catch (requestError) {
+      if(requestError instanceof ApiError && requestError.errorCode === "potential_duplicate"){
+        setServerError("This transaction might be a duplicate. Submit again if you still wish to add transaction.");
+        setIsDuplicate(true);
+        return;
+      }
+
+
       applyFieldErrors(
         requestError,
         form.setError,
@@ -350,9 +361,8 @@ export default function Transactions() {
                       setServerError("");
                       setSuccessTransactionId(null);
                       setEditingId(transaction.id);
-                      setDuplicateWarning(transaction.potentialDuplicate);
                     }}
-                    potentialDuplicate = {duplicateWarning}
+                    potentialDuplicate={transaction.potentialDuplicate}
                   />
                 ),
               )}
