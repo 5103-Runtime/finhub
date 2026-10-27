@@ -1,5 +1,6 @@
 @FinHub.Api_HostAddress = http://localhost:5013
 @accountId =
+@categoryId =
 
 # Authenticated requests rely on the HttpOnly cookie set by login, so run the login request first in the same client session.
 
@@ -51,5 +52,39 @@ Content-Type: application/json
 ###
 
 DELETE {{FinHub.Api_HostAddress}}/api/accounts/{{accountId}}
+
+###
+
+GET {{FinHub.Api_HostAddress}}/api/categories
+Accept: application/json
+
+###
+
+POST {{FinHub.Api_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Dining Out",
+  "slug": "dining-out"
+}
+
+###
+
+GET {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
+Accept: application/json
+
+###
+
+PUT {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
+Content-Type: application/json
+
+{
+  "name": "Dining Out",
+  "slug": "dining-out"
+}
+
+###
+
+DELETE {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
 
 ###

@@ -26,6 +26,11 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
     /// <summary>
+    /// Gets the DbSet of system and user-owned categories.
+    /// </summary>
+    public DbSet<Category> Categories => Set<Category>();
+
+    /// <summary>
     /// Configures the model for the FinHub database context, including entity mappings and relationships.
     /// </summary>
     /// <param name="modelBuilder">The ModelBuilder instance used to configure the model.</param>
@@ -73,6 +78,20 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(transaction => transaction.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(transaction => transaction.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
             entity.HasIndex(transaction => transaction.AccountId);
+        });
+
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.ToTable("categories", "public");
+            entity.HasKey(category => category.Id);
+            entity.Property(category => category.Id).HasColumnName("id");
+            entity.Property(category => category.UserId).HasColumnName("user_id");
+            entity.Property(category => category.Name).HasColumnName("name").HasMaxLength(50);
+            entity.Property(category => category.Slug).HasColumnName("slug");
+            entity.Property(category => category.IsSystem).HasColumnName("is_system");
+            entity.Property(category => category.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(category => category.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
+            entity.HasIndex(category => category.UserId);
         });
     }
 }
