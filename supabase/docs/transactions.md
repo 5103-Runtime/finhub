@@ -10,12 +10,12 @@
 - **`statement_line` is the line's position on the source statement**, so same-day lines keep the statement's order. Null for entries the user adds by hand.
 - `description` is the statement's text for the line, 1 to 500 characters, trimmed. The DB rejects stray whitespace; the API trims before inserting.
 - `transactions_account_id_idx` covers the foreign key and the per-account queries.
+- Categories are optional and arrive through the nullable `category_id` foreign key; see [Categories](./categories.md).
 
 Deliberately left out:
 
 - A stored balance. Balances derive from imported statements; see [Financial accounts](./financial-accounts.md).
 - Duplicate detection. Overlapping imports are compared in the API (FIN-8), not enforced by the schema.
-- Categories are optional and arrive through the nullable `category_id` foreign key; see [Categories](./categories.md).
 
 ## Security
 

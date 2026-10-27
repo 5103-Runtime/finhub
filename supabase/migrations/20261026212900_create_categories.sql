@@ -4,12 +4,11 @@ create table public.categories (
   name text not null,
   slug text not null,
   is_system boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   constraint categories_name_length check (
     name = btrim(name, E' \t\r\n') and char_length(name) between 1 and 50
   ),
-  constraint categories_name_single_word check (name !~ E'\\s'),
   constraint categories_slug_format check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
   constraint categories_system_ownership check (
     (is_system and user_id is null) or (not is_system and user_id is not null)
@@ -33,7 +32,7 @@ comment on column public.categories.user_id is
   'Null for immutable system categories; set to the owning user for custom categories.';
 
 comment on column public.categories.slug is
-  'Stable lowercase identifier for system categories and a normalized identifier for custom categories.';
+  'Stable lowercase identifier reserved for use by the API and web client as a machine-readable category key.';
 
 comment on column public.categories.is_system is
   'System categories are seeded separately and cannot be changed or deleted by users.';
@@ -85,6 +84,11 @@ begin
     return old;
   end if;
 
+  if new.user_id is distinct from old.user_id
+    or new.is_system is distinct from old.is_system then
+    raise exception 'Category ownership and system status cannot be changed';
+  end if;
+
   if old.is_system then
     raise exception 'System categories cannot be modified';
   end if;
@@ -92,6 +96,29 @@ begin
   return new;
 end;
 $$;
+
+create or replace function public.prevent_category_name_collision()
+returns trigger
+language plpgsql
+as $$
+begin
+  if exists (
+    select 1
+    from public.categories category
+    where category.id <> new.id
+      and lower(category.name) = lower(new.name)
+      and (category.is_system or new.is_system)
+  ) then
+    raise exception 'Category names cannot be shared by system and custom categories';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger categories_prevent_name_collision
+  before insert or update of name, is_system on public.categories
+  for each row execute procedure public.prevent_category_name_collision();
 
 create trigger categories_prevent_system_mutation
   before update or delete on public.categories

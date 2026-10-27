@@ -7,8 +7,8 @@ owned by users. Transactions reference a category; see [Transactions](./transact
 
 - **`user_id` is nullable.** System categories have no owner; custom categories reference `auth.users` and are owned by one user.
 - **`is_system` distinguishes shared and custom categories.** System categories are shared by all users; custom categories belong to the user in `user_id`.
-- **`name` is 1 to 50 characters, trimmed, and must be one word.** The database rejects stray spaces and multi-word names.
-- **`slug` is a lowercase, stable identifier** using lowercase letters, numbers, and hyphens.
+- **`name` is 1 to 50 characters and trimmed.** The database rejects stray leading or trailing whitespace. Names may contain spaces, and system names cannot be reused by custom categories.
+- **`slug` is a lowercase, stable identifier** using lowercase letters, numbers, and hyphens. It is reserved for the API and web client as a machine-readable category key, independently of the display name.
 - System category slugs are unique. Custom category names are unique per user, case-insensitively.
 - System categories are seeded by [the system category migration](../migrations/20261026213000_seed_system_categories.sql).
 - A transaction has at most one category through its nullable `category_id` foreign key. Null means the transaction is uncategorized.
@@ -34,20 +34,15 @@ Deliberately left out:
 
 ## Security
 
-Row Level Security allows authenticated users to view system categories and their
-own custom categories. Insert, update, and delete policies are limited to custom
-categories owned by the authenticated user. A database trigger also prevents
-system categories from being modified or deleted. The API bypasses RLS, so it
-must apply the same ownership filtering explicitly.
+Row Level Security is enabled with select, insert, update, and delete policies, each scoped to system categories or the authenticated user's own categories. The API bypasses RLS, so it must filter categories by the authenticated user itself.
 
 ## Verify The Migration
 
 In the Supabase Dashboard:
 
 1. Open **Table Editor** and confirm `public.categories` exists.
-2. Confirm the system category rows are present and have `is_system = true` and `user_id` set to null.
-3. Open the table policies and confirm users can view system categories but can manage only their own custom categories.
-4. Confirm an authenticated user cannot update or delete a system category.
-5. Create a custom category for a test user and confirm another user cannot view, update, or delete it.
-6. Assign a system or owned custom category to a transaction, then clear the category and confirm null is allowed.
-7. Delete a custom category and confirm its transactions remain while their `category_id` values become null.
+2. Open the table policies and confirm Row Level Security is enabled with select, insert, update, and delete policies.
+3. Confirm the system category rows have `is_system = true` and `user_id = null`.
+4. Confirm custom categories are restricted to their owners and system categories cannot be modified or deleted.
+5. Confirm a transaction can use a system category or a category owned by its account owner.
+6. Delete a custom category and confirm its transactions remain while their `category_id` values become null.
