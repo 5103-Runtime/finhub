@@ -13,14 +13,6 @@ public class LoginPage : BasePage
     #region Public Properties
     // URL
     public override string PageUrl => $"{ConfigManager.BaseUrl}/login";
-
-    // Registry
-    public enum ValidationKey
-    {
-        SuccessfulLoginUrl
-    }
-
-    public readonly Dictionary<ValidationKey, string> Registry;
     #endregion
 
     #region Page Locators
@@ -40,10 +32,6 @@ public class LoginPage : BasePage
     #region Constructor
     public LoginPage(IWebDriver driver) : base(driver)
     {
-        Registry = new()
-        {
-            { ValidationKey.SuccessfulLoginUrl, $"{ConfigManager.BaseUrl}/overview" }
-        };
     }
     #endregion
 
@@ -76,28 +64,5 @@ public class LoginPage : BasePage
     /// </summary>
     /// <returns></returns>
     public string GetErrorMessage() => ErrorMessageContainer.Text;
-
-    /// <summary>
-    /// Waits until the login succeeds or an error is displayed, then reports login failures immediately.
-    /// </summary>
-    public void WaitUntilLoginIsSuccessful()
-    {
-        string expectedUrl = Registry[ValidationKey.SuccessfulLoginUrl];
-
-        _wait.Until(driver =>
-            driver.Url.Contains(expectedUrl, StringComparison.OrdinalIgnoreCase) ||
-            driver.FindElements(_errorMessageContainerLocator).Any(element => element.Displayed));
-
-        if (!_driver.Url.Contains(expectedUrl, StringComparison.OrdinalIgnoreCase))
-        {
-            string? errorMessage = _driver.FindElements(_errorMessageContainerLocator)
-                .FirstOrDefault(element => element.Displayed)?.Text;
-
-            throw new InvalidOperationException(
-                string.IsNullOrWhiteSpace(errorMessage)
-                    ? $"Login did not navigate to the expected URL '{expectedUrl}'. Current URL: '{_driver.Url}'."
-                    : $"Login failed: {errorMessage}");
-        }
-    }
     #endregion
 }
