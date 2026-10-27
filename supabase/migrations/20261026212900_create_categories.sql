@@ -23,6 +23,10 @@ create unique index categories_user_name_idx
   on public.categories (user_id, lower(name))
   where not is_system;
 
+create unique index categories_user_slug_idx
+  on public.categories (user_id, slug)
+  where not is_system;
+
 create index categories_user_id_idx on public.categories (user_id);
 
 comment on table public.categories is
@@ -97,7 +101,7 @@ begin
 end;
 $$;
 
-create or replace function public.prevent_category_name_collision()
+create or replace function public.prevent_category_value_collision()
 returns trigger
 language plpgsql
 as $$
@@ -106,19 +110,23 @@ begin
     select 1
     from public.categories category
     where category.id <> new.id
-      and lower(category.name) = lower(new.name)
-      and (category.is_system or new.is_system)
+      and category.is_system
+      and not new.is_system
+      and (
+        lower(category.name) = lower(new.name)
+        or category.slug = new.slug
+      )
   ) then
-    raise exception 'Category names cannot be shared by system and custom categories';
+    raise exception 'Custom category names and slugs cannot be shared with system categories';
   end if;
 
   return new;
 end;
 $$;
 
-create trigger categories_prevent_name_collision
-  before insert or update of name, is_system on public.categories
-  for each row execute procedure public.prevent_category_name_collision();
+create trigger categories_prevent_value_collision
+  before insert or update of name, slug, is_system on public.categories
+  for each row execute procedure public.prevent_category_value_collision();
 
 create trigger categories_prevent_system_mutation
   before update or delete on public.categories

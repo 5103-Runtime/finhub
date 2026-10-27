@@ -9,11 +9,12 @@ owned by users. Transactions reference a category; see [Transactions](./transact
 - **`is_system` distinguishes shared and custom categories.** System categories are shared by all users; custom categories belong to the user in `user_id`.
 - **`name` is 1 to 50 characters and trimmed.** The database rejects stray leading or trailing whitespace. Names may contain spaces, and system names cannot be reused by custom categories.
 - **`slug` is a lowercase, stable identifier** using lowercase letters, numbers, and hyphens. It is reserved for the API and web client as a machine-readable category key, independently of the display name.
-- System category slugs are unique. Custom category names are unique per user, case-insensitively.
+- System category slugs are unique. Custom category names are unique per user, case-insensitively, and custom slugs are unique per user.
+- Custom category names and slugs cannot reuse values from system categories. Existing custom values do not prevent a future system category from being added.
 - System categories are seeded by [the system category migration](../migrations/20261026213000_seed_system_categories.sql).
 - A transaction has at most one category through its nullable `category_id` foreign key. Null means the transaction is uncategorized.
 - Deleting a custom category sets `transactions.category_id` to null rather than deleting transactions.
-- `categories_user_id_idx`, `categories_system_slug_idx`, and `categories_user_name_idx` support ownership and category lookups.
+- `categories_user_id_idx`, `categories_system_slug_idx`, `categories_user_name_idx`, and `categories_user_slug_idx` support ownership and category lookups.
 
 The default system categories are:
 
