@@ -15,7 +15,7 @@ Deliberately left out:
 
 - A stored balance. Balances derive from imported statements; see [Financial accounts](./financial-accounts.md).
 - Duplicate detection. Overlapping imports are compared in the API (FIN-8), not enforced by the schema.
-- Categories. They arrive with their own table and foreign key.
+- Categories are optional and arrive through the nullable `category_id` foreign key; see [Categories](./categories.md).
 
 ## Security
 
