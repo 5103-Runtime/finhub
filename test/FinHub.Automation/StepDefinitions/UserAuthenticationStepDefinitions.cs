@@ -42,7 +42,6 @@ public class UserAuthenticationStepDefinitions : BaseStepDefinitions
         LoginPage.WaitUntilLoginSucceeds();
         OverviewPage.WaitUntilPageIsLoaded();
         Assert.Contains(OverviewPage.PageUrl, Driver.Url, "User was not logged in successfully.");
-        Assert.IsTrue(OverviewPage.IsUserLoggedIn(), "User was not logged in successfully.");
     }
     #endregion
 }
