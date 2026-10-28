@@ -1,6 +1,6 @@
 # Statement import
 
-FinHub parses bank statements in the API, not the browser. The user uploads a CSV export, the API recognizes the bank from the header and returns the lines as candidate transactions. Nothing is saved until the user has reviewed and confirmed them.
+FinHub parses bank statements in the API, not the browser. The user uploads a CSV export, the API picks a mapping from the header (and the account type column, where a bank shares one header across account types) and returns the lines as candidate transactions. Nothing is saved until the user has reviewed and confirmed them.
 
 ## Design
 
