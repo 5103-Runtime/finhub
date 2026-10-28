@@ -87,7 +87,6 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(category => category.Id).HasColumnName("id");
             entity.Property(category => category.UserId).HasColumnName("user_id");
             entity.Property(category => category.Name).HasColumnName("name").HasMaxLength(50);
-            entity.Property(category => category.Slug).HasColumnName("slug");
             entity.Property(category => category.IsSystem).HasColumnName("is_system");
             entity.Property(category => category.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(category => category.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();

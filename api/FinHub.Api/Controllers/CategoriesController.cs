@@ -85,9 +85,8 @@ public sealed class CategoriesController(
         }
 
         string name = request.Name.Trim();
-        string slug = request.Slug;
 
-        ActionResult? conflict = await FindConflictAsync(userId!.Value, name, slug, categoryId: null, cancellationToken);
+        ActionResult? conflict = await FindConflictAsync(userId!.Value, name, categoryId: null, cancellationToken);
         if (conflict is not null)
         {
             return conflict;
@@ -98,7 +97,6 @@ public sealed class CategoriesController(
             Id = Guid.NewGuid(),
             UserId = userId.Value,
             Name = name,
-            Slug = slug,
             IsSystem = false
         };
 
@@ -141,16 +139,14 @@ public sealed class CategoriesController(
         }
 
         string name = request.Name.Trim();
-        string slug = request.Slug;
 
-        ActionResult? conflict = await FindConflictAsync(userId.Value, name, slug, category.Id, cancellationToken);
+        ActionResult? conflict = await FindConflictAsync(userId.Value, name, category.Id, cancellationToken);
         if (conflict is not null)
         {
             return conflict;
         }
 
         category.Name = name;
-        category.Slug = slug;
 
         try
         {
@@ -237,7 +233,6 @@ public sealed class CategoriesController(
     private async Task<ActionResult?> FindConflictAsync(
         Guid userId,
         string name,
-        string slug,
         Guid? categoryId,
         CancellationToken cancellationToken)
     {
@@ -250,16 +245,6 @@ public sealed class CategoriesController(
         if (systemNameExists)
         {
             return CategoryNameConflict();
-        }
-
-        bool systemSlugExists = await dbContext.Categories
-            .AsNoTracking()
-            .AnyAsync(
-                category => category.IsSystem && category.Slug == slug,
-                cancellationToken);
-        if (systemSlugExists)
-        {
-            return CategorySlugConflict();
         }
 
         bool customNameExists = await dbContext.Categories
@@ -275,15 +260,7 @@ public sealed class CategoriesController(
             return CategoryNameConflict();
         }
 
-        bool customSlugExists = await dbContext.Categories
-            .AsNoTracking()
-            .AnyAsync(
-                category => !category.IsSystem
-                    && category.UserId == userId
-                    && category.Slug == slug
-                    && (categoryId == null || category.Id != categoryId.Value),
-                cancellationToken);
-        return customSlugExists ? CategorySlugConflict() : null;
+        return null;
     }
 
     /// <summary>
@@ -292,7 +269,6 @@ public sealed class CategoriesController(
     private static CategoryResponse ToResponse(Category category) => new(
         category.Id,
         category.Name,
-        category.Slug,
         category.IsSystem,
         category.CreatedAt,
         category.UpdatedAt);
@@ -313,15 +289,6 @@ public sealed class CategoriesController(
     {
         error = "A category with this name already exists.",
         errorCode = "category_name_conflict"
-    });
-
-    /// <summary>
-    /// Creates the response returned when a category slug conflicts with another category.
-    /// </summary>
-    private ConflictObjectResult CategorySlugConflict() => Conflict(new
-    {
-        error = "A category with this slug already exists.",
-        errorCode = "category_slug_conflict"
     });
 
     /// <summary>

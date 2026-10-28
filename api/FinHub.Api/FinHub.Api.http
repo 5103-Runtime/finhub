@@ -64,8 +64,7 @@ POST {{FinHub.Api_HostAddress}}/api/categories
 Content-Type: application/json
 
 {
-  "name": "Dining Out",
-  "slug": "dining-out"
+  "name": "Dining Out"
 }
 
 ###
@@ -79,8 +78,7 @@ PUT {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
 Content-Type: application/json
 
 {
-  "name": "Dining Out",
-  "slug": "dining-out"
+  "name": "Restaurants"
 }
 
 ###

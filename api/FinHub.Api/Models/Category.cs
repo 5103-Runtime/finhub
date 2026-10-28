@@ -21,11 +21,6 @@ public sealed class Category
     public string Name { get; set; } = "";
 
     /// <summary>
-    /// Gets or sets the category's stable machine-readable identifier.
-    /// </summary>
-    public string Slug { get; set; } = "";
-
-    /// <summary>
     /// Gets or sets whether the category is shared and managed by the system.
     /// </summary>
     public bool IsSystem { get; set; }
