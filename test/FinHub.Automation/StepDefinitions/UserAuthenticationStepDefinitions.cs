@@ -39,8 +39,9 @@ public class UserAuthenticationStepDefinitions : BaseStepDefinitions
     [Then(@"I should be logged in successfully")]
     public void ThenIShouldBeLoggedInSuccessfully()
     {
-        LoginPage.WaitUntilLoginIsSuccessful();
-        Assert.Contains(LoginPage.Registry[LoginPage.ValidationKey.SuccessfulLoginUrl], Driver.Url, "User was not logged in successfully.");
+        LoginPage.WaitUntilLoginSucceeds();
+        OverviewPage.WaitUntilPageIsLoaded();
+        Assert.Contains(OverviewPage.PageUrl, Driver.Url, "User was not logged in successfully.");
     }
     #endregion
 }

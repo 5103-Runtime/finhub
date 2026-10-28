@@ -40,4 +40,13 @@ public static class WebDriverExtensions
             throw new WebDriverTimeoutException($"Timed out after {ConfigProvider.DefaultTimeout} seconds waiting for element with locator {locator}.", ex);
         }
     }
+
+    /// <summary>
+    /// Checks whether an element matching the locator is present and visible without waiting.
+    /// </summary>
+    /// <param name="driver">The IWebDriver instance.</param>
+    /// <param name="locator">The locator of the element.</param>
+    /// <returns>True if at least one matching element is visible; otherwise, false.</returns>
+    public static bool IsElementDisplayed(this IWebDriver driver, By locator) =>
+        driver.FindElements(locator).Any(element => element.Displayed);
 }

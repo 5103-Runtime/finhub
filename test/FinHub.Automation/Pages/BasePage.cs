@@ -23,6 +23,7 @@ public abstract class BasePage
     {
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
         _wait = new(_driver, TimeSpan.FromSeconds(ConfigManager.DefaultTimeout));
+        _wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException));
     }
     #endregion
 

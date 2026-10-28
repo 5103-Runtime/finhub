@@ -12,6 +12,7 @@ public class BaseStepDefinitions
     // Driver & Contexts
     private IWebDriver? _driver;
     private LoginPage? _loginPage;
+    private OverviewPage? _overviewPage;
 
     protected readonly ScenarioContext _scenarioContext;
     protected readonly FeatureContext _featureContext;
@@ -39,6 +40,18 @@ public class BaseStepDefinitions
         {
             _loginPage ??= new(Driver);
             return _loginPage;
+        }
+    }
+
+    /// <summary>
+    /// Lazy initialization of the OverviewPage instance.
+    /// </summary>
+    public OverviewPage OverviewPage
+    {
+        get
+        {
+            _overviewPage ??= new(Driver);
+            return _overviewPage;
         }
     }
     #endregion
