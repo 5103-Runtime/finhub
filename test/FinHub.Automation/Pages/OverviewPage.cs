@@ -37,7 +37,9 @@ public class OverviewPage : BasePage
     /// </summary>
     public void WaitUntilPageIsLoaded()
     {
-        _wait.Until(driver => Avatar.Displayed && WelcomeMessage.Displayed);
+        // Wait until the avatar and welcome message elements are loaded on the page
+        _ = Avatar;
+        _ = WelcomeMessage;
     }
 
     /// <summary>
@@ -46,8 +48,8 @@ public class OverviewPage : BasePage
     /// <returns>True if the user is logged in, false otherwise.</returns>
     public bool IsUserLoggedIn()
     {
-        return Avatar.Displayed && WelcomeMessage.Displayed;
+        return _driver.IsElementDisplayed(_avatarLocator) &&
+               _driver.IsElementDisplayed(_welcomeMessageLocator);
     }
     #endregion
 }
-

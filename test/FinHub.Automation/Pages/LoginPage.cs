@@ -60,6 +60,23 @@ public class LoginPage : BasePage
     }
 
     /// <summary>
+    /// Waits until login succeeds or an authentication error is displayed.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when an authentication error is displayed.</exception>
+    public void WaitUntilLoginSucceeds()
+    {
+        _wait.Until(driver =>
+            driver.IsElementDisplayed(_errorMessageContainerLocator) ||
+            !driver.IsElementDisplayed(_signInButtonLocator));
+
+        if (_driver.IsElementDisplayed(_errorMessageContainerLocator))
+        {
+            string errorMessage = GetErrorMessage();
+            throw new InvalidOperationException($"Login failed: {errorMessage}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves the error message displayed on the login page, if any.
     /// </summary>
     /// <returns></returns>
