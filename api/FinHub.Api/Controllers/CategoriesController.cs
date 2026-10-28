@@ -107,7 +107,7 @@ public sealed class CategoriesController(
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
         {
-            return CategoryConflict();
+            return CategoryNameConflict();
         }
 
         return CreatedAtAction(nameof(Get), new { id = category.Id }, ToResponse(category));
@@ -159,7 +159,7 @@ public sealed class CategoriesController(
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
         {
-            return CategoryConflict();
+            return CategoryNameConflict();
         }
 
         return Ok(ToResponse(category));
@@ -288,15 +288,6 @@ public sealed class CategoriesController(
     {
         error = "System categories cannot be modified or deleted.",
         errorCode = "system_category_conflict"
-    });
-
-    /// <summary>
-    /// Creates the response returned when a category conflicts with an existing unique value.
-    /// </summary>
-    private ConflictObjectResult CategoryConflict() => Conflict(new
-    {
-        error = "The category conflicts with an existing category.",
-        errorCode = "category_conflict"
     });
 
     /// <summary>
