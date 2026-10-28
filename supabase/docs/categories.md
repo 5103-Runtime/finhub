@@ -41,7 +41,7 @@ In the Supabase Dashboard:
 1. Open **Table Editor** and confirm `public.categories` exists.
 2. Open the table policies and confirm Row Level Security is enabled with select, insert, update, and delete policies.
 3. Confirm the system category rows have `is_system = true` and `user_id = null`.
-4. Confirm custom categories are restricted to their owners and system categories cannot be modified or deleted.
+4. Confirm custom categories are restricted to their owners and system category update/delete requests return `409 Conflict`.
 5. Confirm a transaction can use a system category or a category owned by its account owner.
 6. Delete a custom category and confirm its transactions remain while their `category_id` values become null.
 7. Use the API to create, update, list, and delete a custom category.

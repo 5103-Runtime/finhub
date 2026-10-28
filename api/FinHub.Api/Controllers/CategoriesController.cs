@@ -132,10 +132,15 @@ public sealed class CategoriesController(
             return failure;
         }
 
-        Category? category = await FindOwnedCustomCategoryAsync(id, userId!.Value, track: true, cancellationToken);
+        Category? category = await FindVisibleCategoryAsync(id, userId!.Value, track: true, cancellationToken);
         if (category is null)
         {
             return CategoryNotFound();
+        }
+
+        if (category.IsSystem)
+        {
+            return SystemCategoryConflict();
         }
 
         string name = request.Name.Trim();
@@ -177,10 +182,15 @@ public sealed class CategoriesController(
             return failure;
         }
 
-        Category? category = await FindOwnedCustomCategoryAsync(id, userId!.Value, track: true, cancellationToken);
+        Category? category = await FindVisibleCategoryAsync(id, userId!.Value, track: true, cancellationToken);
         if (category is null)
         {
             return CategoryNotFound();
+        }
+
+        if (category.IsSystem)
+        {
+            return SystemCategoryConflict();
         }
 
         dbContext.Categories.Remove(category);
@@ -206,26 +216,6 @@ public sealed class CategoriesController(
         CancellationToken cancellationToken) =>
         VisibleCategories(userId, track)
             .SingleOrDefaultAsync(category => category.Id == id, cancellationToken);
-
-    /// <summary>
-    /// Finds a custom category owned by the authenticated user.
-    /// </summary>
-    private Task<Category?> FindOwnedCustomCategoryAsync(
-        Guid id,
-        Guid userId,
-        bool track,
-        CancellationToken cancellationToken)
-    {
-        IQueryable<Category> categories = track
-            ? dbContext.Categories
-            : dbContext.Categories.AsNoTracking();
-
-        return categories.SingleOrDefaultAsync(
-            category => category.Id == id
-                && !category.IsSystem
-                && category.UserId == userId,
-            cancellationToken);
-    }
 
     /// <summary>
     /// Checks the database rules that cannot be represented by the request validators.
@@ -289,6 +279,15 @@ public sealed class CategoriesController(
     {
         error = "A category with this name already exists.",
         errorCode = "category_name_conflict"
+    });
+
+    /// <summary>
+    /// Creates the response returned when a system category is modified or deleted.
+    /// </summary>
+    private ConflictObjectResult SystemCategoryConflict() => Conflict(new
+    {
+        error = "System categories cannot be modified or deleted.",
+        errorCode = "system_category_conflict"
     });
 
     /// <summary>
