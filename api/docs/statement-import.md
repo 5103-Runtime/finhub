@@ -9,6 +9,7 @@ FinHub parses bank statements in the API, not the browser. The user uploads a CS
 - **Parsing and saving are separate.** The parser produces candidates; saving goes through the existing transactions API after the user confirms, so the review page (FIN-6) and duplicate warning (FIN-8) apply to imports unchanged.
 - **Sign convention is the ledger's.** Money in is positive regardless of how the bank writes it; `invert` in the mapping absorbs credit card exports that list charges as positive.
 - **CSV only before sprint 5.** The parser sits behind an interface that takes a file stream, so another format is a new implementation, not a change to the endpoint.
+- **Pending rows are skipped.** A pending charge can change amount or date, or disappear, before it posts; importing it would double-count once the posted line arrives. The next export carries the posted version.
 
 ## Not covered
 
@@ -42,30 +43,38 @@ One JSON file per bank and account type, shipped inside the API. Adding a bank i
 | `amountColumn` | Signed amount as the bank writes it. |
 | `invert` | Flip every sign. Set for credit card exports that list charges as positive. |
 | `balanceColumn` | Running balance column, or null. Follows the same sign convention as the amount after `invert`. |
+| `statusColumn`, `skipStatuses` | Optional. Rows whose status is listed are dropped, such as Scotiabank credit `pending`. |
 
 ```json
-{ "bank": "rbc", "accountType": "chequing",
+{
+  "bank": "rbc", "accountType": "chequing",
   "match": ["Account Type", "Account Number", "Transaction Date", "Cheque Number", "Description 1", "Description 2", "CAD$", "USD$"],
   "accountTypeColumn": "Account Type", "accountTypeValue": "Chequing",
   "dateColumn": "Transaction Date", "dateFormat": "M/d/yyyy",
   "descriptionColumns": ["Description 1", "Description 2"],
-  "amountColumn": "CAD$", "invert": false, "balanceColumn": null }
+  "amountColumn": "CAD$", "invert": false, "balanceColumn": null
+}
 ```
 
 RBC credit uses the same header with `accountTypeValue: "Visa"` and keeps `invert: false`, since RBC already writes charges negative.
 
 ```json
-{ "bank": "scotiabank", "accountType": "chequing",
+{
+  "bank": "scotiabank", "accountType": "chequing",
   "match": ["Filter", "Date", "Description", "Sub-description", "Type of Transaction", "Amount", "Balance"],
   "dateColumn": "Date", "dateFormat": "M/d/yyyy",
   "descriptionColumns": ["Description", "Sub-description"],
-  "amountColumn": "Amount", "invert": false, "balanceColumn": "Balance" }
+  "amountColumn": "Amount", "invert": false, "balanceColumn": "Balance"
+}
 ```
 
 ```json
-{ "bank": "scotiabank", "accountType": "credit_card",
+{
+  "bank": "scotiabank", "accountType": "credit_card",
   "match": ["Filter", "Date", "Description", "Sub-description", "Status", "Type of Transaction", "Amount", "Associated card number"],
   "dateColumn": "Date", "dateFormat": "M/d/yyyy",
   "descriptionColumns": ["Description", "Sub-description"],
-  "amountColumn": "Amount", "invert": true, "balanceColumn": null }
+  "amountColumn": "Amount", "invert": true, "balanceColumn": null,
+  "statusColumn": "Status", "skipStatuses": ["pending"]
+}
 ```
