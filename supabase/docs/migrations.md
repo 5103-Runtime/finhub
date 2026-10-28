@@ -17,6 +17,9 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_use_now_for_timestamps` switches the `created_at` and `updated_at` defaults on both tables, and `set_updated_at()`, from `timezone('utc', now())` to `now()`. The old form returns a timestamp without a zone that Postgres casts back using the session time zone; `now()` is already a `timestamptz`.
 - `_restrict_table_access_to_api` revokes `anon` and `authenticated` access to the tables, functions, and sequences in `public`, present and future, so the API, connecting as `postgres`, is the only allowed client.
 - `_create_transactions` creates `public.transactions`, described under [Transactions](./transactions.md), and revokes `anon` and `authenticated` access to any sequences already in `public`.
+- `_create_categories` creates `public.categories`, described under [Categories](./categories.md), and adds the optional transaction category relationship.
+- `_seed_system_categories` inserts the shared system categories.
+- `_remove_category_slugs` removes the unused `slug` column, slug indexes, and slug validation while preserving category names, ownership, policies, transaction references, and system-category protection.
 
 ## Create a migration
 
@@ -47,7 +50,7 @@ Stop the containers when done:
 npx supabase@latest stop
 ```
 
-`db reset` without flags only touches the local database. Never pass **``--linked``**; that resets the shared project and destroys database data.
+`db reset` without flags only touches the local database. Never pass **`--linked`**; that resets the shared project and destroys database data.
 
 ## Apply a migration to Supabase
 
