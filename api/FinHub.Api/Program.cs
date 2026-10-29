@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
 using FinHub.Api.Data;
+using FinHub.Api.Statements;
+using FinHub.Api.Statements.Csv;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,10 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient<FinHub.Api.Services.SupabaseAuthClient>();
 builder.Services.AddDbContext<FinHubDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")));
+
+builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a bad mapping file fails startup.
+builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
