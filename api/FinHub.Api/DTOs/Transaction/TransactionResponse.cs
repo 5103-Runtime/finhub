@@ -7,6 +7,7 @@ namespace FinHub.Api.DTOs.Transaction;
 /// </summary>
 /// <param name="Id">The ID of the transaction.</param>
 /// <param name="AccountId">The ID of the account the transaction belongs to.</param>
+/// <param name="CategoryId">The optional category ID.</param>
 /// <param name="TransactionDate">The date the transaction occurred.</param>
 /// <param name="Description">The description of the transaction.</param>
 /// <param name="Amount">The signed amount: positive for money in, negative for money out.</param>
@@ -18,6 +19,7 @@ namespace FinHub.Api.DTOs.Transaction;
 public sealed record TransactionResponse(
     Guid Id,
     Guid AccountId,
+    Guid? CategoryId,
     DateOnly TransactionDate,
     string Description,
     decimal Amount,
