@@ -1,0 +1,14 @@
+{
+  "bank": "rbc",
+  "accountType": "credit_card",
+  "match": ["Account Type", "Account Number", "Transaction Date", "Cheque Number", "Description 1", "Description 2", "CAD$", "USD$"],
+  "accountTypeColumn": "Account Type",
+  "accountTypeValues": ["Visa", "MasterCard"],
+  "accountColumn": "Account Number",
+  "dateColumn": "Transaction Date",
+  "dateFormat": "M/d/yyyy",
+  "descriptionColumns": ["Description 1", "Description 2"],
+  "amountColumn": "CAD$",
+  "invert": false,
+  "balanceColumn": null
+}
