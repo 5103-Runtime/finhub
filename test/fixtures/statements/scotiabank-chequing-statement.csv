@@ -1,0 +1,21 @@
+﻿Filter,Date,Description,Sub-description,Type of Transaction,Amount,Balance
+All available transactions (up to 2 years),10/22/2026,bill payment,Mb-Utility Co 00000001,Debit,-83.42,2039.13
+,10/22/2026,deposit,Free Interac E-Transfer ,Credit,145.91,2122.55
+,10/22/2026,withdrawal,Free Interac E-Transfer ,Debit,-46.22,1976.64
+,10/22/2026,payroll deposit,Payroll Services ,Credit,213.65,2022.86
+,10/21/2026,customer transfer cr.,Mb-Transfer ,Credit,219.67,1809.21
+,10/17/2026,bill payment,Mb-Utility Co 00000002,Debit,-311.32,1589.54
+,10/17/2026,deposit,Free Interac E-Transfer ,Credit,1239,1900.86
+,10/16/2026,customer transfer dr.,Mb-Transfer ,Debit,-12,661.86
+,10/15/2026,bill payment,Mb-Utility Co 00000003,Debit,-118.05,673.86
+,10/15/2026,withdrawal,Free Interac E-Transfer ,Debit,-260,791.91
+,10/15/2026,payroll deposit,Payroll Services ,Credit,954.22,1051.91
+,10/9/2026,customer transfer dr.,Mb-Transfer ,Debit,-495.82,97.69
+,10/8/2026,customer transfer dr.,Mb-Transfer ,Debit,-81.33,593.51
+,10/8/2026,withdrawal,Free Interac E-Transfer ,Debit,-205.73,674.84
+,10/8/2026,payroll deposit,Payroll Services ,Credit,282.38,880.57
+,10/6/2026,customer transfer dr.,Mb-Transfer ,Debit,-446.49,598.19
+,10/1/2026,withdrawal,Free Interac E-Transfer ,Debit,-19,1044.68
+,10/1/2026,customer transfer dr.,Mb-Transfer ,Debit,-103.98,1063.68
+,10/1/2026,payroll deposit,Payroll Services ,Credit,1033.49,1167.66
+,9/29/2026,service charge,Monthly Fees ,Debit,-265.83,134.17

@@ -6,7 +6,7 @@
 
 - **`account_id` references `public.financial_accounts`**, `on delete cascade`. Deleting an account removes its transactions; deleting a user removes both through the same chain.
 - **`amount` is signed `numeric(14, 2)`.** Money in is positive, money out is negative, for every account type. Credit card statements that list charges as positive are inverted by the import mapping before the API sees them.
-- **`balance_after` is the balance the statement reports after this line**, when the format provides one (most PDFs, some CSVs). Null otherwise. It follows the same sign convention as `amount`: a credit card balance owed is negative, so within one statement the previous line's balance plus `amount` gives `balance_after`.
+- **`balance_after` is the balance the statement reports after this line**, when the format provides one (Scotiabank's CSV export has a balance column, RBC's does not). Null otherwise. It follows the same sign convention as `amount`: a credit card balance owed is negative, so within one statement the previous line's balance plus `amount` gives `balance_after`.
 - **`statement_line` is the line's position on the source statement**, so same-day lines keep the statement's order. Null for entries the user adds by hand.
 - `description` is the statement's text for the line, 1 to 500 characters, trimmed. The DB rejects stray whitespace; the API trims before inserting.
 - `transactions_account_id_idx` covers the foreign key and the per-account queries.

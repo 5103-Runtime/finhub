@@ -2,7 +2,7 @@
 
 A centralized financial ledger for students and young adults. Import statements from multiple banks and FinHub normalizes them into one categorized ledger, with dashboards and spending insights.
 
-Statements are parsed in the browser; only the extracted transactions are sent to the server.
+Statements are uploaded to the API, which parses them and returns the extracted transactions for review before anything is saved.
 
 ![CI](https://github.com/5103-Runtime/finhub/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-green)
