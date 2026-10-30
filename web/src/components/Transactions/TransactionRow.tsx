@@ -1,18 +1,10 @@
-import {
-  Children,
-  forwardRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useState, type CSSProperties } from "react";
 import {
   Box,
   CircularProgress,
   IconButton,
   MenuItem,
   Divider,
-  MenuList,
-  type MenuListProps,
   Select,
   Typography,
 } from "@mui/material";
@@ -27,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { TextFormField } from "@app/components/Form";
 import { Form } from "@app/components/Form/Form";
 import { FormAlert } from "@app/components/Form/FormAlert";
+import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 import type { AccountResponse } from "@app/services/accountsApi";
 import type { TransactionResponse } from "@app/services/transactionApi";
 import {
@@ -58,24 +51,6 @@ type CategoryOption = {
   color: string;
   isEmpty: boolean;
 };
-
-const CategoryMenuList = forwardRef<HTMLUListElement, MenuListProps>(
-  function CategoryMenuList({ children, ...props }, ref) {
-    const menuItems = Children.toArray(children);
-    const manageItem = menuItems.pop() as ReactNode;
-    const divider = menuItems.pop() as ReactNode;
-
-    return (
-      <MenuList ref={ref} {...props}>
-        <Box component="div" className="ledger-category-options-scroll">
-          {menuItems}
-        </Box>
-        {divider}
-        {manageItem}
-      </MenuList>
-    );
-  },
-);
 
 function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
   const longestLabelLength = Math.max(
@@ -185,6 +160,48 @@ function CategoryLoadingDisplay({
   );
 }
 
+function TransactionCategoryField({
+  transaction,
+  categoryOptions,
+  disabled,
+  onCategoryChange,
+}: {
+  transaction: TransactionResponse;
+  categoryOptions: CategoryOption[];
+  disabled: boolean;
+  onCategoryChange: (categoryId: string) => Promise<void>;
+}) {
+  const [categoryUpdating, setCategoryUpdating] = useState(false);
+  const selectedCategory =
+    categoryOptions.find((option) => option.value === transaction.categoryId) ??
+    categoryOptions[0];
+  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
+
+  return categoryUpdating ? (
+    <CategoryLoadingDisplay
+      category={selectedCategory}
+      width={categorySelectWidth}
+    />
+  ) : (
+    <CategorySelect
+      value={transaction.categoryId}
+      categoryOptions={categoryOptions}
+      selectedCategory={selectedCategory}
+      width={categorySelectWidth}
+      ariaLabel={`Category for ${transaction.description}`}
+      disabled={disabled}
+      onChange={async (categoryId) => {
+        setCategoryUpdating(true);
+        try {
+          await onCategoryChange(categoryId);
+        } finally {
+          setCategoryUpdating(false);
+        }
+      }}
+    />
+  );
+}
+
 /**
  * @brief Read-only ledger row with an edit button.
  */
@@ -199,13 +216,8 @@ export function TransactionRow({
   categoryOptions,
   onCategoryChange,
 }: TransactionRowProps) {
-  const [categoryUpdating, setCategoryUpdating] = useState(false);
   const amountClass =
     transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
-  const selectedCategory =
-    categoryOptions.find((option) => option.value === transaction.categoryId) ??
-    categoryOptions[0];
-  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
 
   return (
     <>
@@ -219,29 +231,12 @@ export function TransactionRow({
         >
           {transaction.description}
         </Typography>
-        {categoryUpdating ? (
-          <CategoryLoadingDisplay
-            category={selectedCategory}
-            width={categorySelectWidth}
-          />
-        ) : (
-          <CategorySelect
-            value={transaction.categoryId}
-            categoryOptions={categoryOptions}
-            selectedCategory={selectedCategory}
-            width={categorySelectWidth}
-            ariaLabel={`Category for ${transaction.description}`}
-            disabled={deleting}
-            onChange={async (categoryId) => {
-              setCategoryUpdating(true);
-              try {
-                await onCategoryChange(categoryId);
-              } finally {
-                setCategoryUpdating(false);
-              }
-            }}
-          />
-        )}
+        <TransactionCategoryField
+          transaction={transaction}
+          categoryOptions={categoryOptions}
+          disabled={deleting}
+          onCategoryChange={onCategoryChange}
+        />
 
         <Typography className={amountClass}>
           {formatSignedCurrency(transaction.amount, account.currency)}
@@ -316,7 +311,6 @@ export function TransactionEditRow({
   onCancel,
   onSave,
 }: TransactionEditRowProps) {
-  const [categoryUpdating, setCategoryUpdating] = useState(false);
   const [serverError, setServerError] = useState("");
   const [serverErrorSeverity, setServerErrorSeverity] = useState<
     "error" | "warning"
@@ -333,10 +327,6 @@ export function TransactionEditRow({
     mode: "onTouched",
   });
   const { isSubmitting } = form.formState;
-  const selectedCategory =
-    categoryOptions.find((option) => option.value === transaction.categoryId) ??
-    categoryOptions[0];
-  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
 
   const onSubmit: SubmitHandler<TransactionEditFormData> = async (data) => {
     setServerError("");
@@ -397,29 +387,12 @@ export function TransactionEditRow({
           htmlInput: { "aria-label": "Description", maxLength: 500 },
         }}
       />
-      {categoryUpdating ? (
-        <CategoryLoadingDisplay
-          category={selectedCategory}
-          width={categorySelectWidth}
-        />
-      ) : (
-        <CategorySelect
-          value={transaction.categoryId}
-          categoryOptions={categoryOptions}
-          selectedCategory={selectedCategory}
-          width={categorySelectWidth}
-          ariaLabel={`Category for ${transaction.description}`}
-          disabled={isSubmitting}
-          onChange={async (categoryId) => {
-            setCategoryUpdating(true);
-            try {
-              await onCategoryChange(categoryId);
-            } finally {
-              setCategoryUpdating(false);
-            }
-          }}
-        />
-      )}
+      <TransactionCategoryField
+        transaction={transaction}
+        categoryOptions={categoryOptions}
+        disabled={isSubmitting}
+        onCategoryChange={onCategoryChange}
+      />
       <TextFormField<TransactionEditFormData>
         name="amount"
         size="small"

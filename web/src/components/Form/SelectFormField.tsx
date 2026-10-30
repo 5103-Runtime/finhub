@@ -1,4 +1,5 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Controller,
   useFormContext,
@@ -9,10 +10,13 @@ import {
   FormControl,
   FormHelperText,
   InputLabel,
+  Divider,
   MenuItem,
   Select,
   type FormControlProps,
 } from "@mui/material";
+import SettingsRounded from "@mui/icons-material/SettingsRounded";
+import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 
 export type SelectOption = {
   value: string;
@@ -40,6 +44,9 @@ export function SelectFormField<T extends FieldValues>({
 }: SelectFormFieldProps<T>) {
   const { control } = useFormContext<T>();
   const labelId = useId();
+  const navigate = useNavigate();
+  const isCategoryField = options.some((option) => option.color);
+  const manageCategoriesValue = "__manage_categories__";
 
   return (
     <Controller
@@ -47,7 +54,10 @@ export function SelectFormField<T extends FieldValues>({
       control={control}
       render={({ field: { ref, ...field }, fieldState }) => (
         <FormControl fullWidth error={Boolean(fieldState.error)} {...props}>
-          <InputLabel id={labelId} shrink={displayEmpty || Boolean(field.value)}>
+          <InputLabel
+            id={labelId}
+            shrink={displayEmpty || Boolean(field.value)}
+          >
             {label}
           </InputLabel>
           <Select
@@ -57,10 +67,21 @@ export function SelectFormField<T extends FieldValues>({
             label={label}
             className={selectClassName}
             displayEmpty={displayEmpty}
+            onChange={(event) => {
+              if (
+                isCategoryField &&
+                event.target.value === manageCategoriesValue
+              ) {
+                navigate("/categories");
+                return;
+              }
+              field.onChange(event);
+            }}
             renderValue={(value) =>
               options.find((option) => option.value === value)?.label ?? ""
             }
             MenuProps={{
+              slots: isCategoryField ? { list: CategoryMenuList } : undefined,
               slotProps: {
                 paper: {
                   className: [
@@ -98,6 +119,19 @@ export function SelectFormField<T extends FieldValues>({
                 {option.label}
               </MenuItem>
             ))}
+            {isCategoryField && (
+              <>
+                <Divider />
+                <MenuItem
+                  value={manageCategoriesValue}
+                  className="ledger-category-manage-option"
+                  onClick={() => navigate("/categories")}
+                >
+                  <SettingsRounded fontSize="small" />
+                  Edit categories
+                </MenuItem>
+              </>
+            )}
           </Select>
           <FormHelperText>
             {fieldState.error?.message ?? helperText}
