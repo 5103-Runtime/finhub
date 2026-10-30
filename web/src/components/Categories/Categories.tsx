@@ -118,8 +118,16 @@ export default function Categories() {
   const customCategories = categories.filter((category) => !category.isSystem);
   const systemCategories = categories.filter((category) => category.isSystem);
   const sections = [
-    { title: "Your categories", items: customCategories },
-    { title: "System categories", items: systemCategories },
+    {
+      title: "System categories",
+      items: systemCategories,
+      className: "system-categories-section",
+    },
+    {
+      title: "Your categories",
+      items: customCategories,
+      className: "custom-categories-section",
+    },
   ];
 
   return (
@@ -156,9 +164,13 @@ export default function Categories() {
               Loading categories...
             </Typography>
           ) : (
-            <Stack spacing={3}>
+            <Box className="categories-sections">
               {sections.map((section) => (
-                <Box component="section" key={section.title}>
+                <Box
+                  component="section"
+                  className={`category-section ${section.className}`}
+                  key={section.title}
+                >
                   <Typography component="h2" className="section-title">
                     {section.title}
                   </Typography>
@@ -202,7 +214,7 @@ export default function Categories() {
                   </Stack>
                 </Box>
               ))}
-            </Stack>
+            </Box>
           )}
         </Box>
         <Footer />

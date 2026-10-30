@@ -356,7 +356,7 @@
 .transaction-row {
   position: relative;
   display: grid;
-  grid-template-columns: 37px minmax(0, 1fr) 140px 100px;
+  grid-template-columns: 37px minmax(0, 1fr) minmax(140px, max-content) 100px;
   align-items: center;
   gap: 13px;
   padding: 15px 20px;
@@ -405,7 +405,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 140px;
+  min-width: 0;
+}
+
+.transaction-category-desktop .category-chip {
+  flex: 0 1 auto;
+  max-width: none;
 }
 
 .transaction-category-desktop:empty {
