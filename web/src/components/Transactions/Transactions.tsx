@@ -16,7 +16,7 @@ import AddRounded from "@mui/icons-material/AddRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
@@ -134,6 +134,18 @@ export default function Transactions() {
     defaultValues: getEmptyTransactionForm(),
     mode: "onTouched",
   });
+  const amountValue = useWatch({
+    control: form.control,
+    name: "amount",
+  });
+  const amountIndicator =
+    amountValue.trim() === ""
+      ? ""
+      : Number(amountValue) > 0
+        ? "ledger-amount-positive"
+        : Number(amountValue) < 0
+          ? "ledger-amount-negative"
+          : "";
 
   const accountOptions = accounts.map((account) => ({
     value: account.id,
@@ -586,43 +598,48 @@ export default function Transactions() {
         error={serverError}
         errorSeverity={isDuplicate ? "warning" : "error"}
       >
-        <SelectFormField<TransactionFormData>
-          name="accountId"
-          label="Account"
-          options={accountOptions}
-        />
-        <SelectFormField<TransactionFormData>
-          name="categoryId"
-          label="Category"
-          options={categoryOptions}
-          selectClassName="ledger-category-form-select"
-          displayEmpty
-        />
-        <Stack direction="row" spacing={1.5}>
-          <TextFormField<TransactionFormData>
-            name="transactionDate"
-            label="Date"
-            type="date"
-            required
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
+        <Box className="ledger-transaction-form-grid">
+          <SelectFormField<TransactionFormData>
+            name="accountId"
+            label="Account"
+            options={accountOptions}
           />
-          <TextFormField<TransactionFormData>
-            name="amount"
-            label="Amount"
-            required
-            fullWidth
-            helperText="Use a negative amount for money out."
-            slotProps={{ htmlInput: { inputMode: "decimal" } }}
-          />
-        </Stack>
-        <TextFormField<TransactionFormData>
-          name="description"
-          label="Description"
-          required
-          fullWidth
-          slotProps={{ htmlInput: { maxLength: 500 } }}
-        />
+          <Box className="ledger-transaction-form-row ledger-date-description-row">
+            <TextFormField<TransactionFormData>
+              name="transactionDate"
+              label="Date"
+              type="date"
+              required
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextFormField<TransactionFormData>
+              name="description"
+              label="Description"
+              required
+              fullWidth
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+            />
+          </Box>
+          <Box className="ledger-transaction-form-row ledger-category-amount-row">
+            <SelectFormField<TransactionFormData>
+              name="categoryId"
+              label="Category"
+              options={categoryOptions}
+              selectClassName="ledger-category-form-select"
+              displayEmpty
+            />
+            <TextFormField<TransactionFormData>
+              name="amount"
+              label="Amount"
+              required
+              fullWidth
+              helperText="Use a negative amount for money out"
+              className={amountIndicator}
+              slotProps={{ htmlInput: { inputMode: "decimal" } }}
+            />
+          </Box>
+        </Box>
       </FormDialog>
 
       <ConfirmDialog

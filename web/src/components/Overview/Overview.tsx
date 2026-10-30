@@ -18,12 +18,17 @@ import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { Link } from "react-router-dom";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
+import { CategoryChip } from "@app/components/Category/CategoryChip";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
 import {
   getTransactions,
   type TransactionResponse,
 } from "@app/services/transactionApi";
+import {
+  getCategories,
+  type CategoryResponse,
+} from "@app/services/categoriesApi";
 import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
 import {
   formatSignedCurrency,
@@ -59,6 +64,9 @@ export default function Overview() {
   >([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionError, setTransactionsError] = useState("");
+  const [categoriesById, setCategoriesById] = useState<
+    Map<string, CategoryResponse>
+  >(new Map());
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -83,9 +91,14 @@ export default function Overview() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    Promise.all([getAccounts(), getTransactions()])
-      .then(([loadedAccounts, loadedTransactions]) => {
+    Promise.all([getAccounts(), getTransactions(), getCategories()])
+      .then(([loadedAccounts, loadedTransactions, loadedCategories]) => {
         if (isCurrentRequest) {
+          setCategoriesById(
+            new Map(
+              loadedCategories.map((category) => [category.id, category]),
+            ),
+          );
           const accountsWithBalances = withTransactionBalances(
             loadedAccounts,
             loadedTransactions,
@@ -434,6 +447,9 @@ export default function Overview() {
                 recentTransactions.map((transaction, index) => {
                   const account = accountsById.get(transaction.accountId);
                   const isIncome = transaction.amount > 0;
+                  const category = transaction.categoryId
+                    ? categoriesById.get(transaction.categoryId)
+                    : undefined;
                   const AccountIcon = account
                     ? accountTypeIcons[account.accountType]
                     : null;
@@ -459,6 +475,9 @@ export default function Overview() {
                           {account?.name ?? "Unknown account"} ·{" "}
                           {formatTransactionDate(transaction.transactionDate)}
                         </Typography>
+                      </Box>
+                      <Box className="transaction-category-desktop">
+                        {category && <CategoryChip name={category.name} />}
                       </Box>
                       <Typography
                         className={`transaction-amount ${isIncome ? "positive" : ""}`}

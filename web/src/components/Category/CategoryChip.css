@@ -1,0 +1,18 @@
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 140px;
+  min-height: 30px;
+  padding: 5px 12px;
+  overflow: hidden;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--category-color);
+  background: color-mix(in srgb, var(--category-color) 20%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
