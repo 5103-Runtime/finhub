@@ -4,13 +4,16 @@ import {
   CircularProgress,
   IconButton,
   MenuItem,
+  Divider,
   Select,
   Typography,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
+import SettingsRounded from "@mui/icons-material/SettingsRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TextFormField } from "@app/components/Form";
@@ -72,13 +75,21 @@ function CategorySelect({
   disabled: boolean;
   onChange: (categoryId: string) => Promise<void>;
 }) {
+  const navigate = useNavigate();
+  const manageCategoriesValue = "__manage_categories__";
   return (
     <Select
       value={value ?? ""}
       size="small"
       aria-label={ariaLabel}
       disabled={disabled}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => {
+        if (event.target.value === manageCategoriesValue) {
+          navigate("/categories");
+          return;
+        }
+        void onChange(event.target.value);
+      }}
       className="ledger-category-select"
       displayEmpty
       renderValue={(selectedValue) =>
@@ -109,6 +120,15 @@ function CategorySelect({
           {option.label}
         </MenuItem>
       ))}
+      <Divider />
+      <MenuItem
+        value={manageCategoriesValue}
+        className="ledger-category-manage-option"
+        onClick={() => navigate("/categories")}
+      >
+        <SettingsRounded fontSize="small" />
+        Edit categories
+      </MenuItem>
     </Select>
   );
 }

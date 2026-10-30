@@ -356,6 +356,18 @@
   ) !important;
 }
 
+.ledger-category-manage-option {
+  gap: 8px;
+  min-height: 40px !important;
+  color: var(--color-bronze) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.ledger-category-manage-option:hover {
+  background: var(--border-accent) !important;
+}
+
 .ledger-actions {
   display: flex;
   justify-content: flex-end;
