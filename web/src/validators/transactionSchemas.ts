@@ -10,6 +10,7 @@ const MAX_AMOUNT = 999_999_999_999.99; // For future reference, look for a diffe
  */
 export const transactionSchema = z.object({
   accountId: z.string().min(1, "Choose an account."),
+  categoryId: z.string(),
   transactionDate: z.string().min(1, "Date is required."),
   description: z
     .string()
@@ -40,6 +41,7 @@ export type TransactionFormData = z.infer<typeof transactionSchema>;
  */
 export const transactionEditSchema = transactionSchema.omit({
   accountId: true,
+  categoryId: true,
 });
 
 /**
@@ -54,6 +56,7 @@ export type TransactionEditFormData = z.infer<typeof transactionEditSchema>;
 export function getEmptyTransactionForm(): TransactionFormData {
   return {
     accountId: "",
+    categoryId: "",
     transactionDate: getTodayDate(),
     description: "",
     amount: "",
