@@ -594,6 +594,10 @@ export default function Transactions() {
         form={form}
         onSubmit={onSubmit}
         onClose={closeModal}
+        onEntered={() => {
+          form.setFocus("description");
+          form.clearErrors("description");
+        }}
         submitLabel="Add transaction"
         error={serverError}
         errorSeverity={isDuplicate ? "warning" : "error"}

@@ -90,6 +90,7 @@ export default function Login() {
                 name="email"
                 label="Email address"
                 type="email"
+                autoFocus
                 autoComplete="email"
               />
               <PasswordField<LoginFormData>

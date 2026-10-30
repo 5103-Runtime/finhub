@@ -96,6 +96,7 @@ function Register() {
                 label="Email"
                 type="email"
                 required
+                autoFocus
                 autoComplete="email"
               />
               <PasswordField<RegisterFormData>
