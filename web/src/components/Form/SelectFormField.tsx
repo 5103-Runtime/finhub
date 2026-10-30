@@ -47,7 +47,9 @@ export function SelectFormField<T extends FieldValues>({
       control={control}
       render={({ field: { ref, ...field }, fieldState }) => (
         <FormControl fullWidth error={Boolean(fieldState.error)} {...props}>
-          <InputLabel id={labelId}>{label}</InputLabel>
+          <InputLabel id={labelId} shrink={displayEmpty || Boolean(field.value)}>
+            {label}
+          </InputLabel>
           <Select
             {...field}
             inputRef={ref}
@@ -60,7 +62,16 @@ export function SelectFormField<T extends FieldValues>({
             }
             MenuProps={{
               slotProps: {
-                paper: { className: "ledger-category-menu" },
+                paper: {
+                  className: [
+                    "app-form-menu",
+                    options.some((option) => option.color)
+                      ? "ledger-category-menu"
+                      : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                },
               },
             }}
             style={

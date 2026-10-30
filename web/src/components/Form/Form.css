@@ -31,6 +31,29 @@
   color: var(--color-danger) !important;
 }
 
+.app-form-menu {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--color-paper);
+  color: var(--color-cream);
+}
+
+.app-form-menu .MuiList-root {
+  padding: 4px;
+}
+
+.app-form-menu .MuiMenuItem-root {
+  min-height: 40px;
+  border-radius: 6px;
+  color: var(--color-ink);
+}
+
+.app-form-menu .MuiMenuItem-root:hover,
+.app-form-menu .MuiMenuItem-root.Mui-selected,
+.app-form-menu .MuiMenuItem-root.Mui-selected:hover {
+  background: var(--border-accent);
+}
+
 .app-form .MuiIconButton-root {
   color: var(--color-slate);
 }

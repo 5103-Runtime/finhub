@@ -55,6 +55,64 @@ function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
   return `calc(${longestLabelLength}ch + 48px)`;
 }
 
+function CategorySelect({
+  value,
+  categoryOptions,
+  selectedCategory,
+  width,
+  ariaLabel,
+  disabled,
+  onChange,
+}: {
+  value: string | null;
+  categoryOptions: CategoryOption[];
+  selectedCategory: CategoryOption;
+  width: string;
+  ariaLabel: string;
+  disabled: boolean;
+  onChange: (categoryId: string) => Promise<void>;
+}) {
+  return (
+    <Select
+      value={value ?? ""}
+      size="small"
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+      className="ledger-category-select"
+      displayEmpty
+      renderValue={(selectedValue) =>
+        categoryOptions.find((option) => option.value === selectedValue)
+          ?.label ?? "None"
+      }
+      MenuProps={{
+        slotProps: {
+          paper: { className: "ledger-category-menu" },
+        },
+      }}
+      data-category-empty={selectedCategory.isEmpty || undefined}
+      style={
+        {
+          "--category-color": selectedCategory.color,
+          "--category-select-width": width,
+        } as CSSProperties
+      }
+      variant="outlined"
+    >
+      {categoryOptions.map((option) => (
+        <MenuItem
+          key={option.value || "uncategorized"}
+          value={option.value}
+          className="ledger-category-option"
+          style={{ "--category-color": option.color } as CSSProperties}
+        >
+          {option.label}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+}
+
 function CategoryLoadingDisplay({
   category,
   width,
@@ -120,50 +178,22 @@ export function TransactionRow({
             width={categorySelectWidth}
           />
         ) : (
-          <Select
-            value={transaction.categoryId ?? ""}
-            size="small"
-            aria-label={`Category for ${transaction.description}`}
+          <CategorySelect
+            value={transaction.categoryId}
+            categoryOptions={categoryOptions}
+            selectedCategory={selectedCategory}
+            width={categorySelectWidth}
+            ariaLabel={`Category for ${transaction.description}`}
             disabled={deleting}
-            onChange={async (event) => {
+            onChange={async (categoryId) => {
               setCategoryUpdating(true);
               try {
-                await onCategoryChange(event.target.value);
+                await onCategoryChange(categoryId);
               } finally {
                 setCategoryUpdating(false);
               }
             }}
-            className="ledger-category-select"
-            displayEmpty
-            renderValue={(value) =>
-              categoryOptions.find((option) => option.value === value)?.label ??
-              "None"
-            }
-            MenuProps={{
-              slotProps: {
-                paper: { className: "ledger-category-menu" },
-              },
-            }}
-            data-category-empty={selectedCategory.isEmpty || undefined}
-            style={
-              {
-                "--category-color": selectedCategory.color,
-                "--category-select-width": categorySelectWidth,
-              } as CSSProperties
-            }
-            variant="outlined"
-          >
-            {categoryOptions.map((option) => (
-              <MenuItem
-                key={option.value || "uncategorized"}
-                value={option.value}
-                className="ledger-category-option"
-                style={{ "--category-color": option.color } as CSSProperties}
-              >
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
+          />
         )}
 
         <Typography className={amountClass}>
@@ -326,50 +356,22 @@ export function TransactionEditRow({
           width={categorySelectWidth}
         />
       ) : (
-        <Select
-          value={transaction.categoryId ?? ""}
-          size="small"
-          aria-label={`Category for ${transaction.description}`}
+        <CategorySelect
+          value={transaction.categoryId}
+          categoryOptions={categoryOptions}
+          selectedCategory={selectedCategory}
+          width={categorySelectWidth}
+          ariaLabel={`Category for ${transaction.description}`}
           disabled={isSubmitting}
-          onChange={async (event) => {
+          onChange={async (categoryId) => {
             setCategoryUpdating(true);
             try {
-              await onCategoryChange(event.target.value);
+              await onCategoryChange(categoryId);
             } finally {
               setCategoryUpdating(false);
             }
           }}
-          className="ledger-category-select"
-          displayEmpty
-          renderValue={(value) =>
-            categoryOptions.find((option) => option.value === value)?.label ??
-            "None"
-          }
-          MenuProps={{
-            slotProps: {
-              paper: { className: "ledger-category-menu" },
-            },
-          }}
-          data-category-empty={selectedCategory.isEmpty || undefined}
-          style={
-            {
-              "--category-color": selectedCategory.color,
-              "--category-select-width": categorySelectWidth,
-            } as CSSProperties
-          }
-          variant="outlined"
-        >
-          {categoryOptions.map((option) => (
-            <MenuItem
-              key={option.value || "uncategorized"}
-              value={option.value}
-              className="ledger-category-option"
-              style={{ "--category-color": option.color } as CSSProperties}
-            >
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
+        />
       )}
       <TextFormField<TransactionEditFormData>
         name="amount"
