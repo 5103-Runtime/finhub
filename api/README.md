@@ -29,6 +29,14 @@ The URL must also be listed under **Authentication > URL Configuration > Redirec
 
 If the setting is missing, the API logs a warning and the email link falls back to the Site URL.
 
+## Tests
+
+Unit tests live in `FinHub.Api.Tests` and run against the sample statements under `test/fixtures/statements`:
+
+```powershell
+dotnet test api/FinHub.Api.Tests
+```
+
 ## Related Documentation
 
 See the [root README](../README.md) to run it.
