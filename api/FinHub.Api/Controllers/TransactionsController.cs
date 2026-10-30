@@ -100,6 +100,13 @@ public sealed class TransactionsController(
             return AccountNotFound();
         }
 
+        Guid? categoryId = request.CategoryId;
+        if (categoryId is not null
+            && !await IsCategoryAvailableAsync(categoryId.Value, userId.Value, cancellationToken))
+        {
+            return CategoryNotFound();
+        }
+
         DateOnly transactionDate = request.TransactionDate!.Value;
         string description = request.Description.Trim();
         decimal amount = Math.Round(
@@ -122,7 +129,8 @@ public sealed class TransactionsController(
         Transaction transaction = new()
         {
             Id = Guid.NewGuid(),
-            AccountId = accountId
+            AccountId = accountId,
+            CategoryId = categoryId
         };
         ApplyDetails(
             transaction,
@@ -170,14 +178,27 @@ public sealed class TransactionsController(
             request.Amount!.Value, 2, MidpointRounding.AwayFromZero
         );
 
-        Transaction? duplicate = await FindDuplicateTransactionAsync(
-            transaction.AccountId,
+        Guid? categoryId = request.CategoryId;
+        if (categoryId is not null
+            && !await IsCategoryAvailableAsync(categoryId.Value, userId.Value, cancellationToken))
+        {
+            return CategoryNotFound();
+        }
+
+        bool transactionDetailsChanged = HasTransactionDetailsChanged(
+            transaction,
             transactionDate,
             description,
-            amount,
-            excludeTransactionId: transaction.Id,
-            cancellationToken
-        );
+            amount);
+        Transaction? duplicate = transactionDetailsChanged
+            ? await FindDuplicateTransactionAsync(
+                transaction.AccountId,
+                transactionDate,
+                description,
+                amount,
+                excludeTransactionId: transaction.Id,
+                cancellationToken)
+            : null;
         if (duplicate is not null && !request.ConfirmPotentialDuplicate)
         {
             return PotentialDuplicateConflict(duplicate);
@@ -188,6 +209,7 @@ public sealed class TransactionsController(
             transactionDate,
             description,
             amount);
+        transaction.CategoryId = categoryId;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(ToResponse(transaction, duplicate is not null));
@@ -241,6 +263,24 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
+    /// Checks whether the duplicate-defining transaction details changed.
+    /// Category is intentionally excluded because it is mutable metadata.
+    /// </summary>
+    /// <param name="transaction">The existing transaction.</param>
+    /// <param name="transactionDate">The normalized transaction date.</param>
+    /// <param name="description">The normalized description.</param>
+    /// <param name="amount">The normalized amount.</param>
+    /// <returns>True when the date, description, or amount changed.</returns>
+    private static bool HasTransactionDetailsChanged(
+        Transaction transaction,
+        DateOnly transactionDate,
+        string description,
+        decimal amount) =>
+        transaction.TransactionDate != transactionDate
+        || transaction.Description != description
+        || transaction.Amount != amount;
+
+    /// <summary>
     /// Checks whether another transaction has the same date, description,
     /// and amount on the same account.
     /// </summary>
@@ -291,6 +331,7 @@ public sealed class TransactionsController(
     private static TransactionResponse ToResponse(Transaction transaction, bool? potentialDuplicate = null) => new(
         transaction.Id,
         transaction.AccountId,
+        transaction.CategoryId,
         transaction.TransactionDate,
         transaction.Description,
         transaction.Amount,
@@ -319,6 +360,28 @@ public sealed class TransactionsController(
         error = "The account could not be found.",
         errorCode = "account_not_found"
     });
+
+    /// <summary>
+    /// Creates the response returned when the category does not exist for the authenticated user.
+    /// </summary>
+    /// <returns>A not-found response.</returns>
+    private NotFoundObjectResult CategoryNotFound() => NotFound(new
+    {
+        error = "The category could not be found.",
+        errorCode = "category_not_found"
+    });
+
+    /// <summary>
+    /// Checks whether a category is system-owned or belongs to the authenticated user.
+    /// </summary>
+    private Task<bool> IsCategoryAvailableAsync(
+        Guid categoryId,
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        dbContext.Categories.AnyAsync(
+            category => category.Id == categoryId
+                && (category.IsSystem || category.UserId == userId),
+            cancellationToken);
 
     /// <summary>
     /// Gets the IDs of the accounts owned by the user.

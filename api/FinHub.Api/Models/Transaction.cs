@@ -16,6 +16,11 @@ public sealed class Transaction
     public Guid AccountId { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional category ID.
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
     /// Gets or sets the date the transaction was made on.
     /// </summary>
     public DateOnly TransactionDate { get; set; }

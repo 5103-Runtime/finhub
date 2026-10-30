@@ -70,6 +70,7 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.HasKey(transaction => transaction.Id);
             entity.Property(transaction => transaction.Id).HasColumnName("id");
             entity.Property(transaction => transaction.AccountId).HasColumnName("account_id");
+            entity.Property(transaction => transaction.CategoryId).HasColumnName("category_id");
             entity.Property(transaction => transaction.TransactionDate).HasColumnName("transaction_date");
             entity.Property(transaction => transaction.Description).HasColumnName("description").HasMaxLength(500);
             entity.Property(transaction => transaction.Amount).HasColumnName("amount").HasPrecision(14, 2);
