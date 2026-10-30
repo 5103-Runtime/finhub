@@ -76,14 +76,11 @@
 .ledger-row,
 .ledger-row.ledger-edit-form {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 150px 88px;
+  grid-template-columns: 150px minmax(0, 1fr) 180px 150px 88px;
   align-items: center;
   gap: 12px;
+  min-height: 58px;
   padding: 14px 20px;
-}
-
-.ledger-row.ledger-edit-form {
-  align-items: start;
 }
 
 .ledger-head {
@@ -97,6 +94,10 @@
 
 .ledger-head-amount {
   text-align: right;
+}
+
+.ledger-head span:nth-child(3) {
+  text-align: center;
 }
 
 .ledger-row + .ledger-row {
@@ -132,13 +133,129 @@
   color: var(--color-success-light) !important;
 }
 
+.ledger-category-select {
+  justify-self: center;
+  width: var(--category-select-width);
+  max-width: 100%;
+  border-radius: 999px !important;
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.ledger-category-select .MuiSelect-select {
+  overflow: hidden;
+  padding: 5px 12px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-category-select .MuiOutlinedInput-notchedOutline {
+  border: 1px solid currentColor !important;
+  border-radius: 999px !important;
+}
+
+.ledger-category-select:hover .MuiOutlinedInput-notchedOutline,
+.ledger-category-select.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-width: 1px !important;
+}
+
+.ledger-category-select .MuiSelect-select,
+.ledger-category-select .MuiSelect-icon {
+  color: var(--category-color) !important;
+}
+
+.ledger-category-loading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 30px;
+  padding: 5px 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.ledger-category-loading .MuiCircularProgress-root {
+  flex: 0 0 13px;
+  color: var(--category-color);
+}
+
+.ledger-category-select.Mui-disabled .MuiSelect-select,
+.ledger-category-select.Mui-disabled .MuiSelect-icon {
+  color: var(--category-color) !important;
+}
+
+.ledger-category-form-select {
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+}
+
+.ledger-category-form-select .MuiSelect-select {
+  color: var(--category-color) !important;
+}
+
+.ledger-category-menu {
+  overflow: hidden !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px !important;
+  background: var(--color-ink) !important;
+}
+
+.ledger-category-menu .MuiList-root {
+  padding: 4px !important;
+}
+
+.ledger-category-option {
+  min-height: 40px !important;
+  gap: 10px;
+  border-radius: 6px !important;
+  color: var(--color-cream) !important;
+  background: transparent !important;
+  font-size: 14px !important;
+}
+
+.ledger-category-option::before {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--category-color);
+  content: "";
+}
+
+.ledger-category-option:hover,
+.ledger-category-option.Mui-selected,
+.ledger-category-option.Mui-selected:hover {
+  color: var(--color-cream) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 24%,
+    transparent
+  ) !important;
+}
+
 .ledger-actions {
   display: flex;
   justify-content: flex-end;
-}
-
-.ledger-edit-form .ledger-actions {
-  padding-top: 4px;
 }
 
 .ledger-icon-button {
@@ -195,26 +312,27 @@
   margin-top: 12px;
 }
 
-/* Inline edit inputs sit on the dark card, so they need light text. All three
-   inputs share one radius, height and border so they look like one set. */
-.ledger-edit-form .MuiInputBase-input {
+/* Inline edit inputs sit on the dark card, so they need light text and compact
+   sizing. */
+.ledger-edit-form .MuiInputBase-input:not(.MuiSelect-select) {
   color: var(--color-ink) !important;
 }
 
 .ledger-edit-form .MuiFormControl-root {
+  position: relative;
   background: transparent !important;
 }
 
-.ledger-edit-form .MuiOutlinedInput-root {
-  min-height: 40px;
+.ledger-edit-form .MuiOutlinedInput-root:not(.ledger-category-select) {
+  min-height: 30px;
   border-radius: 10px !important;
   background: var(--color-cream);
 }
 
 .ledger-edit-form .MuiOutlinedInput-input {
-  min-height: 40px;
+  min-height: 30px;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: 5px 12px;
 }
 
 .ledger-edit-form input[type="date"] {
@@ -225,20 +343,30 @@
   text-align: right;
 }
 
-.ledger-edit-form .MuiOutlinedInput-notchedOutline {
+.ledger-edit-form
+  .MuiOutlinedInput-root:not(.ledger-category-select)
+  .MuiOutlinedInput-notchedOutline {
   border-radius: 10px !important;
   border: 1px solid color-mix(in srgb, var(--color-slate) 35%, transparent);
 }
 
-.ledger-edit-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
 .ledger-edit-form
-  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-root:not(.ledger-category-select):hover
+  .MuiOutlinedInput-notchedOutline,
+.ledger-edit-form
+  .MuiOutlinedInput-root:not(.ledger-category-select).Mui-focused
   .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-bronze) !important;
   border-width: 1px !important;
 }
 
 .ledger-edit-form .MuiFormHelperText-root.Mui-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1;
+  margin: 3px 0 0;
+  white-space: nowrap;
   color: var(--color-danger-muted);
 }
 
@@ -253,13 +381,18 @@
   }
 
   .ledger-amount {
-    grid-column: 2;
+    grid-column: 2 / -1;
     grid-row: 1;
+  }
+
+  .ledger-category-select {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .ledger-actions {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   .ledger-row.ledger-edit-form {
