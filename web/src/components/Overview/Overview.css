@@ -355,7 +355,8 @@
 
 .transaction-row {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 37px minmax(0, 1fr) 140px 100px;
   align-items: center;
   gap: 13px;
   padding: 15px 20px;
@@ -400,8 +401,20 @@
   min-width: 0;
 }
 
+.transaction-category-desktop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+}
+
+.transaction-category-desktop:empty {
+  visibility: hidden;
+}
+
 .transaction-amount {
-  margin-left: auto !important;
+  margin-left: 0 !important;
+  text-align: right;
   color: var(--color-cream);
   font-size: 14px !important;
   font-weight: 700 !important;
@@ -470,6 +483,10 @@
   }
 
   .transaction-row {
+    display: grid;
+    grid-template-columns: 37px minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: 13px;
     padding: 14px;
   }
 
@@ -482,5 +499,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .transaction-category-desktop {
+    display: none;
+  }
+
+  .transaction-amount {
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 0 !important;
+    justify-self: end;
   }
 }

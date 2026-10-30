@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import {
   Controller,
   useFormContext,
@@ -14,13 +14,19 @@ import {
   type FormControlProps,
 } from "@mui/material";
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption = {
+  value: string;
+  label: string;
+  color?: string;
+};
 
 export type SelectFormFieldProps<T extends FieldValues> = {
   name: Path<T>;
   label: string;
   options: SelectOption[];
   helperText?: ReactNode;
+  selectClassName?: string;
+  displayEmpty?: boolean;
 } & Omit<FormControlProps, "error" | "children">;
 
 export function SelectFormField<T extends FieldValues>({
@@ -28,6 +34,8 @@ export function SelectFormField<T extends FieldValues>({
   label,
   options,
   helperText,
+  selectClassName,
+  displayEmpty = false,
   ...props
 }: SelectFormFieldProps<T>) {
   const { control } = useFormContext<T>();
@@ -39,10 +47,54 @@ export function SelectFormField<T extends FieldValues>({
       control={control}
       render={({ field: { ref, ...field }, fieldState }) => (
         <FormControl fullWidth error={Boolean(fieldState.error)} {...props}>
-          <InputLabel id={labelId}>{label}</InputLabel>
-          <Select {...field} inputRef={ref} labelId={labelId} label={label}>
+          <InputLabel id={labelId} shrink={displayEmpty || Boolean(field.value)}>
+            {label}
+          </InputLabel>
+          <Select
+            {...field}
+            inputRef={ref}
+            labelId={labelId}
+            label={label}
+            className={selectClassName}
+            displayEmpty={displayEmpty}
+            renderValue={(value) =>
+              options.find((option) => option.value === value)?.label ?? ""
+            }
+            MenuProps={{
+              slotProps: {
+                paper: {
+                  className: [
+                    "app-form-menu",
+                    options.some((option) => option.color)
+                      ? "ledger-category-menu"
+                      : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                },
+              },
+            }}
+            style={
+              {
+                "--category-color": options.find(
+                  (option) => option.value === field.value,
+                )?.color,
+              } as CSSProperties
+            }
+          >
             {options.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem
+                key={option.value}
+                value={option.value}
+                className={option.color ? "ledger-category-option" : undefined}
+                style={
+                  option.color
+                    ? ({
+                        "--category-color": option.color,
+                      } as CSSProperties)
+                    : undefined
+                }
+              >
                 {option.label}
               </MenuItem>
             ))}

@@ -16,7 +16,7 @@ import AddRounded from "@mui/icons-material/AddRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
@@ -30,6 +30,10 @@ import {
   type TransactionResponse,
 } from "@app/services/transactionApi";
 import {
+  getCategories,
+  type CategoryResponse,
+} from "@app/services/categoriesApi";
+import {
   getEmptyTransactionForm,
   transactionSchema,
   type TransactionEditFormData,
@@ -42,6 +46,7 @@ import {
   getAccountTypePluralLabel,
 } from "@app/utils/accounts";
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
+import { getCategoryColor } from "@app/utils/categories";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 
 import "@app/components/Accounts/Accounts.css";
@@ -53,6 +58,7 @@ export default function Transactions() {
   const selectedAccountId = searchParams.get("accountId");
   const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,11 +79,12 @@ export default function Transactions() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    Promise.all([getTransactions(), getAccounts()])
-      .then(([loadedTransactions, loadedAccounts]) => {
+    Promise.all([getTransactions(), getAccounts(), getCategories()])
+      .then(([loadedTransactions, loadedAccounts, loadedCategories]) => {
         if (isCurrentRequest) {
           setTransactions(loadedTransactions);
           setAccounts(loadedAccounts);
+          setCategories(loadedCategories);
           if (
             selectedAccountId &&
             loadedAccounts.some((account) => account.id === selectedAccountId)
@@ -127,11 +134,32 @@ export default function Transactions() {
     defaultValues: getEmptyTransactionForm(),
     mode: "onTouched",
   });
+  const amountValue = useWatch({
+    control: form.control,
+    name: "amount",
+  });
+  const amountIndicator =
+    amountValue.trim() === ""
+      ? ""
+      : Number(amountValue) > 0
+        ? "ledger-amount-positive"
+        : Number(amountValue) < 0
+          ? "ledger-amount-negative"
+          : "";
 
   const accountOptions = accounts.map((account) => ({
     value: account.id,
     label: account.name,
   }));
+  const categoryOptions = [
+    { value: "", label: "None", color: "var(--color-mist)", isEmpty: true },
+    ...categories.map((category) => ({
+      value: category.id,
+      label: category.name,
+      color: getCategoryColor(category.name),
+      isEmpty: false,
+    })),
+  ];
 
   // Group the transactions by account. The API order (newest first) is kept
   // inside each account.
@@ -167,6 +195,30 @@ export default function Transactions() {
         ),
       );
       return false;
+    }
+  };
+
+  const handleCategoryChange = async (
+    transaction: TransactionResponse,
+    categoryId: string,
+  ) => {
+    const updatedCategoryId = categoryId || null;
+
+    try {
+      await updateTransaction(transaction.id, {
+        categoryId: updatedCategoryId,
+        transactionDate: transaction.transactionDate,
+        description: transaction.description,
+        amount: transaction.amount,
+      });
+      await reloadTransactions();
+    } catch (requestError) {
+      setServerError(
+        getErrorMessage(
+          requestError,
+          "Unable to update the transaction category.",
+        ),
+      );
     }
   };
 
@@ -207,6 +259,7 @@ export default function Transactions() {
     try {
       await createTransaction({
         accountId: data.accountId,
+        categoryId: data.categoryId || null,
         transactionDate: data.transactionDate,
         description: data.description,
         amount: Number(data.amount),
@@ -337,6 +390,7 @@ export default function Transactions() {
               <Box className="ledger-head">
                 <span>Date</span>
                 <span>Description</span>
+                <span>Category</span>
                 <span className="ledger-head-amount">Amount</span>
                 <span aria-hidden="true" />
               </Box>
@@ -345,6 +399,10 @@ export default function Transactions() {
                   <TransactionEditRow
                     key={transaction.id}
                     transaction={transaction}
+                    categoryOptions={categoryOptions}
+                    onCategoryChange={(categoryId) =>
+                      handleCategoryChange(transaction, categoryId)
+                    }
                     onCancel={() => setEditingId(null)}
                     onSave={(data, confirmPotentialDuplicate) =>
                       handleSaveEdit(
@@ -359,6 +417,10 @@ export default function Transactions() {
                     key={transaction.id}
                     transaction={transaction}
                     account={account}
+                    categoryOptions={categoryOptions}
+                    onCategoryChange={(categoryId) =>
+                      handleCategoryChange(transaction, categoryId)
+                    }
                     onDelete={() => {
                       setServerError("");
                       setSuccessTransactionId(null);
@@ -536,36 +598,48 @@ export default function Transactions() {
         error={serverError}
         errorSeverity={isDuplicate ? "warning" : "error"}
       >
-        <SelectFormField<TransactionFormData>
-          name="accountId"
-          label="Account"
-          options={accountOptions}
-        />
-        <Stack direction="row" spacing={1.5}>
-          <TextFormField<TransactionFormData>
-            name="transactionDate"
-            label="Date"
-            type="date"
-            required
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
+        <Box className="ledger-transaction-form-grid">
+          <SelectFormField<TransactionFormData>
+            name="accountId"
+            label="Account"
+            options={accountOptions}
           />
-          <TextFormField<TransactionFormData>
-            name="amount"
-            label="Amount"
-            required
-            fullWidth
-            helperText="Use a negative amount for money out."
-            slotProps={{ htmlInput: { inputMode: "decimal" } }}
-          />
-        </Stack>
-        <TextFormField<TransactionFormData>
-          name="description"
-          label="Description"
-          required
-          fullWidth
-          slotProps={{ htmlInput: { maxLength: 500 } }}
-        />
+          <Box className="ledger-transaction-form-row ledger-date-description-row">
+            <TextFormField<TransactionFormData>
+              name="transactionDate"
+              label="Date"
+              type="date"
+              required
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextFormField<TransactionFormData>
+              name="description"
+              label="Description"
+              required
+              fullWidth
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+            />
+          </Box>
+          <Box className="ledger-transaction-form-row ledger-category-amount-row">
+            <SelectFormField<TransactionFormData>
+              name="categoryId"
+              label="Category"
+              options={categoryOptions}
+              selectClassName="ledger-category-form-select"
+              displayEmpty
+            />
+            <TextFormField<TransactionFormData>
+              name="amount"
+              label="Amount"
+              required
+              fullWidth
+              helperText="Use a negative amount for money out"
+              className={amountIndicator}
+              slotProps={{ htmlInput: { inputMode: "decimal" } }}
+            />
+          </Box>
+        </Box>
       </FormDialog>
 
       <ConfirmDialog

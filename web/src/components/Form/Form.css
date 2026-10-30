@@ -18,6 +18,14 @@
   color: var(--color-ink);
 }
 
+.app-form input:-webkit-autofill,
+.app-form input:-webkit-autofill:hover,
+.app-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-paper) inset;
+  caret-color: var(--color-ink);
+}
+
 .app-form .MuiInputBase-input::placeholder {
   color: var(--color-slate);
   opacity: 1;
@@ -29,6 +37,29 @@
 
 .app-form .MuiFormHelperText-root.Mui-error {
   color: var(--color-danger) !important;
+}
+
+.app-form-menu {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--color-paper);
+  color: var(--color-cream);
+}
+
+.app-form-menu .MuiList-root {
+  padding: 4px;
+}
+
+.app-form-menu .MuiMenuItem-root {
+  min-height: 40px;
+  border-radius: 6px;
+  color: var(--color-ink);
+}
+
+.app-form-menu .MuiMenuItem-root:hover,
+.app-form-menu .MuiMenuItem-root.Mui-selected,
+.app-form-menu .MuiMenuItem-root.Mui-selected:hover {
+  background: var(--border-accent);
 }
 
 .app-form .MuiIconButton-root {

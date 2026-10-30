@@ -6,6 +6,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from "./apiClient";
 export interface TransactionResponse {
   id: string;
   accountId: string;
+  categoryId: string | null;
   // Date only, formatted as YYYY-MM-DD
   transactionDate: string;
   description: string;
@@ -23,6 +24,7 @@ export interface TransactionResponse {
  */
 export interface CreateTransactionRequest {
   accountId: string;
+  categoryId?: string | null;
   transactionDate: string;
   description: string;
   amount: number;
@@ -34,6 +36,7 @@ export interface CreateTransactionRequest {
  * The account a transaction belongs to cannot be changed.
  */
 export interface UpdateTransactionRequest {
+  categoryId?: string | null;
   transactionDate: string;
   description: string;
   amount: number;

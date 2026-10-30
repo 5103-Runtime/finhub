@@ -76,14 +76,11 @@
 .ledger-row,
 .ledger-row.ledger-edit-form {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 150px 88px;
+  grid-template-columns: 150px minmax(0, 1fr) 180px 150px 88px;
   align-items: center;
   gap: 12px;
+  min-height: 58px;
   padding: 14px 20px;
-}
-
-.ledger-row.ledger-edit-form {
-  align-items: start;
 }
 
 .ledger-head {
@@ -97,6 +94,10 @@
 
 .ledger-head-amount {
   text-align: right;
+}
+
+.ledger-head span:nth-child(3) {
+  text-align: center;
 }
 
 .ledger-row + .ledger-row {
@@ -132,13 +133,244 @@
   color: var(--color-success-light) !important;
 }
 
+.ledger-category-select {
+  justify-self: center;
+  width: var(--category-select-width);
+  max-width: 100%;
+  border-radius: 999px !important;
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.ledger-category-select .MuiSelect-select {
+  overflow: hidden;
+  padding: 5px 12px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-category-select .MuiOutlinedInput-notchedOutline {
+  border: 1px solid currentColor !important;
+  border-radius: 999px !important;
+}
+
+.ledger-category-select:hover .MuiOutlinedInput-notchedOutline,
+.ledger-category-select.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-width: 1px !important;
+}
+
+.ledger-category-select .MuiSelect-select,
+.ledger-category-select .MuiSelect-icon {
+  color: var(--category-color) !important;
+}
+
+.ledger-category-loading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 30px;
+  padding: 5px 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.ledger-category-loading .MuiCircularProgress-root {
+  flex: 0 0 13px;
+  color: var(--category-color);
+}
+
+.ledger-category-select.Mui-disabled .MuiSelect-select,
+.ledger-category-select.Mui-disabled .MuiSelect-icon {
+  color: var(--category-color) !important;
+}
+
+.ledger-transaction-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.app-dialog .ledger-transaction-form-grid .MuiFormControl-root {
+  background: transparent;
+}
+
+.ledger-transaction-form-row {
+  display: grid;
+  gap: 14px;
+}
+
+.ledger-date-description-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.ledger-category-amount-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: center;
+}
+
+.ledger-amount-positive .MuiInputBase-input {
+  color: var(--color-success) !important;
+}
+
+.ledger-amount-positive .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-success) !important;
+}
+
+.ledger-amount-positive .MuiInputLabel-root.Mui-focused {
+  color: var(--color-success) !important;
+}
+
+.ledger-amount-negative .MuiInputBase-input {
+  color: var(--color-warning) !important;
+}
+
+.ledger-amount-negative .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-warning) !important;
+}
+
+.ledger-amount-negative .MuiInputLabel-root.Mui-focused {
+  color: var(--color-warning) !important;
+}
+
+.ledger-category-amount-row > .MuiFormControl-root:first-child {
+  min-width: 0;
+  align-self: center;
+  transform: translateY(-8px);
+}
+
+.ledger-category-amount-row
+  > .MuiFormControl-root:first-child
+  .ledger-category-form-select {
+  width: max-content;
+  min-width: 170px;
+  max-width: 100%;
+}
+
+.ledger-category-form-select {
+  border-radius: 999px !important;
+  color: color-mix(
+    in srgb,
+    var(--category-color) 45%,
+    var(--color-ink)
+  ) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+}
+
+.ledger-category-form-select .MuiSelect-select {
+  overflow: hidden;
+  color: color-mix(
+    in srgb,
+    var(--category-color) 45%,
+    var(--color-ink)
+  ) !important;
+  padding: 5px 12px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-category-form-select .MuiSelect-icon {
+  color: color-mix(
+    in srgb,
+    var(--category-color) 45%,
+    var(--color-ink)
+  ) !important;
+}
+
+.app-dialog
+  .MuiFormControl-root:has(.ledger-category-form-select)
+  .MuiInputLabel-root.Mui-focused {
+  color: color-mix(
+    in srgb,
+    var(--category-color) 45%,
+    var(--color-ink)
+  ) !important;
+}
+
+.ledger-category-form-select .MuiOutlinedInput-notchedOutline {
+  border: 1px solid currentColor !important;
+  border-radius: 999px !important;
+}
+
+.ledger-category-form-select:hover .MuiOutlinedInput-notchedOutline,
+.ledger-category-form-select.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-width: 1px !important;
+}
+
+.ledger-category-menu {
+  overflow: hidden !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px !important;
+  background: var(--color-paper) !important;
+}
+
+.ledger-category-menu .MuiList-root {
+  padding: 4px !important;
+}
+
+.ledger-category-option {
+  min-height: 40px !important;
+  gap: 10px;
+  border-radius: 6px !important;
+  color: var(--color-ink) !important;
+  background: transparent !important;
+  font-size: 14px !important;
+}
+
+.ledger-category-option::before {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--category-color);
+  content: "";
+}
+
+.ledger-category-option:hover,
+.ledger-category-option.Mui-selected,
+.ledger-category-option.Mui-selected:hover {
+  color: var(--color-ink) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 24%,
+    transparent
+  ) !important;
+}
+
+.ledger-category-manage-option {
+  gap: 8px;
+  min-height: 40px !important;
+  color: var(--color-bronze) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.ledger-category-manage-option:hover {
+  background: var(--border-accent) !important;
+}
+
 .ledger-actions {
   display: flex;
   justify-content: flex-end;
-}
-
-.ledger-edit-form .ledger-actions {
-  padding-top: 4px;
 }
 
 .ledger-icon-button {
@@ -195,26 +427,27 @@
   margin-top: 12px;
 }
 
-/* Inline edit inputs sit on the dark card, so they need light text. All three
-   inputs share one radius, height and border so they look like one set. */
-.ledger-edit-form .MuiInputBase-input {
+/* Inline edit inputs sit on the dark card, so they need light text and compact
+   sizing. */
+.ledger-edit-form .MuiInputBase-input:not(.MuiSelect-select) {
   color: var(--color-ink) !important;
 }
 
 .ledger-edit-form .MuiFormControl-root {
+  position: relative;
   background: transparent !important;
 }
 
-.ledger-edit-form .MuiOutlinedInput-root {
-  min-height: 40px;
+.ledger-edit-form .MuiOutlinedInput-root:not(.ledger-category-select) {
+  min-height: 30px;
   border-radius: 10px !important;
   background: var(--color-cream);
 }
 
 .ledger-edit-form .MuiOutlinedInput-input {
-  min-height: 40px;
+  min-height: 30px;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: 5px 12px;
 }
 
 .ledger-edit-form input[type="date"] {
@@ -225,41 +458,109 @@
   text-align: right;
 }
 
-.ledger-edit-form .MuiOutlinedInput-notchedOutline {
+.ledger-edit-form
+  .MuiOutlinedInput-root:not(.ledger-category-select)
+  .MuiOutlinedInput-notchedOutline {
   border-radius: 10px !important;
   border: 1px solid color-mix(in srgb, var(--color-slate) 35%, transparent);
 }
 
-.ledger-edit-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
 .ledger-edit-form
-  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-root:not(.ledger-category-select):hover
+  .MuiOutlinedInput-notchedOutline,
+.ledger-edit-form
+  .MuiOutlinedInput-root:not(.ledger-category-select).Mui-focused
   .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-bronze) !important;
   border-width: 1px !important;
 }
 
 .ledger-edit-form .MuiFormHelperText-root.Mui-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1;
+  margin: 3px 0 0;
+  white-space: nowrap;
   color: var(--color-danger-muted);
 }
 
 @media (max-width: 850px) {
+  .ledger-date-description-row,
+  .ledger-category-amount-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-category-amount-row > .MuiFormControl-root:first-child {
+    transform: none;
+  }
+
+  .ledger-category-amount-row
+    > .MuiFormControl-root:first-child
+    .ledger-category-form-select {
+    width: 100%;
+    min-width: 0;
+  }
+
   .ledger-head {
     display: none;
   }
 
   .ledger-row {
     grid-template-columns: minmax(0, 1fr) auto;
-    row-gap: 4px;
+    row-gap: 10px;
+    padding: 14px 16px 16px;
   }
 
-  .ledger-amount {
-    grid-column: 2;
+  .ledger-row:not(.ledger-edit-form) .ledger-date {
+    grid-column: 1 / -1;
     grid-row: 1;
   }
 
-  .ledger-actions {
-    grid-column: 2;
+  .ledger-row:not(.ledger-edit-form) .ledger-amount {
+    grid-column: 2 / -1;
     grid-row: 2;
+    align-self: center;
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-description {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-category-select,
+  .ledger-row:not(.ledger-edit-form) .ledger-category-loading {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-category-select {
+    width: var(--category-select-width);
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-actions {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-category-select {
+    max-width: min(100%, 220px);
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-category-select .MuiSelect-select {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-category-loading {
+    max-width: min(100%, 220px);
+  }
+
+  .ledger-row:not(.ledger-edit-form) .ledger-actions {
+    justify-content: flex-end;
   }
 
   .ledger-row.ledger-edit-form {
