@@ -12,3 +12,4 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet build api/FinHub.Api
+      - run: dotnet test api/FinHub.Api.Tests
