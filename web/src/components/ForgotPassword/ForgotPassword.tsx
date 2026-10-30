@@ -33,6 +33,7 @@ export default function ForgotPassword() {
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailFormSchema),
     defaultValues: { email: "" },
+    mode: "onTouched",
   });
 
   const onSubmit: SubmitHandler<EmailFormData> = async (data) => {

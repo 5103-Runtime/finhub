@@ -20,10 +20,11 @@ export function TextFormField<T extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState }) => (
+      render={({ field: { ref, ...field }, fieldState }) => (
         <TextField
           {...props}
           {...field}
+          inputRef={ref}
           error={Boolean(fieldState.error)}
           helperText={fieldState.error?.message ?? helperText}
         />

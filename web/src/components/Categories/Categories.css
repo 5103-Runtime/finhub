@@ -1,0 +1,27 @@
+.categories-page {
+  min-height: 100vh;
+  background: var(--color-ink);
+}
+
+.category-management-card {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 16px !important;
+  background: color-mix(
+    in srgb,
+    var(--color-slate) 29%,
+    var(--color-ink)
+  ) !important;
+  box-shadow: none !important;
+}
+
+.category-management-card .MuiCardContent-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px !important;
+}
+
+.category-management-actions {
+  display: flex;
+  gap: 4px;
+}

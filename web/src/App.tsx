@@ -12,6 +12,7 @@ import ForgotPassword from "@app/components/ForgotPassword";
 import ResetPassword from "@app/components/ResetPassword";
 import Accounts from "@app/components/Accounts";
 import Transactions from "@app/components/Transactions";
+import Categories from "@app/components/Categories";
 
 function TransactionsRoute() {
   const location = useLocation();
@@ -38,6 +39,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/transactions" element={<TransactionsRoute />} />
+        <Route path="/categories" element={<Categories />} />
       </Route>
 
       {/* 404 Catch-All */}

@@ -1,10 +1,18 @@
-import { useState, type CSSProperties } from "react";
+import {
+  Children,
+  forwardRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   Box,
   CircularProgress,
   IconButton,
   MenuItem,
   Divider,
+  MenuList,
+  type MenuListProps,
   Select,
   Typography,
 } from "@mui/material";
@@ -50,6 +58,24 @@ type CategoryOption = {
   color: string;
   isEmpty: boolean;
 };
+
+const CategoryMenuList = forwardRef<HTMLUListElement, MenuListProps>(
+  function CategoryMenuList({ children, ...props }, ref) {
+    const menuItems = Children.toArray(children);
+    const manageItem = menuItems.pop() as ReactNode;
+    const divider = menuItems.pop() as ReactNode;
+
+    return (
+      <MenuList ref={ref} {...props}>
+        <Box component="div" className="ledger-category-options-scroll">
+          {menuItems}
+        </Box>
+        {divider}
+        {manageItem}
+      </MenuList>
+    );
+  },
+);
 
 function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
   const longestLabelLength = Math.max(
@@ -97,6 +123,7 @@ function CategorySelect({
           ?.label ?? "None"
       }
       MenuProps={{
+        slots: { list: CategoryMenuList },
         slotProps: {
           paper: { className: "ledger-category-menu" },
         },

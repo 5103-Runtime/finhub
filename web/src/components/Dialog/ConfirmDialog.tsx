@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { Button, Typography } from "@mui/material";
 import { DialogBase } from "./DialogBase";
+import { FormAlert } from "@app/components/Form/FormAlert";
 
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
   message: ReactNode;
   confirmLabel: string;
+  error?: string;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -18,6 +20,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  error,
   loading = false,
   onConfirm,
   onCancel,
@@ -51,6 +54,7 @@ export function ConfirmDialog({
       }
     >
       <Typography>{message}</Typography>
+      <FormAlert severity="error">{error}</FormAlert>
     </DialogBase>
   );
 }
