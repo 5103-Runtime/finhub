@@ -103,6 +103,10 @@ export default function Login() {
                 to="/forgot-password"
                 size="small"
                 className="forgot-password-link"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  navigate("/forgot-password");
+                }}
               >
                 Forgot password?
               </Button>
