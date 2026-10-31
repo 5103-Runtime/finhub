@@ -12,6 +12,7 @@ export type DialogBaseProps = {
   open: boolean;
   title: string;
   onClose: () => void;
+  onEntered?: () => void;
   onExited?: () => void;
   busy?: boolean;
   maxWidth?: DialogProps["maxWidth"];
@@ -23,6 +24,7 @@ export function DialogBase({
   open,
   title,
   onClose,
+  onEntered,
   onExited,
   busy = false,
   maxWidth = "sm",
@@ -38,7 +40,7 @@ export function DialogBase({
       onClose={() => {
         if (!busy) onClose();
       }}
-      slotProps={{ transition: { onExited } }}
+      slotProps={{ transition: { onEntered, onExited } }}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>{children}</DialogContent>

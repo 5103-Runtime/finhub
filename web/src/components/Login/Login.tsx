@@ -31,6 +31,7 @@ export default function Login() {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
+    mode: "onTouched",
   });
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
@@ -89,6 +90,7 @@ export default function Login() {
                 name="email"
                 label="Email address"
                 type="email"
+                autoFocus
                 autoComplete="email"
               />
               <PasswordField<LoginFormData>
@@ -101,6 +103,10 @@ export default function Login() {
                 to="/forgot-password"
                 size="small"
                 className="forgot-password-link"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  navigate("/forgot-password");
+                }}
               >
                 Forgot password?
               </Button>

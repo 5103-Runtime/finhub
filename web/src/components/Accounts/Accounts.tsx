@@ -365,6 +365,10 @@ export default function Accounts() {
         form={form}
         onSubmit={onSubmit}
         onClose={closeModal}
+        onEntered={() => {
+          form.setFocus("name");
+          form.clearErrors("name");
+        }}
         onExited={handleModalExited}
         submitLabel={selectedAccount ? "Save changes" : "Add account"}
         error={serverError}

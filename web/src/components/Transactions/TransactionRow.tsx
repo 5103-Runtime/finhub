@@ -4,7 +4,6 @@ import {
   CircularProgress,
   IconButton,
   MenuItem,
-  Divider,
   Select,
   Typography,
 } from "@mui/material";
@@ -13,12 +12,16 @@ import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
-import SettingsRounded from "@mui/icons-material/SettingsRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TextFormField } from "@app/components/Form";
 import { Form } from "@app/components/Form/Form";
 import { FormAlert } from "@app/components/Form/FormAlert";
+import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
+import {
+  CategoryMenuFooter,
+  MANAGE_CATEGORIES_VALUE,
+} from "@app/components/Category/CategoryMenuFooter";
 import type { AccountResponse } from "@app/services/accountsApi";
 import type { TransactionResponse } from "@app/services/transactionApi";
 import {
@@ -76,7 +79,6 @@ function CategorySelect({
   onChange: (categoryId: string) => Promise<void>;
 }) {
   const navigate = useNavigate();
-  const manageCategoriesValue = "__manage_categories__";
   return (
     <Select
       value={value ?? ""}
@@ -84,7 +86,7 @@ function CategorySelect({
       aria-label={ariaLabel}
       disabled={disabled}
       onChange={(event) => {
-        if (event.target.value === manageCategoriesValue) {
+        if (event.target.value === MANAGE_CATEGORIES_VALUE) {
           navigate("/categories");
           return;
         }
@@ -97,6 +99,7 @@ function CategorySelect({
           ?.label ?? "None"
       }
       MenuProps={{
+        slots: { list: CategoryMenuList },
         slotProps: {
           paper: { className: "ledger-category-menu" },
         },
@@ -120,15 +123,7 @@ function CategorySelect({
           {option.label}
         </MenuItem>
       ))}
-      <Divider />
-      <MenuItem
-        value={manageCategoriesValue}
-        className="ledger-category-manage-option"
-        onClick={() => navigate("/categories")}
-      >
-        <SettingsRounded fontSize="small" />
-        Edit categories
-      </MenuItem>
+      <CategoryMenuFooter />
     </Select>
   );
 }
@@ -141,10 +136,19 @@ function CategoryLoadingDisplay({
   width: string;
 }) {
   return (
-    <Box
+    <Select
+      value={category.value}
+      size="small"
       className="ledger-category-select ledger-category-loading"
       aria-label={`Loading category ${category.label}`}
-      role="status"
+      aria-busy="true"
+      open={false}
+      displayEmpty
+      IconComponent={(props) => (
+        <CircularProgress {...props} size={13} aria-hidden="true" />
+      )}
+      renderValue={() => category.label}
+      variant="outlined"
       style={
         {
           "--category-color": category.color,
@@ -152,9 +156,50 @@ function CategoryLoadingDisplay({
         } as CSSProperties
       }
     >
-      <span>{category.label}</span>
-      <CircularProgress size={13} aria-hidden="true" />
-    </Box>
+      <MenuItem value={category.value}>{category.label}</MenuItem>
+    </Select>
+  );
+}
+
+function TransactionCategoryField({
+  transaction,
+  categoryOptions,
+  disabled,
+  onCategoryChange,
+}: {
+  transaction: TransactionResponse;
+  categoryOptions: CategoryOption[];
+  disabled: boolean;
+  onCategoryChange: (categoryId: string) => Promise<void>;
+}) {
+  const [categoryUpdating, setCategoryUpdating] = useState(false);
+  const selectedCategory =
+    categoryOptions.find((option) => option.value === transaction.categoryId) ??
+    categoryOptions[0];
+  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
+
+  return categoryUpdating ? (
+    <CategoryLoadingDisplay
+      category={selectedCategory}
+      width={categorySelectWidth}
+    />
+  ) : (
+    <CategorySelect
+      value={transaction.categoryId}
+      categoryOptions={categoryOptions}
+      selectedCategory={selectedCategory}
+      width={categorySelectWidth}
+      ariaLabel={`Category for ${transaction.description}`}
+      disabled={disabled}
+      onChange={async (categoryId) => {
+        setCategoryUpdating(true);
+        try {
+          await onCategoryChange(categoryId);
+        } finally {
+          setCategoryUpdating(false);
+        }
+      }}
+    />
   );
 }
 
@@ -172,13 +217,8 @@ export function TransactionRow({
   categoryOptions,
   onCategoryChange,
 }: TransactionRowProps) {
-  const [categoryUpdating, setCategoryUpdating] = useState(false);
   const amountClass =
     transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
-  const selectedCategory =
-    categoryOptions.find((option) => option.value === transaction.categoryId) ??
-    categoryOptions[0];
-  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
 
   return (
     <>
@@ -192,29 +232,12 @@ export function TransactionRow({
         >
           {transaction.description}
         </Typography>
-        {categoryUpdating ? (
-          <CategoryLoadingDisplay
-            category={selectedCategory}
-            width={categorySelectWidth}
-          />
-        ) : (
-          <CategorySelect
-            value={transaction.categoryId}
-            categoryOptions={categoryOptions}
-            selectedCategory={selectedCategory}
-            width={categorySelectWidth}
-            ariaLabel={`Category for ${transaction.description}`}
-            disabled={deleting}
-            onChange={async (categoryId) => {
-              setCategoryUpdating(true);
-              try {
-                await onCategoryChange(categoryId);
-              } finally {
-                setCategoryUpdating(false);
-              }
-            }}
-          />
-        )}
+        <TransactionCategoryField
+          transaction={transaction}
+          categoryOptions={categoryOptions}
+          disabled={deleting}
+          onCategoryChange={onCategoryChange}
+        />
 
         <Typography className={amountClass}>
           {formatSignedCurrency(transaction.amount, account.currency)}
@@ -289,7 +312,6 @@ export function TransactionEditRow({
   onCancel,
   onSave,
 }: TransactionEditRowProps) {
-  const [categoryUpdating, setCategoryUpdating] = useState(false);
   const [serverError, setServerError] = useState("");
   const [serverErrorSeverity, setServerErrorSeverity] = useState<
     "error" | "warning"
@@ -306,10 +328,6 @@ export function TransactionEditRow({
     mode: "onTouched",
   });
   const { isSubmitting } = form.formState;
-  const selectedCategory =
-    categoryOptions.find((option) => option.value === transaction.categoryId) ??
-    categoryOptions[0];
-  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
 
   const onSubmit: SubmitHandler<TransactionEditFormData> = async (data) => {
     setServerError("");
@@ -370,29 +388,12 @@ export function TransactionEditRow({
           htmlInput: { "aria-label": "Description", maxLength: 500 },
         }}
       />
-      {categoryUpdating ? (
-        <CategoryLoadingDisplay
-          category={selectedCategory}
-          width={categorySelectWidth}
-        />
-      ) : (
-        <CategorySelect
-          value={transaction.categoryId}
-          categoryOptions={categoryOptions}
-          selectedCategory={selectedCategory}
-          width={categorySelectWidth}
-          ariaLabel={`Category for ${transaction.description}`}
-          disabled={isSubmitting}
-          onChange={async (categoryId) => {
-            setCategoryUpdating(true);
-            try {
-              await onCategoryChange(categoryId);
-            } finally {
-              setCategoryUpdating(false);
-            }
-          }}
-        />
-      )}
+      <TransactionCategoryField
+        transaction={transaction}
+        categoryOptions={categoryOptions}
+        disabled={isSubmitting}
+        onCategoryChange={onCategoryChange}
+      />
       <TextFormField<TransactionEditFormData>
         name="amount"
         size="small"
