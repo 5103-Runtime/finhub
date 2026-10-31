@@ -4,7 +4,6 @@ import {
   CircularProgress,
   IconButton,
   MenuItem,
-  Divider,
   Select,
   Typography,
 } from "@mui/material";
@@ -13,13 +12,16 @@ import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
-import SettingsRounded from "@mui/icons-material/SettingsRounded";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TextFormField } from "@app/components/Form";
 import { Form } from "@app/components/Form/Form";
 import { FormAlert } from "@app/components/Form/FormAlert";
 import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
+import {
+  CategoryMenuFooter,
+  MANAGE_CATEGORIES_VALUE,
+} from "@app/components/Category/CategoryMenuFooter";
 import type { AccountResponse } from "@app/services/accountsApi";
 import type { TransactionResponse } from "@app/services/transactionApi";
 import {
@@ -77,7 +79,6 @@ function CategorySelect({
   onChange: (categoryId: string) => Promise<void>;
 }) {
   const navigate = useNavigate();
-  const manageCategoriesValue = "__manage_categories__";
   return (
     <Select
       value={value ?? ""}
@@ -85,7 +86,7 @@ function CategorySelect({
       aria-label={ariaLabel}
       disabled={disabled}
       onChange={(event) => {
-        if (event.target.value === manageCategoriesValue) {
+        if (event.target.value === MANAGE_CATEGORIES_VALUE) {
           navigate("/categories");
           return;
         }
@@ -122,15 +123,7 @@ function CategorySelect({
           {option.label}
         </MenuItem>
       ))}
-      <Divider />
-      <MenuItem
-        value={manageCategoriesValue}
-        className="ledger-category-manage-option"
-        onClick={() => navigate("/categories")}
-      >
-        <SettingsRounded fontSize="small" />
-        Edit categories
-      </MenuItem>
+      <CategoryMenuFooter />
     </Select>
   );
 }
@@ -143,10 +136,19 @@ function CategoryLoadingDisplay({
   width: string;
 }) {
   return (
-    <Box
+    <Select
+      value={category.value}
+      size="small"
       className="ledger-category-select ledger-category-loading"
       aria-label={`Loading category ${category.label}`}
-      role="status"
+      aria-busy="true"
+      open={false}
+      displayEmpty
+      IconComponent={(props) => (
+        <CircularProgress {...props} size={13} aria-hidden="true" />
+      )}
+      renderValue={() => category.label}
+      variant="outlined"
       style={
         {
           "--category-color": category.color,
@@ -154,9 +156,8 @@ function CategoryLoadingDisplay({
         } as CSSProperties
       }
     >
-      <span>{category.label}</span>
-      <CircularProgress size={13} aria-hidden="true" />
-    </Box>
+      <MenuItem value={category.value}>{category.label}</MenuItem>
+    </Select>
   );
 }
 

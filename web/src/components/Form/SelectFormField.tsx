@@ -10,13 +10,15 @@ import {
   FormControl,
   FormHelperText,
   InputLabel,
-  Divider,
   MenuItem,
   Select,
   type FormControlProps,
 } from "@mui/material";
-import SettingsRounded from "@mui/icons-material/SettingsRounded";
 import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
+import {
+  CategoryMenuFooter,
+  MANAGE_CATEGORIES_VALUE,
+} from "@app/components/Category/CategoryMenuFooter";
 
 export type SelectOption = {
   value: string;
@@ -46,7 +48,6 @@ export function SelectFormField<T extends FieldValues>({
   const labelId = useId();
   const navigate = useNavigate();
   const isCategoryField = options.some((option) => option.color);
-  const manageCategoriesValue = "__manage_categories__";
 
   return (
     <Controller
@@ -70,7 +71,7 @@ export function SelectFormField<T extends FieldValues>({
             onChange={(event) => {
               if (
                 isCategoryField &&
-                event.target.value === manageCategoriesValue
+                event.target.value === MANAGE_CATEGORIES_VALUE
               ) {
                 navigate("/categories");
                 return;
@@ -119,19 +120,7 @@ export function SelectFormField<T extends FieldValues>({
                 {option.label}
               </MenuItem>
             ))}
-            {isCategoryField && (
-              <>
-                <Divider />
-                <MenuItem
-                  value={manageCategoriesValue}
-                  className="ledger-category-manage-option"
-                  onClick={() => navigate("/categories")}
-                >
-                  <SettingsRounded fontSize="small" />
-                  Edit categories
-                </MenuItem>
-              </>
-            )}
+            {isCategoryField && <CategoryMenuFooter />}
           </Select>
           <FormHelperText>
             {fieldState.error?.message ?? helperText}

@@ -145,7 +145,7 @@
     transparent
   ) !important;
   font-size: 13px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 .ledger-category-select .MuiSelect-select {
@@ -170,33 +170,7 @@
   color: var(--category-color) !important;
 }
 
-.ledger-category-loading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-  height: 30px;
-  padding: 5px 12px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  color: var(--category-color) !important;
-  background: color-mix(
-    in srgb,
-    var(--category-color) 16%,
-    transparent
-  ) !important;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-}
-
 .ledger-category-loading .MuiCircularProgress-root {
-  flex: 0 0 13px;
-  color: var(--category-color);
-}
-
-.ledger-category-select.Mui-disabled .MuiSelect-select,
-.ledger-category-select.Mui-disabled .MuiSelect-icon {
   color: var(--category-color) !important;
 }
 
