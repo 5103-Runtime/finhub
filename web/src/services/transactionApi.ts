@@ -44,12 +44,38 @@ export interface UpdateTransactionRequest {
 }
 
 /**
+ * @brief Optional filters used when retrieving the authenticated user's transactions.
+ */
+export interface TransactionFilters {
+  accountId?: string;
+  categoryId?: string;
+  uncategorized?: boolean;
+  fromDate?: string;
+  toDate?: string;
+  minAmount?: string;
+  maxAmount?: string;
+  search?: string;
+}
+
+/**
  * @brief Retrieves the authenticated user's transactions, newest first.
  * @returns A promise containing the user's transactions.
  * @throws ApiError If the request fails or the user is not authenticated.
  */
-export function getTransactions(): Promise<TransactionResponse[]> {
-  return apiGet<TransactionResponse[]>("/api/transactions");
+export function getTransactions(
+  filters: TransactionFilters = {},
+): Promise<TransactionResponse[]> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== "" && value !== false) {
+      query.set(key, String(value));
+    }
+  }
+
+  const queryString = query.toString();
+  return apiGet<TransactionResponse[]>(
+    `/api/transactions${queryString ? `?${queryString}` : ""}`,
+  );
 }
 
 /**

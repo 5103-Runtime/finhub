@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "@app/components/Login";
 import Register from "@app/components/Register";
 import Home from "@app/components/Home";
@@ -13,11 +13,6 @@ import ResetPassword from "@app/components/ResetPassword";
 import Accounts from "@app/components/Accounts";
 import Transactions from "@app/components/Transactions";
 import Categories from "@app/components/Categories";
-
-function TransactionsRoute() {
-  const location = useLocation();
-  return <Transactions key={`${location.pathname}${location.search}`} />;
-}
 
 function App() {
   return (
@@ -38,7 +33,7 @@ function App() {
         <Route path="/setup-profile" element={<SetupProfile />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
-        <Route path="/transactions" element={<TransactionsRoute />} />
+        <Route path="/transactions" element={<Transactions />} />
         <Route path="/categories" element={<Categories />} />
       </Route>
 

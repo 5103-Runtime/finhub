@@ -34,6 +34,7 @@ import {
 } from "@app/utils/transactions";
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { ApiError } from "@app/services/apiClient";
+import type { CategoryOption } from "./categoryTypes";
 
 type TransactionRowProps = {
   transaction: TransactionResponse;
@@ -45,13 +46,6 @@ type TransactionRowProps = {
   potentialDuplicate?: boolean;
   categoryOptions: CategoryOption[];
   onCategoryChange: (categoryId: string) => Promise<void>;
-};
-
-type CategoryOption = {
-  value: string;
-  label: string;
-  color: string;
-  isEmpty: boolean;
 };
 
 function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
