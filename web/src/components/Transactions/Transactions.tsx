@@ -44,6 +44,7 @@ import {
 } from "@app/services/categoriesApi";
 import {
   getEmptyTransactionForm,
+  transactionFilterSchema,
   transactionSchema,
   type TransactionEditFormData,
   type TransactionFormData,
@@ -92,6 +93,7 @@ export default function Transactions() {
     minAmount: searchParams.get("minAmount") ?? "",
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
+  const [searchFilterError, setSearchFilterError] = useState("");
   const filterDebounceRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -214,6 +216,16 @@ export default function Transactions() {
   ) => {
     setFiltersOpen(true);
     setDraftFilterValues((current) => ({ ...current, [key]: value }));
+    if (key === "search") {
+      const validation = transactionFilterSchema.shape.search.safeParse(value);
+      setSearchFilterError(
+        validation.success ? "" : validation.error.issues[0].message,
+      );
+      if (!validation.success) {
+        return;
+      }
+    }
+
     if (filterDebounceRef.current !== null) {
       window.clearTimeout(filterDebounceRef.current);
     }
@@ -238,6 +250,7 @@ export default function Transactions() {
       filterDebounceRef.current = null;
     }
     setDraftFilterValues({ search: "", minAmount: "", maxAmount: "" });
+    setSearchFilterError("");
     setSearchParams(new URLSearchParams());
   };
 
@@ -728,6 +741,8 @@ export default function Transactions() {
                       }
                       size="small"
                       type="text"
+                      error={Boolean(searchFilterError)}
+                      helperText={searchFilterError}
                       slotProps={{
                         input: {
                           endAdornment: draftFilterValues.search ? (

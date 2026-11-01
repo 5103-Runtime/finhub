@@ -75,9 +75,11 @@
 .transaction-filters {
   margin-bottom: 24px;
   padding: 18px 20px 20px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid
+    color-mix(in srgb, var(--color-bronze) 32%, var(--color-slate));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--color-slate) 22%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-slate) 34%, var(--color-ink));
+  box-shadow: 0 8px 24px var(--shadow-soft);
 }
 
 .transaction-filter-panel-heading {
@@ -170,22 +172,41 @@
 
 .transaction-filters .MuiOutlinedInput-root {
   height: 40px;
+  background: transparent !important;
 }
 
 .transaction-filters .ledger-category-form-select {
-  height: 36px !important;
+  height: 40px !important;
   min-height: 0 !important;
+  color: var(--color-mist) !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select {
   color: var(--category-color) !important;
   background: color-mix(
     in srgb,
     var(--category-color) 16%,
     transparent
   ) !important;
-  border-radius: 999px !important;
 }
 
 .transaction-filters .ledger-category-form-select .MuiSelect-select,
 .transaction-filters .ledger-category-form-select .MuiSelect-icon {
+  color: var(--color-mist) !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiSelect-select,
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiSelect-icon {
   color: var(--category-color) !important;
 }
 
@@ -193,15 +214,23 @@
   display: flex !important;
   align-items: center;
   min-height: 0 !important;
-  padding: 5px 12px !important;
+  padding: 7px 12px !important;
   line-height: 24px !important;
 }
 
 .transaction-filters
   .ledger-category-form-select
   .MuiOutlinedInput-notchedOutline {
-  border: 1px solid currentColor !important;
+  border: 1px solid
+    color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
   border-radius: 999px !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiOutlinedInput-notchedOutline {
+  border-color: currentColor !important;
 }
 
 .transaction-filters .MuiSelect-icon {
@@ -232,15 +261,12 @@
   color: var(--color-mist) !important;
 }
 
-.transaction-filters .MuiInputLabel-root.Mui-focused {
-  color: var(--color-bronze) !important;
-}
-
 .transaction-filters .MuiInputBase-root {
   color: var(--color-cream) !important;
 }
 
 .transaction-filters .MuiOutlinedInput-notchedOutline {
+  border-width: 1px !important;
   border-color: color-mix(
     in srgb,
     var(--color-mist) 45%,
@@ -249,12 +275,58 @@
 }
 
 .transaction-filters
-  .MuiOutlinedInput-root:hover
-  .MuiOutlinedInput-notchedOutline,
-.transaction-filters
-  .MuiOutlinedInput-root.Mui-focused
+  .MuiTextField-root
+  .MuiOutlinedInput-root:hover:not(.Mui-focused)
   .MuiOutlinedInput-notchedOutline {
-  border-color: var(--color-bronze) !important;
+  border-width: 2px !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-mist) 45%,
+    transparent
+  ) !important;
+}
+
+.transaction-filters .MuiTextField-root .MuiInputLabel-root.Mui-error,
+.transaction-filters
+  .MuiTextField-root
+  .MuiFormHelperText-root.Mui-error {
+  color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root
+  .MuiOutlinedInput-root.Mui-error
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root
+  .MuiOutlinedInput-root.Mui-error:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-danger) !important;
+  border-width: 2px !important;
+}
+
+.transaction-filters
+  .MuiTextField-root:has(.MuiOutlinedInput-root.Mui-error)
+  .transaction-filter-search-clear {
+  color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root:has(.MuiOutlinedInput-root.Mui-error)
+  .transaction-filter-search-clear:hover {
+  color: var(--color-danger-muted) !important;
+}
+
+.transaction-filters input:-webkit-autofill,
+.transaction-filters input:-webkit-autofill:hover,
+.transaction-filters input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-cream);
+  -webkit-box-shadow: 0 0 0 1000px
+    color-mix(in srgb, var(--color-slate) 34%, var(--color-ink)) inset;
+  caret-color: var(--color-cream);
 }
 
 .transaction-filters input[type="date"]::-webkit-calendar-picker-indicator {
@@ -479,16 +551,6 @@
   ) !important;
 }
 
-.app-dialog
-  .MuiFormControl-root:has(.ledger-category-form-select)
-  .MuiInputLabel-root.Mui-focused {
-  color: color-mix(
-    in srgb,
-    var(--category-color) 45%,
-    var(--color-ink)
-  ) !important;
-}
-
 .ledger-category-form-select .MuiOutlinedInput-notchedOutline {
   border: 1px solid currentColor !important;
   border-radius: 999px !important;
@@ -551,6 +613,10 @@
   border-radius: 50%;
   background: var(--category-color);
   content: "";
+}
+
+.ledger-category-option-all::before {
+  background: transparent;
 }
 
 .ledger-category-option:hover,
@@ -678,9 +744,6 @@
 
 .ledger-edit-form
   .MuiOutlinedInput-root:not(.ledger-category-select):hover
-  .MuiOutlinedInput-notchedOutline,
-.ledger-edit-form
-  .MuiOutlinedInput-root:not(.ledger-category-select).Mui-focused
   .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-bronze) !important;
   border-width: 1px !important;

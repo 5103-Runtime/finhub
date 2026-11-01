@@ -26,7 +26,7 @@ export function CategoryFilter({
     <MenuItem
       key={value || option.label}
       value={value}
-      className="ledger-category-option"
+      className={`ledger-category-option${value === "" ? " ledger-category-option-all" : ""}`}
       style={{ "--category-color": option.color } as CSSProperties}
     >
       {option.label}
