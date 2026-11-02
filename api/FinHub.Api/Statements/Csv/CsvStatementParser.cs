@@ -241,9 +241,15 @@ public sealed class CsvStatementParser(StatementMappingCatalog catalog) : IState
         return value[..cut].TrimEnd();
     }
 
+    /// <summary>
+    /// Builds the error for a row that cannot be parsed, prefixed with its line.
+    /// </summary>
     private static StatementFormatException InvalidRow(int line, string message) =>
         new(StatementFormatException.InvalidRow, $"Line {line}: {message}", line);
 
+    /// <summary>
+    /// Builds the error for a row that belongs to a different account than the first row, prefixed with its line.
+    /// </summary>
     private static StatementFormatException MultipleAccounts(int line) =>
         new(StatementFormatException.MultipleAccounts,
             $"Line {line}: The file holds more than one account. Export one account at a time.", line);
