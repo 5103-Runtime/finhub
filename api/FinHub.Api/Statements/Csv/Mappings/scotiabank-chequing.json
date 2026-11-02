@@ -1,0 +1,11 @@
+{
+  "bank": "scotiabank",
+  "accountType": "chequing",
+  "match": ["Filter", "Date", "Description", "Sub-description", "Type of Transaction", "Amount", "Balance"],
+  "dateColumn": "Date",
+  "dateFormat": "M/d/yyyy",
+  "descriptionColumns": ["Description", "Sub-description"],
+  "amountColumn": "Amount",
+  "invert": false,
+  "balanceColumn": "Balance"
+}

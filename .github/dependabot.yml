@@ -9,7 +9,9 @@ updates:
       include: "scope"
 
   - package-ecosystem: nuget
-    directory: /api/FinHub.Api
+    directories:
+      - /api/FinHub.Api
+      - /api/FinHub.Api.Tests
     schedule:
       interval: weekly
     commit-message:

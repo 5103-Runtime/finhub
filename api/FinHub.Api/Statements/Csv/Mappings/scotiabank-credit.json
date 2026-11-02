@@ -1,0 +1,13 @@
+{
+  "bank": "scotiabank",
+  "accountType": "credit_card",
+  "match": ["Filter", "Date", "Description", "Sub-description", "Status", "Type of Transaction", "Amount", "Associated card number"],
+  "dateColumn": "Date",
+  "dateFormat": "M/d/yyyy",
+  "descriptionColumns": ["Description", "Sub-description"],
+  "amountColumn": "Amount",
+  "invert": true,
+  "balanceColumn": null,
+  "statusColumn": "Status",
+  "importStatuses": ["posted"]
+}

@@ -27,6 +27,7 @@ jobs:
           filters: |
             api:
               - 'api/**'
+              - 'test/fixtures/statements/**'
             web:
               - 'web/**'
             test:
