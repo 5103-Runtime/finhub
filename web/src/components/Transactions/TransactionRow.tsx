@@ -1,7 +1,8 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   Box,
   CircularProgress,
+  Fade,
   IconButton,
   MenuItem,
   Select,
@@ -211,6 +212,22 @@ export function TransactionRow({
   categoryOptions,
   onCategoryChange,
 }: TransactionRowProps) {
+  const [visibleSuccessMessage, setVisibleSuccessMessage] =
+    useState(successMessage);
+
+  useEffect(() => {
+    if (successMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleSuccessMessage(undefined);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage]);
+
+  const displayedSuccessMessage = successMessage ?? visibleSuccessMessage;
   const amountClass =
     transaction.amount > 0 ? "ledger-amount positive" : "ledger-amount";
 
@@ -255,7 +272,7 @@ export function TransactionRow({
           </IconButton>
         </Box>
       </Box>
-      {(potentialDuplicate || successMessage) && (
+      {(potentialDuplicate || displayedSuccessMessage) && (
         <Box className="ledger-row-feedback">
           {potentialDuplicate && (
             <FormAlert severity="warning">
@@ -263,9 +280,15 @@ export function TransactionRow({
               Please review your transactions.
             </FormAlert>
           )}
-          {successMessage && (
-            <FormAlert severity="success">{successMessage}</FormAlert>
-          )}
+          <Fade in={Boolean(successMessage)} timeout={250}>
+            <Box>
+              {displayedSuccessMessage && (
+                <FormAlert severity="success">
+                  {displayedSuccessMessage}
+                </FormAlert>
+              )}
+            </Box>
+          </Fade>
         </Box>
       )}
     </>

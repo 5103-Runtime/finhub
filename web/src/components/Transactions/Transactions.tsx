@@ -110,6 +110,7 @@ export default function Transactions() {
   const [searchFilterError, setSearchFilterError] = useState("");
   const filterDebounceRef = useRef<number | null>(null);
 
+  // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
     let isCurrentRequest = true;
     const filterParams = new URLSearchParams(filterKey);
@@ -147,6 +148,7 @@ export default function Transactions() {
     };
   }, [filterKey]);
 
+  // Scroll to an account selected from account navigation.
   useEffect(() => {
     if (!selectedAccountId || loading || !accounts.length) {
       return;
@@ -241,6 +243,7 @@ export default function Transactions() {
     }, 350);
   };
 
+  // Cancel pending filter updates when the page unmounts.
   useEffect(
     () => () => {
       if (filterDebounceRef.current !== null) {
@@ -249,6 +252,19 @@ export default function Transactions() {
     },
     [],
   );
+
+  // Auto-dismiss transaction update success feedback.
+  useEffect(() => {
+    if (!successTransactionId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessTransactionId(null);
+    }, 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [successTransactionId]);
 
   const clearFilters = () => {
     setFiltersOpen(true);
