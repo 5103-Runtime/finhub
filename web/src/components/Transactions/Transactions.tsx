@@ -138,7 +138,7 @@ export default function Transactions() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [filterKey, selectedAccountId]);
+  }, [filterKey]);
 
   useEffect(() => {
     if (!selectedAccountId || loading || !accounts.length) {
