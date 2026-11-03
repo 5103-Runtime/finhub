@@ -36,6 +36,7 @@ import {
   deleteTransaction,
   getTransactions,
   updateTransaction,
+  type TransactionFilters,
   type TransactionResponse,
 } from "@app/services/transactionApi";
 import {
@@ -63,6 +64,19 @@ import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 import { ApiError } from "@app/services/apiClient";
+
+function getTransactionFilters(params: URLSearchParams): TransactionFilters {
+  return {
+    accountId: params.get("accountId") ?? undefined,
+    categoryId: params.get("categoryId") ?? undefined,
+    uncategorized: params.get("uncategorized") === "true",
+    fromDate: params.get("fromDate") ?? undefined,
+    toDate: params.get("toDate") ?? undefined,
+    minAmount: params.get("minAmount") ?? undefined,
+    maxAmount: params.get("maxAmount") ?? undefined,
+    search: params.get("search") ?? undefined,
+  };
+}
 
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -101,16 +115,7 @@ export default function Transactions() {
     const filterParams = new URLSearchParams(filterKey);
 
     Promise.all([
-      getTransactions({
-        accountId: filterParams.get("accountId") ?? undefined,
-        categoryId: filterParams.get("categoryId") ?? undefined,
-        uncategorized: filterParams.get("uncategorized") === "true",
-        fromDate: filterParams.get("fromDate") ?? undefined,
-        toDate: filterParams.get("toDate") ?? undefined,
-        minAmount: filterParams.get("minAmount") ?? undefined,
-        maxAmount: filterParams.get("maxAmount") ?? undefined,
-        search: filterParams.get("search") ?? undefined,
-      }),
+      getTransactions(getTransactionFilters(filterParams)),
       getAccounts(),
       getCategories(),
     ])
@@ -119,6 +124,8 @@ export default function Transactions() {
           setTransactions(loadedTransactions);
           setAccounts(loadedAccounts);
           setCategories(loadedCategories);
+          setLoadFailed(false);
+          setServerError("");
         }
       })
       .catch((requestError) => {
@@ -289,7 +296,11 @@ export default function Transactions() {
   // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async (): Promise<boolean> => {
     try {
-      setTransactions(await getTransactions());
+      setTransactions(
+        await getTransactions(
+          getTransactionFilters(new URLSearchParams(searchParams)),
+        ),
+      );
       return true;
     } catch (requestError) {
       setServerError(
