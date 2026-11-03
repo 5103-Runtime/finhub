@@ -438,6 +438,9 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
+      categoryId:
+        transactions.find((transaction) => transaction.id === id)?.categoryId ??
+        null,
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),

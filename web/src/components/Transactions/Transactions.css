@@ -451,6 +451,12 @@
   color: var(--category-color) !important;
 }
 
+.ledger-category-select.Mui-disabled .MuiSelect-select,
+.ledger-category-select.Mui-disabled .MuiSelect-icon {
+  color: var(--category-color) !important;
+  -webkit-text-fill-color: var(--category-color) !important;
+}
+
 .ledger-category-loading .MuiCircularProgress-root {
   color: var(--category-color) !important;
 }
