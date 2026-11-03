@@ -6,12 +6,12 @@ FinHub parses bank statements in the API, not the browser. The user uploads a CS
 
 - **Parsing is server-side.** One parser, one set of tests, and the duplicate check (FIN-42) runs in the same place as the data.
 - **Bank formats are data, not code.** Each export shape is a JSON mapping selected by its header. Supporting a new bank means adding a mapping and a sample file.
-- **Parsing and saving are separate.** The parser produces candidates; saving goes through the existing transactions API after the user confirms, so the review page (FIN-6) and duplicate warning (FIN-8) apply to imports unchanged.
+- **Parsing and saving are separate.** Parsing returns candidates and writes nothing, so the review page (FIN-6) can edit them first; the confirmed lines are saved by a second request, all or nothing, under the same duplicate rule as the manual transaction endpoints (FIN-8, FIN-42).
 - **Sign convention is the ledger's.** Money in is positive regardless of how the bank writes it; `invert` in the mapping absorbs credit card exports that list charges as positive.
 - **CSV only before sprint 5.** The parser sits behind an interface that takes a file stream, so another format is a new implementation, not a change to the endpoint.
 - **Only posted rows are imported.** A pending charge can change amount or date, or disappear, before it posts; importing it would double-count once the posted line arrives. The next export carries the posted version, and any status the mapping does not list is skipped the same way.
 
-## Endpoint
+## Endpoints
 
 `POST /api/statements/parse` takes a `multipart/form-data` body with two fields: `file`, the export, and `accountId`, the account the statement belongs to. It returns the candidates and saves nothing:
 
@@ -27,6 +27,19 @@ FinHub parses bank statements in the API, not the browser. The user uploads a CS
 ```
 
 `potentialDuplicate` is true when the account already holds a transaction with the same date, description, and amount, the same check `POST /api/transactions` makes before saving (FIN-42), so the review page can warn before the user confirms the line. The endpoint reports the detected bank and account type but does not compare them with the account, since a Scotiabank savings export reads as `chequing`; the review page can show them so a file dropped on the wrong account is caught before anything is saved. The account must belong to the user (404 `account_not_found`), the file must be a `.csv` (400 `unsupported_file_type`), and a request body over 1 MiB is refused with a 400 validation error before it is read; what the parser rejects is listed under [Errors](#errors).
+
+`POST /api/statements/import` saves the confirmed lines into one account in a single request:
+
+```json
+{
+  "accountId": "4b3b1c2e-8f2a-4e2b-9a1d-0c6f7e5d3a21",
+  "transactions": [
+    { "statementLine": 2, "transactionDate": "2026-10-01", "description": "DEPOSIT", "amount": 209.77, "balanceAfter": null, "categoryId": null, "confirmPotentialDuplicate": false }
+  ]
+}
+```
+
+Lines keep their `statementLine` and `balanceAfter`, and `categoryId` is optional. The import is all or nothing: a line that matches a transaction the account already holds is refused with 409 `potential_duplicates` naming the `statementLines`, and nothing is saved, unless the line carries `confirmPotentialDuplicate`. Two equal lines in one request both save, since a statement can hold two identical purchases. A category that is neither a system category nor the user's gives 404 `category_not_found` with the `statementLines` that name it, and the account must belong to the user (404 `account_not_found`). The response is 201 with the saved transactions in request order, in the shape `GET /api/transactions` returns.
 
 ## Not covered
 
@@ -108,7 +121,7 @@ Export one account at a time; an RBC download holding several accounts is reject
 
 ## Errors
 
-The parser stops at the first problem and reports a stable code; the endpoint returns it as a 400 carrying `errorCode`, `error`, and `line`, null when none is known. Lines count from the first line of the file.
+The parser stops at the first problem and reports a stable code; the parse endpoint returns it as a 400 carrying `errorCode`, `error`, and `line`, null when none is known. Lines count from the first line of the file.
 
 | Code | When | Line |
 |---|---|---|
