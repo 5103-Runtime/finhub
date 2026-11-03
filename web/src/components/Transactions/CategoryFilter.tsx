@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import type { CategoryOption } from "./categoryTypes";
+import { CategoryOptionsList } from "@app/components/Category/CategoryMenuList";
 
 type CategoryFilterProps = {
   categoryOptions: CategoryOption[];
@@ -9,6 +10,9 @@ type CategoryFilterProps = {
   onChange: (key: "categoryId" | "uncategorized", value: string) => void;
 };
 
+/**
+ * @brief Category filter selector with color-coded options and scrolling.
+ */
 export function CategoryFilter({
   categoryOptions,
   selectedCategoryId,
@@ -58,6 +62,7 @@ export function CategoryFilter({
               : selectedCategory.label
         }
         MenuProps={{
+          slots: { list: CategoryOptionsList },
           slotProps: {
             paper: { className: "ledger-category-menu" },
           },

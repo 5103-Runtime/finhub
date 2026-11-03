@@ -221,8 +221,7 @@
 .transaction-filters
   .ledger-category-form-select
   .MuiOutlinedInput-notchedOutline {
-  border: 1px solid
-    color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
   border-radius: 999px !important;
 }
 
@@ -236,11 +235,6 @@
 .transaction-filters .MuiSelect-icon {
   color: var(--color-cream) !important;
   filter: none !important;
-}
-
-.transaction-filters .MuiOutlinedInput-root.Mui-focused .MuiSelect-icon,
-.transaction-filters .ledger-category-form-select.Mui-focused .MuiSelect-icon {
-  color: var(--color-bronze) !important;
 }
 
 .transaction-filters .MuiOutlinedInput-input {
@@ -287,9 +281,7 @@
 }
 
 .transaction-filters .MuiTextField-root .MuiInputLabel-root.Mui-error,
-.transaction-filters
-  .MuiTextField-root
-  .MuiFormHelperText-root.Mui-error {
+.transaction-filters .MuiTextField-root .MuiFormHelperText-root.Mui-error {
   color: var(--color-danger) !important;
 }
 
