@@ -20,13 +20,15 @@ public sealed class TransactionsController(
 {
     /// <summary>
     /// Lists the authenticated user's transactions, newest first.
+    /// Supports accountId, categoryId, uncategorized, fromDate, toDate,
+    /// minAmount, maxAmount, and search query parameters.
     /// </summary>
-    /// <param name="accountId"> Optional account ID to filter by. </param>
-    /// <param name="cancellationToken"> The cancellation token. </param>
-    /// <returns> The user's transactions. </returns>
+    /// <param name="filters">Optional filters to apply to the transaction list.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The user's transactions.</returns>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TransactionResponse>>> List(
-        [FromQuery] Guid? accountId, CancellationToken cancellationToken)
+        [FromQuery] TransactionFilters filters, CancellationToken cancellationToken)
     {
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
         if (failure is not null)
@@ -34,14 +36,17 @@ public sealed class TransactionsController(
             return failure;
         }
 
+        Guid currentUserId = userId!.Value;
+        BadRequestObjectResult? filterError = ValidateFilters(filters);
+        if (filterError is not null)
+        {
+            return filterError;
+        }
+
         IQueryable<Transaction> query = dbContext.Transactions
             .AsNoTracking()
-            .Where(transaction => OwnedAccountIds(userId!.Value).Contains(transaction.AccountId));
-
-        if (accountId is not null)
-        {
-            query = query.Where(transaction => transaction.AccountId == accountId.Value);
-        }
+            .Where(transaction => OwnedAccountIds(currentUserId).Contains(transaction.AccountId));
+        query = ApplyFilters(query, filters);
 
         List<TransactionResponse> transactions = await query
             .OrderByDescending(transaction => transaction.TransactionDate)
@@ -243,6 +248,111 @@ public sealed class TransactionsController(
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Validates combinations and limits for transaction list filters.
+    /// </summary>
+    private static BadRequestObjectResult? ValidateFilters(TransactionFilters filters)
+    {
+        if (filters.FromDate is not null
+            && filters.ToDate is not null
+            && filters.FromDate > filters.ToDate)
+        {
+            return new BadRequestObjectResult(new
+            {
+                error = "The fromDate must be on or before the toDate.",
+                errorCode = "invalid_date_range"
+            });
+        }
+
+        if (filters.MinAmount is not null
+            && filters.MaxAmount is not null
+            && filters.MinAmount > filters.MaxAmount)
+        {
+            return new BadRequestObjectResult(new
+            {
+                error = "The minAmount must be less than or equal to the maxAmount.",
+                errorCode = "invalid_amount_range"
+            });
+        }
+
+        if (filters.Uncategorized && filters.CategoryId is not null)
+        {
+            return new BadRequestObjectResult(new
+            {
+                error = "Category and uncategorized filters cannot be used together.",
+                errorCode = "conflicting_category_filters"
+            });
+        }
+
+        if (filters.Search?.Trim().Length > 100)
+        {
+            return new BadRequestObjectResult(new
+            {
+                error = "The search filter must be 100 characters or less.",
+                errorCode = "search_too_long"
+            });
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Applies user-supplied transaction filters to an ownership-scoped query.
+    /// </summary>
+    private static IQueryable<Transaction> ApplyFilters(
+        IQueryable<Transaction> query,
+        TransactionFilters filters)
+    {
+        if (filters.AccountId is not null)
+        {
+            query = query.Where(transaction => transaction.AccountId == filters.AccountId.Value);
+        }
+
+        if (filters.CategoryId is not null)
+        {
+            query = query.Where(transaction => transaction.CategoryId == filters.CategoryId.Value);
+        }
+        else if (filters.Uncategorized)
+        {
+            query = query.Where(transaction => transaction.CategoryId == null);
+        }
+
+        if (filters.FromDate is not null)
+        {
+            query = query.Where(transaction => transaction.TransactionDate >= filters.FromDate.Value);
+        }
+
+        if (filters.ToDate is not null)
+        {
+            query = query.Where(transaction => transaction.TransactionDate <= filters.ToDate.Value);
+        }
+
+        if (filters.MinAmount is not null)
+        {
+            query = query.Where(transaction => transaction.Amount >= filters.MinAmount.Value);
+        }
+
+        if (filters.MaxAmount is not null)
+        {
+            query = query.Where(transaction => transaction.Amount <= filters.MaxAmount.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+        {
+            string pattern = $"%{EscapeLikePattern(filters.Search.Trim())}%";
+            query = query.Where(transaction =>
+                EF.Functions.ILike(transaction.Description, pattern, @"\"));
+        }
+
+        return query;
+    }
+
+    /// <summary>
+    /// Escapes PostgreSQL LIKE wildcards so search input is treated as literal text.
+    /// </summary>
+    private static string EscapeLikePattern(string value) =>
+        value.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
 
     /// <summary>
     /// Sets the transaction's editable fields, trimming the description.
