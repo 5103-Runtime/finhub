@@ -11,6 +11,23 @@ FinHub parses bank statements in the API, not the browser. The user uploads a CS
 - **CSV only before sprint 5.** The parser sits behind an interface that takes a file stream, so another format is a new implementation, not a change to the endpoint.
 - **Only posted rows are imported.** A pending charge can change amount or date, or disappear, before it posts; importing it would double-count once the posted line arrives. The next export carries the posted version, and any status the mapping does not list is skipped the same way.
 
+## Endpoint
+
+`POST /api/statements/parse` takes a `multipart/form-data` body with two fields: `file`, the export, and `accountId`, the account the statement belongs to. It returns the candidates and saves nothing:
+
+```json
+{
+  "bank": "rbc",
+  "accountType": "chequing",
+  "skippedRows": 0,
+  "transactions": [
+    { "statementLine": 2, "transactionDate": "2026-10-01", "description": "DEPOSIT", "amount": 209.77, "balanceAfter": null, "potentialDuplicate": false }
+  ]
+}
+```
+
+`potentialDuplicate` is true when the account already holds a transaction with the same date, description, and amount, the same check `POST /api/transactions` makes before saving (FIN-42), so the review page can warn before the user confirms the line. The endpoint reports the detected bank and account type but does not compare them with the account, since a Scotiabank savings export reads as `chequing`; the review page can show them so a file dropped on the wrong account is caught before anything is saved. The account must belong to the user (404 `account_not_found`), the file must be a `.csv` (400 `unsupported_file_type`), and a request body over 1 MiB is refused with a 400 validation error before it is read; what the parser rejects is listed under [Errors](#errors).
+
 ## Not covered
 
 - Requesting support for a new bank: on an unrecognized header, the UI could collect the bank name and a sample so a mapping can be added.
@@ -91,7 +108,7 @@ Export one account at a time; an RBC download holding several accounts is reject
 
 ## Errors
 
-The parser stops at the first problem and reports a stable code; FIN-46 maps it to a 400 carrying `errorCode`, `error`, and `line` where one is known. Lines count from the first line of the file.
+The parser stops at the first problem and reports a stable code; the endpoint returns it as a 400 carrying `errorCode`, `error`, and `line`, null when none is known. Lines count from the first line of the file.
 
 | Code | When | Line |
 |---|---|---|

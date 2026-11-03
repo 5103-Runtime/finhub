@@ -117,3 +117,19 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{FinHub.Api_HostAddress}}/api/statements/parse
+Content-Type: multipart/form-data; boundary=statement
+
+--statement
+Content-Disposition: form-data; name="accountId"
+
+{{accountId}}
+--statement
+Content-Disposition: form-data; name="file"; filename="rbc-chequing-statement.csv"
+Content-Type: text/csv
+
+< ../../test/fixtures/statements/rbc-chequing-statement.csv
+--statement--
+
+###
