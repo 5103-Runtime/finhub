@@ -459,12 +459,6 @@ export default function Transactions() {
     }
   };
 
-  const handleUpload = () => {
-    if (!importFile) {
-      return;
-    }
-  };
-
   const handleDelete = async () => {
     if (!transactionToDelete) {
       return;
@@ -485,6 +479,13 @@ export default function Transactions() {
       );
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // FIN-49 will send importFile to the parse endpoint and show the preview.
+  const handleUpload = () => {
+    if (!importFile) {
+      return;
     }
   };
 
@@ -717,7 +718,7 @@ export default function Transactions() {
                 Transactions
               </Typography>
             </Box>
-                        {accounts.length > 0 && (
+            {accounts.length > 0 && (
               <Stack direction="row" spacing={1.5}>
                 <Button
                   className="accounts-add-button"

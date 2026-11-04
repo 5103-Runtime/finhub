@@ -11,21 +11,26 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import DescriptionRounded from "@mui/icons-material/DescriptionRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { FormAlert } from "@app/components/Form/FormAlert";
-import { formatFileSize, validateStatementFile } from "@app/utils/statements";
+import {
+  formatFileSize,
+  STATEMENT_ACCEPT,
+  validateStatementFile,
+} from "@app/utils/statements";
 
 import "./StatementUpload.css";
 
 type StatementUploadProps = {
-  // The chosen file, held by the parent. It is always a valid CSV or null.
+  // The chosen file, held by the parent. It is always a valid CSV or XLSX file, or null.
   file: File | null;
   onFileChange: (file: File | null) => void;
   disabled?: boolean;
 };
 
 /**
- * @brief Drag and drop area for choosing one CSV bank statement. Clicking it or
+ * @brief Drag and drop area for choosing one CSV or XLSX bank statement. Clicking it or
  * pressing Enter or Space opens the file picker instead. Invalid files are
  * rejected here with a message, so the parent only ever receives a valid file.
+ * A rejected file leaves any previously chosen valid file in place.
  */
 export default function StatementUpload({
   file,
@@ -33,6 +38,8 @@ export default function StatementUpload({
   disabled = false,
 }: StatementUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  // Counts nested dragenter/dragleave events so child elements don't flicker the highlight.
+  const dragDepth = useRef(0);
   const errorId = useId();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
@@ -44,7 +51,6 @@ export default function StatementUpload({
 
     if (files.length > 1) {
       setError("Upload one file at a time.");
-      onFileChange(null);
       return;
     }
 
@@ -52,7 +58,6 @@ export default function StatementUpload({
     const validationError = validateStatementFile(selectedFile);
     if (validationError) {
       setError(validationError);
-      onFileChange(null);
       return;
     }
 
@@ -72,23 +77,29 @@ export default function StatementUpload({
     event.target.value = "";
   };
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    // Without preventDefault the browser opens the dropped file instead.
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    dragDepth.current += 1;
     if (!disabled) {
       setIsDragging(true);
     }
   };
 
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    // Moving over a child element also fires dragleave, so ignore that case.
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    // Without preventDefault the browser opens the dropped file instead.
+    event.preventDefault();
+  };
+
+  const handleDragLeave = () => {
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) {
       setIsDragging(false);
     }
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    dragDepth.current = 0;
     setIsDragging(false);
     if (!disabled) {
       chooseFiles(event.dataTransfer.files);
@@ -123,12 +134,12 @@ export default function StatementUpload({
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled}
-        aria-label="Upload a CSV statement. Drag a file here, or press Enter to browse."
+        aria-label="Upload a CSV or XLSX statement. Drag a file here, or press Enter to browse."
         aria-describedby={error ? errorId : undefined}
         onClick={openPicker}
         onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
-        onDragEnter={handleDragOver}
+        onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
@@ -138,14 +149,14 @@ export default function StatementUpload({
         </Typography>
         <Typography className="statement-upload-hint">
           or <span className="statement-upload-browse">browse</span> to choose a
-          CSV file
+          CSV or XLSX file
         </Typography>
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept={STATEMENT_ACCEPT}
           hidden
-          onClick={(event)=> event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
           onChange={handleInputChange}
         />
       </Box>
