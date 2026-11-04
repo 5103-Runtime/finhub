@@ -24,11 +24,16 @@ public sealed class TransactionsController(
     /// minAmount, maxAmount, and search query parameters.
     /// </summary>
     /// <param name="filters">Optional filters to apply to the transaction list.</param>
+    /// <param name="sortBy">The field to sort by - amount, date, or description </param>
+    /// <param name="sortOrder">The sort direction - asc or desc. </param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The user's transactions.</returns>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TransactionResponse>>> List(
-        [FromQuery] TransactionFilters filters, CancellationToken cancellationToken)
+        [FromQuery] TransactionFilters filters, 
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortOrder,
+        CancellationToken cancellationToken)
     {
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
         if (failure is not null)
@@ -43,15 +48,20 @@ public sealed class TransactionsController(
             return filterError;
         }
 
+        BadRequestObjectResult? sortingError = ValidateSorting(sortBy, sortOrder);
+        if (sortingError is not null)
+        {
+            return sortingError;
+        }
+
         IQueryable<Transaction> query = dbContext.Transactions
             .AsNoTracking()
             .Where(transaction => OwnedAccountIds(currentUserId).Contains(transaction.AccountId));
+        
         query = ApplyFilters(query, filters);
+        query = ApplySorting(query, sortBy, sortOrder);
 
         List<TransactionResponse> transactions = await query
-            .OrderByDescending(transaction => transaction.TransactionDate)
-            .ThenByDescending(transaction => transaction.StatementLine)
-            .ThenByDescending(transaction => transaction.CreatedAt)
             .Select(transaction => ToResponse(transaction))
             .ToListAsync(cancellationToken);
 
@@ -298,6 +308,55 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
+    /// Validates the requested sorting field and direction.
+    /// </summary>
+    private static BadRequestObjectResult? ValidateSorting(
+        string? sortBy,
+        string? sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+        {
+            if (!string.IsNullOrWhiteSpace(sortOrder))
+            {
+                return new BadRequestObjectResult(new
+                {
+                    error = "A sortBy field is required when sortOrder is provided.",
+                    errorCode = "missing_sort_field"
+                });
+            }
+
+            return null;
+        }
+
+        string field = sortBy.Trim().ToLowerInvariant();
+
+        if (field != "amount" && field != "date" && field != "description")
+        {
+            return new BadRequestObjectResult(new
+            {
+                error = "Sort by amount, date, or description.",
+                errorCode = "invalid_sort_field"
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortOrder))
+        {
+            string direction = sortOrder.Trim().ToLowerInvariant();
+
+            if (direction != "asc" && direction != "desc")
+            {
+                return new BadRequestObjectResult(new
+                {
+                    error = "Sort order must be asc or desc.",
+                    errorCode = "invalid_sort_order"
+                });
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Applies user-supplied transaction filters to an ownership-scoped query.
     /// </summary>
     private static IQueryable<Transaction> ApplyFilters(
@@ -346,6 +405,61 @@ public sealed class TransactionsController(
         }
 
         return query;
+    }
+
+    /// <summary>
+    /// Applies the requested sorting to the transaction query.
+    /// Defaults to newest transactions first.
+    /// </summary>
+    private static IQueryable<Transaction> ApplySorting(
+        IQueryable<Transaction> query,
+        string? sortBy,
+        string? sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+        {
+            return query
+                .OrderByDescending(transaction => transaction.TransactionDate)
+                .ThenByDescending(transaction => transaction.StatementLine)
+                .ThenByDescending(transaction => transaction.CreatedAt);
+        }
+
+        bool descending = string.IsNullOrWhiteSpace(sortOrder)
+            || sortOrder.Trim().Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        string field = sortBy.Trim().ToLowerInvariant();
+
+        return field switch
+        {
+            "amount" => descending
+                ? query.OrderByDescending(transaction => transaction.Amount)
+                    .ThenByDescending(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt)
+                : query.OrderBy(transaction => transaction.Amount)
+                    .ThenByDescending(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt),
+
+            "date" => descending
+                ? query.OrderByDescending(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt)
+                : query.OrderBy(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt),
+
+            "description" => descending
+                ? query.OrderByDescending(transaction => transaction.Description)
+                    .ThenByDescending(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt)
+                : query.OrderBy(transaction => transaction.Description)
+                    .ThenByDescending(transaction => transaction.TransactionDate)
+                    .ThenByDescending(transaction => transaction.StatementLine)
+                    .ThenByDescending(transaction => transaction.CreatedAt),
+            _ => query
+        };
     }
 
     /// <summary>
