@@ -24,13 +24,13 @@ public sealed class TransactionsController(
     /// minAmount, maxAmount, and search query parameters.
     /// </summary>
     /// <param name="filters">Optional filters to apply to the transaction list.</param>
-    /// <param name="sortBy">The field to sort by - amount, date, or description </param>
-    /// <param name="sortOrder">The sort direction - asc or desc. </param>
+    /// <param name="sortBy">The field to sort by - amount, date, or description.</param>
+    /// <param name="sortOrder">The sort direction - asc or desc.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The user's transactions.</returns>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TransactionResponse>>> List(
-        [FromQuery] TransactionFilters filters, 
+        [FromQuery] TransactionFilters filters,
         [FromQuery] string? sortBy,
         [FromQuery] string? sortOrder,
         CancellationToken cancellationToken)
@@ -57,7 +57,7 @@ public sealed class TransactionsController(
         IQueryable<Transaction> query = dbContext.Transactions
             .AsNoTracking()
             .Where(transaction => OwnedAccountIds(currentUserId).Contains(transaction.AccountId));
-        
+
         query = ApplyFilters(query, filters);
         query = ApplySorting(query, sortBy, sortOrder);
 
