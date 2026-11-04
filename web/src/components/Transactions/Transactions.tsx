@@ -60,6 +60,9 @@ import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { getCategoryColor } from "@app/utils/categories";
 import { CategoryFilter } from "./CategoryFilter";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
+import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import { DialogBase } from "@app/components/Dialog/DialogBase";
+import StatementUpload from "@app/components/StatementUpload";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
@@ -101,6 +104,8 @@ export default function Transactions() {
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draftFilterValues, setDraftFilterValues] = useState({
     search: searchParams.get("search") ?? "",
@@ -706,14 +711,23 @@ export default function Transactions() {
                 Transactions
               </Typography>
             </Box>
-            {accounts.length > 0 && (
-              <Button
-                className="accounts-add-button"
-                startIcon={<AddRounded />}
-                onClick={openCreateModal}
-              >
-                Add transaction
-              </Button>
+                        {accounts.length > 0 && (
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<UploadFileRounded />}
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Import statement
+                </Button>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<AddRounded />}
+                  onClick={openCreateModal}
+                >
+                  Add transaction
+                </Button>
+              </Stack>
             )}
           </Box>
 
@@ -942,6 +956,25 @@ export default function Transactions() {
           </Box>
         </Box>
       </FormDialog>
+
+      <DialogBase
+        open={isImportOpen}
+        title="Import statement"
+        maxWidth="sm"
+        busy={false}
+        onClose={() => setIsImportOpen(false)}
+        onExited={() => setImportFile(null)}
+        actions={
+          <Button
+            className="dialog-cancel-button"
+            onClick={() => setIsImportOpen(false)}
+          >
+            Close
+          </Button>
+        }
+      >
+        <StatementUpload file={importFile} onFileChange={setImportFile} />
+      </DialogBase>
 
       <ConfirmDialog
         open={isDeleteModalOpen}
