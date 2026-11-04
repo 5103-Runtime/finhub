@@ -64,3 +64,14 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.MuiInputLabel-root.Mui-focused:not(.Mui-error) {
+  color: var(--color-bronze) !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused:not(.Mui-error):not(
+    .ledger-category-select
+  ):not(.ledger-category-form-select)
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze) !important;
+}

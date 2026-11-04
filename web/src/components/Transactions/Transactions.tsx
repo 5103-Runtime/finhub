@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -9,11 +9,20 @@ import {
   CardContent,
   Collapse,
   Container,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
   Stack,
   Typography,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
+import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
@@ -27,6 +36,7 @@ import {
   deleteTransaction,
   getTransactions,
   updateTransaction,
+  type TransactionFilters,
   type TransactionResponse,
 } from "@app/services/transactionApi";
 import {
@@ -35,6 +45,7 @@ import {
 } from "@app/services/categoriesApi";
 import {
   getEmptyTransactionForm,
+  transactionFilterSchema,
   transactionSchema,
   type TransactionEditFormData,
   type TransactionFormData,
@@ -47,15 +58,30 @@ import {
 } from "@app/utils/accounts";
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { getCategoryColor } from "@app/utils/categories";
+import { CategoryFilter } from "./CategoryFilter";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 import { ApiError } from "@app/services/apiClient";
 
+function getTransactionFilters(params: URLSearchParams): TransactionFilters {
+  return {
+    accountId: params.get("accountId") ?? undefined,
+    categoryId: params.get("categoryId") ?? undefined,
+    uncategorized: params.get("uncategorized") === "true",
+    fromDate: params.get("fromDate") ?? undefined,
+    toDate: params.get("toDate") ?? undefined,
+    minAmount: params.get("minAmount") ?? undefined,
+    maxAmount: params.get("maxAmount") ?? undefined,
+    search: params.get("search") ?? undefined,
+  };
+}
+
 export default function Transactions() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedAccountId = searchParams.get("accountId");
+  const filterKey = searchParams.toString();
   const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -75,28 +101,32 @@ export default function Transactions() {
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [draftFilterValues, setDraftFilterValues] = useState({
+    search: searchParams.get("search") ?? "",
+    minAmount: searchParams.get("minAmount") ?? "",
+    maxAmount: searchParams.get("maxAmount") ?? "",
+  });
+  const [searchFilterError, setSearchFilterError] = useState("");
+  const filterDebounceRef = useRef<number | null>(null);
 
+  // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
     let isCurrentRequest = true;
+    const filterParams = new URLSearchParams(filterKey);
 
-    Promise.all([getTransactions(), getAccounts(), getCategories()])
+    Promise.all([
+      getTransactions(getTransactionFilters(filterParams)),
+      getAccounts(),
+      getCategories(),
+    ])
       .then(([loadedTransactions, loadedAccounts, loadedCategories]) => {
         if (isCurrentRequest) {
           setTransactions(loadedTransactions);
           setAccounts(loadedAccounts);
           setCategories(loadedCategories);
-          if (
-            selectedAccountId &&
-            loadedAccounts.some((account) => account.id === selectedAccountId)
-          ) {
-            setCollapsedAccountIds(
-              new Set(
-                loadedAccounts
-                  .map((account) => account.id)
-                  .filter((accountId) => accountId !== selectedAccountId),
-              ),
-            );
-          }
+          setLoadFailed(false);
+          setServerError("");
         }
       })
       .catch((requestError) => {
@@ -116,8 +146,9 @@ export default function Transactions() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [selectedAccountId]);
+  }, [filterKey]);
 
+  // Scroll to an account selected from account navigation.
   useEffect(() => {
     if (!selectedAccountId || loading || !accounts.length) {
       return;
@@ -161,6 +192,95 @@ export default function Transactions() {
     })),
   ];
 
+  const hasActiveFilters = [
+    "accountId",
+    "categoryId",
+    "uncategorized",
+    "fromDate",
+    "toDate",
+    "minAmount",
+    "maxAmount",
+    "search",
+  ].some((key) => searchParams.has(key));
+
+  const updateFilter = (key: string, value: string) => {
+    setFiltersOpen(true);
+    const next = new URLSearchParams(searchParams);
+    if (value) {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+
+    if (key === "categoryId" || key === "uncategorized") {
+      next.delete(key === "categoryId" ? "uncategorized" : "categoryId");
+    }
+
+    setSearchParams(next);
+  };
+
+  const updateTextFilter = (
+    key: "search" | "minAmount" | "maxAmount",
+    value: string,
+  ) => {
+    setFiltersOpen(true);
+    setDraftFilterValues((current) => ({ ...current, [key]: value }));
+    if (key === "search") {
+      const validation = transactionFilterSchema.shape.search.safeParse(value);
+      setSearchFilterError(
+        validation.success ? "" : validation.error.issues[0].message,
+      );
+      if (!validation.success) {
+        return;
+      }
+    }
+
+    if (filterDebounceRef.current !== null) {
+      window.clearTimeout(filterDebounceRef.current);
+    }
+    filterDebounceRef.current = window.setTimeout(() => {
+      updateFilter(key, value);
+    }, 350);
+  };
+
+  // Cancel pending filter updates when the page unmounts.
+  useEffect(
+    () => () => {
+      if (filterDebounceRef.current !== null) {
+        window.clearTimeout(filterDebounceRef.current);
+      }
+    },
+    [],
+  );
+
+  // Auto-dismiss transaction update success feedback.
+  useEffect(() => {
+    if (!successTransactionId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessTransactionId(null);
+    }, 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [successTransactionId]);
+
+  const clearFilters = () => {
+    setFiltersOpen(true);
+    if (filterDebounceRef.current !== null) {
+      window.clearTimeout(filterDebounceRef.current);
+      filterDebounceRef.current = null;
+    }
+    setDraftFilterValues({ search: "", minAmount: "", maxAmount: "" });
+    setSearchFilterError("");
+    setSearchParams(new URLSearchParams());
+  };
+
+  const toggleFilters = () => {
+    setFiltersOpen((open) => !open);
+  };
+
   // Group the transactions by account. The API order (newest first) is kept
   // inside each account.
   const transactionsByAccount = new Map<string, TransactionResponse[]>();
@@ -178,14 +298,25 @@ export default function Transactions() {
   // Same rule as the Accounts page: only add type headings when there are
   // several account types to separate.
   const accountTypeCount = new Set(
-    accounts.map((account) => account.accountType),
+    (hasActiveFilters
+      ? accounts.filter((account) => transactionsByAccount.has(account.id))
+      : accounts
+    ).map((account) => account.accountType),
   ).size;
-  const shouldGroupAccounts = accounts.length > 1 && accountTypeCount > 1;
+  const visibleAccounts = hasActiveFilters
+    ? accounts.filter((account) => transactionsByAccount.has(account.id))
+    : accounts;
+  const shouldGroupAccounts =
+    visibleAccounts.length > 1 && accountTypeCount > 1;
 
   // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async (): Promise<boolean> => {
     try {
-      setTransactions(await getTransactions());
+      setTransactions(
+        await getTransactions(
+          getTransactionFilters(new URLSearchParams(searchParams)),
+        ),
+      );
       return true;
     } catch (requestError) {
       setServerError(
@@ -307,6 +438,9 @@ export default function Transactions() {
     setServerError("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
+      categoryId:
+        transactions.find((transaction) => transaction.id === id)?.categoryId ??
+        null,
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
@@ -494,17 +628,32 @@ export default function Transactions() {
         <Card className="accounts-empty-card">
           <CardContent>
             <ReceiptLongRounded />
-            <Typography className="empty-title">No transactions yet</Typography>
-            <Typography className="accounts-empty">
-              Add your first transaction to get started.
+            <Typography className="empty-title">
+              {hasActiveFilters
+                ? "No matching transactions"
+                : "No transactions yet"}
             </Typography>
-            <Button
-              className="accounts-primary-button empty-action"
-              startIcon={<AddRounded />}
-              onClick={openCreateModal}
-            >
-              Add transaction
-            </Button>
+            <Typography className="accounts-empty">
+              {hasActiveFilters
+                ? "Try changing or clearing your filters."
+                : "Add your first transaction to get started."}
+            </Typography>
+            {hasActiveFilters ? (
+              <Button
+                className="accounts-primary-button empty-action"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </Button>
+            ) : (
+              <Button
+                className="accounts-primary-button empty-action"
+                startIcon={<AddRounded />}
+                onClick={openCreateModal}
+              >
+                Add transaction
+              </Button>
+            )}
           </CardContent>
         </Card>
       );
@@ -514,7 +663,7 @@ export default function Transactions() {
       return (
         <Stack spacing={4}>
           {accountTypeOrder.map((accountType) => {
-            const groupedAccounts = accounts
+            const groupedAccounts = visibleAccounts
               .filter((account) => account.accountType === accountType)
               .sort(compareAccountsByName);
             if (groupedAccounts.length === 0) {
@@ -538,7 +687,9 @@ export default function Transactions() {
 
     return (
       <Stack spacing={1.5}>
-        {[...accounts].sort(compareAccountsByName).map(renderAccountSection)}
+        {[...visibleAccounts]
+          .sort(compareAccountsByName)
+          .map(renderAccountSection)}
       </Stack>
     );
   };
@@ -555,7 +706,7 @@ export default function Transactions() {
                 Transactions
               </Typography>
             </Box>
-            {transactions.length > 0 && (
+            {accounts.length > 0 && (
               <Button
                 className="accounts-add-button"
                 startIcon={<AddRounded />}
@@ -577,11 +728,157 @@ export default function Transactions() {
           )}
 
           <Box component="section" className="accounts-list-section">
-            <Box className="section-heading">
+            <Box className="section-heading transaction-section-heading">
               <Typography component="h2" className="section-title">
                 Transactions ({transactions.length})
               </Typography>
+              <Button
+                className={`transaction-filter-toggle${hasActiveFilters ? " has-active-filters" : ""}`}
+                startIcon={<FilterListRounded />}
+                onClick={toggleFilters}
+                aria-expanded={filtersOpen}
+                aria-controls="transaction-filter-panel"
+              >
+                Filters{hasActiveFilters ? " active" : ""}
+              </Button>
             </Box>
+            <Collapse in={filtersOpen}>
+              <Box
+                id="transaction-filter-panel"
+                className="transaction-filters"
+              >
+                <Box className="transaction-filter-panel-heading">
+                  <Box>
+                    <Typography className="transaction-filter-title">
+                      Filter transactions
+                    </Typography>
+                  </Box>
+                  <Button
+                    className="transaction-filter-clear"
+                    onClick={clearFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear all
+                  </Button>
+                </Box>
+                <Box className="transaction-filter-grid">
+                  <Box className="transaction-filter-field search-field">
+                    <TextField
+                      label="Search description"
+                      value={draftFilterValues.search}
+                      onChange={(event) =>
+                        updateTextFilter("search", event.target.value)
+                      }
+                      size="small"
+                      type="text"
+                      error={Boolean(searchFilterError)}
+                      helperText={searchFilterError}
+                      slotProps={{
+                        input: {
+                          endAdornment: draftFilterValues.search ? (
+                            <InputAdornment position="end">
+                              <IconButton
+                                className="transaction-filter-search-clear"
+                                aria-label="Clear description search"
+                                onClick={() => updateTextFilter("search", "")}
+                                edge="end"
+                                size="small"
+                              >
+                                <CloseRounded fontSize="small" />
+                              </IconButton>
+                            </InputAdornment>
+                          ) : undefined,
+                        },
+                      }}
+                      fullWidth
+                    />
+                  </Box>
+                  <Box className="transaction-filter-field">
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Account</InputLabel>
+                      <Select
+                        label="Account"
+                        value={searchParams.get("accountId") ?? ""}
+                        onChange={(event) =>
+                          updateFilter("accountId", event.target.value)
+                        }
+                      >
+                        <MenuItem value="">All accounts</MenuItem>
+                        {accounts.map((account) => (
+                          <MenuItem key={account.id} value={account.id}>
+                            {account.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                  <Box className="transaction-filter-field">
+                    <CategoryFilter
+                      categoryOptions={categoryOptions}
+                      selectedCategoryId={searchParams.get("categoryId") ?? ""}
+                      uncategorized={
+                        searchParams.get("uncategorized") === "true"
+                      }
+                      onChange={updateFilter}
+                    />
+                  </Box>
+                  <Box className="transaction-filter-group">
+                    <span className="transaction-filter-group-label">
+                      Date range
+                    </span>
+                    <Box className="transaction-filter-group-fields">
+                      <TextField
+                        label="From"
+                        value={searchParams.get("fromDate") ?? ""}
+                        onChange={(event) =>
+                          updateFilter("fromDate", event.target.value)
+                        }
+                        size="small"
+                        type="date"
+                        slotProps={{ inputLabel: { shrink: true } }}
+                      />
+                      <TextField
+                        label="To"
+                        value={searchParams.get("toDate") ?? ""}
+                        onChange={(event) =>
+                          updateFilter("toDate", event.target.value)
+                        }
+                        size="small"
+                        type="date"
+                        slotProps={{ inputLabel: { shrink: true } }}
+                      />
+                    </Box>
+                  </Box>
+                  <Box className="transaction-filter-group">
+                    <span className="transaction-filter-group-label">
+                      Amount range
+                    </span>
+                    <Box className="transaction-filter-group-fields">
+                      <TextField
+                        label="Min"
+                        value={draftFilterValues.minAmount}
+                        onChange={(event) =>
+                          updateTextFilter("minAmount", event.target.value)
+                        }
+                        size="small"
+                        type="number"
+                        slotProps={{ htmlInput: { step: "0.01" } }}
+                      />
+                      <TextField
+                        label="Max"
+                        value={draftFilterValues.maxAmount}
+                        onChange={(event) =>
+                          updateTextFilter("maxAmount", event.target.value)
+                        }
+                        size="small"
+                        type="number"
+                        slotProps={{ htmlInput: { step: "0.01" } }}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Collapse>
             {renderContent()}
           </Box>
         </Box>

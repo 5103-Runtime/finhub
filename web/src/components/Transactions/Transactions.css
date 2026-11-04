@@ -72,6 +72,279 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+.transaction-filters {
+  margin-bottom: 24px;
+  padding: 18px 20px 20px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-bronze) 32%, var(--color-slate));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-slate) 34%, var(--color-ink));
+  box-shadow: 0 8px 24px var(--shadow-soft);
+}
+
+.transaction-filter-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.transaction-filter-title {
+  color: var(--color-cream) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+.transaction-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px 12px;
+  align-items: end;
+}
+
+.transaction-filter-field,
+.transaction-filter-group {
+  min-width: 0;
+}
+
+.transaction-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.transaction-filter-group-label {
+  color: var(--color-bronze);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.transaction-filter-group-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.transaction-filter-group-fields .MuiTextField-root {
+  min-width: 0;
+}
+
+.transaction-filter-group-fields input[type="date"] {
+  min-width: 0;
+  padding-right: 4px;
+  font-size: 13px;
+}
+
+.transaction-filter-toggle {
+  min-height: 40px !important;
+  border: 1px solid color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
+  border-radius: 10px !important;
+  color: var(--color-mist) !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.transaction-filter-toggle:hover,
+.transaction-filter-toggle.has-active-filters {
+  border-color: var(--color-bronze) !important;
+  color: var(--color-bronze-hover) !important;
+  background: var(--border-accent) !important;
+}
+
+.transaction-filter-toggle.has-active-filters::after {
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  align-self: flex-start;
+  border-radius: 50%;
+  background: var(--color-bronze);
+  content: "";
+}
+
+.transaction-filters .MuiFormControl-root,
+.transaction-filters .MuiTextField-root {
+  width: 100%;
+}
+
+.transaction-filters .MuiOutlinedInput-root {
+  height: 40px;
+  background: transparent !important;
+}
+
+.transaction-filters .ledger-category-form-select {
+  height: 40px !important;
+  min-height: 0 !important;
+  color: var(--color-mist) !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select {
+  color: var(--category-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--category-color) 16%,
+    transparent
+  ) !important;
+}
+
+.transaction-filters .ledger-category-form-select .MuiSelect-select,
+.transaction-filters .ledger-category-form-select .MuiSelect-icon {
+  color: var(--color-mist) !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiSelect-select,
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiSelect-icon {
+  color: var(--category-color) !important;
+}
+
+.transaction-filters .ledger-category-form-select .MuiSelect-select {
+  display: flex !important;
+  align-items: center;
+  min-height: 0 !important;
+  padding: 7px 12px !important;
+  line-height: 24px !important;
+}
+
+.transaction-filters
+  .ledger-category-form-select
+  .MuiOutlinedInput-notchedOutline {
+  border: 1px solid color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
+  border-radius: 999px !important;
+}
+
+.transaction-filters
+  .transaction-filter-category-selected
+  .ledger-category-form-select
+  .MuiOutlinedInput-notchedOutline {
+  border-color: currentColor !important;
+}
+
+.transaction-filters .MuiSelect-icon {
+  color: var(--color-cream) !important;
+  filter: none !important;
+}
+
+.transaction-filters .MuiOutlinedInput-input {
+  box-sizing: border-box;
+  padding: 8px 12px;
+}
+
+.transaction-filter-search-clear {
+  padding: 4px !important;
+  color: var(--color-mist) !important;
+}
+
+.transaction-filter-search-clear:hover {
+  color: var(--color-bronze) !important;
+}
+
+.transaction-filters .MuiInputLabel-root {
+  color: var(--color-mist) !important;
+}
+
+.transaction-filters .MuiInputBase-root {
+  color: var(--color-cream) !important;
+}
+
+.transaction-filters .MuiOutlinedInput-notchedOutline {
+  border-width: 1px !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-mist) 45%,
+    transparent
+  ) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root
+  .MuiOutlinedInput-root:hover:not(.Mui-focused)
+  .MuiOutlinedInput-notchedOutline {
+  border-width: 2px !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-mist) 45%,
+    transparent
+  ) !important;
+}
+
+.transaction-filters .MuiTextField-root .MuiInputLabel-root.Mui-error,
+.transaction-filters .MuiTextField-root .MuiFormHelperText-root.Mui-error {
+  color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root
+  .MuiOutlinedInput-root.Mui-error
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root
+  .MuiOutlinedInput-root.Mui-error:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-danger) !important;
+  border-width: 2px !important;
+}
+
+.transaction-filters
+  .MuiTextField-root:has(.MuiOutlinedInput-root.Mui-error)
+  .transaction-filter-search-clear {
+  color: var(--color-danger) !important;
+}
+
+.transaction-filters
+  .MuiTextField-root:has(.MuiOutlinedInput-root.Mui-error)
+  .transaction-filter-search-clear:hover {
+  color: var(--color-danger-muted) !important;
+}
+
+.transaction-filters input:-webkit-autofill,
+.transaction-filters input:-webkit-autofill:hover,
+.transaction-filters input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-cream);
+  -webkit-box-shadow: 0 0 0 1000px
+    color-mix(in srgb, var(--color-slate) 34%, var(--color-ink)) inset;
+  caret-color: var(--color-cream);
+}
+
+.transaction-filters input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.transaction-filter-clear {
+  flex: 0 0 auto;
+  min-width: 76px !important;
+  margin-top: 0 !important;
+  color: var(--color-bronze) !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+.transaction-filter-clear:not(.Mui-disabled):hover {
+  color: var(--color-bronze-hover) !important;
+  background: var(--border-accent) !important;
+}
+
+.transaction-filter-clear.Mui-disabled {
+  color: color-mix(in srgb, var(--color-bronze) 42%, transparent) !important;
+  background: transparent !important;
+  cursor: not-allowed;
+}
+
 .ledger-head,
 .ledger-row,
 .ledger-row.ledger-edit-form {
@@ -168,6 +441,12 @@
 .ledger-category-select .MuiSelect-select,
 .ledger-category-select .MuiSelect-icon {
   color: var(--category-color) !important;
+}
+
+.ledger-category-select.Mui-disabled .MuiSelect-select,
+.ledger-category-select.Mui-disabled .MuiSelect-icon {
+  color: var(--category-color) !important;
+  -webkit-text-fill-color: var(--category-color) !important;
 }
 
 .ledger-category-loading .MuiCircularProgress-root {
@@ -270,16 +549,6 @@
   ) !important;
 }
 
-.app-dialog
-  .MuiFormControl-root:has(.ledger-category-form-select)
-  .MuiInputLabel-root.Mui-focused {
-  color: color-mix(
-    in srgb,
-    var(--category-color) 45%,
-    var(--color-ink)
-  ) !important;
-}
-
 .ledger-category-form-select .MuiOutlinedInput-notchedOutline {
   border: 1px solid currentColor !important;
   border-radius: 999px !important;
@@ -342,6 +611,10 @@
   border-radius: 50%;
   background: var(--category-color);
   content: "";
+}
+
+.ledger-category-option-all::before {
+  background: transparent;
 }
 
 .ledger-category-option:hover,
@@ -469,9 +742,6 @@
 
 .ledger-edit-form
   .MuiOutlinedInput-root:not(.ledger-category-select):hover
-  .MuiOutlinedInput-notchedOutline,
-.ledger-edit-form
-  .MuiOutlinedInput-root:not(.ledger-category-select).Mui-focused
   .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-bronze) !important;
   border-width: 1px !important;
@@ -487,7 +757,42 @@
   color: var(--color-danger-muted);
 }
 
+@media (max-width: 1150px) and (min-width: 851px) {
+  .transaction-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transaction-filter-field.search-field,
+  .transaction-filter-group {
+    grid-column: span 2;
+  }
+}
+
 @media (max-width: 850px) {
+  .transaction-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transaction-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .transaction-filter-field.search-field,
+  .transaction-filter-group {
+    grid-column: span 2;
+  }
+
+  .transaction-filter-field:nth-child(2),
+  .transaction-filter-field:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .transaction-filter-clear {
+    align-self: flex-start;
+  }
+
   .ledger-date-description-row,
   .ledger-category-amount-row {
     grid-template-columns: 1fr;
@@ -574,5 +879,24 @@
     grid-column: auto;
     grid-row: auto;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .transaction-filters {
+    padding: 16px;
+  }
+
+  .transaction-filter-panel-heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .transaction-filter-group-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-filter-clear {
+    align-self: flex-start;
   }
 }

@@ -32,6 +32,13 @@ export const transactionSchema = z.object({
 });
 
 /**
+ * @brief Validates the text fields used by transaction filters.
+ */
+export const transactionFilterSchema = z.object({
+  search: z.string().max(100, "Search must be 100 characters or less."),
+});
+
+/**
  * @brief The TypeScript type for the transaction create form data.
  */
 export type TransactionFormData = z.infer<typeof transactionSchema>;
