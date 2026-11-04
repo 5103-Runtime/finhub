@@ -145,6 +145,7 @@ export default function StatementUpload({
           type="file"
           accept=".csv,text/csv"
           hidden
+          onClick={(event)=> event.stopPropagation()}
           onChange={handleInputChange}
         />
       </Box>

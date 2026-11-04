@@ -459,6 +459,12 @@ export default function Transactions() {
     }
   };
 
+  const handleUpload = () => {
+    if (!importFile) {
+      return;
+    }
+  };
+
   const handleDelete = async () => {
     if (!transactionToDelete) {
       return;
@@ -965,12 +971,22 @@ export default function Transactions() {
         onClose={() => setIsImportOpen(false)}
         onExited={() => setImportFile(null)}
         actions={
-          <Button
-            className="dialog-cancel-button"
-            onClick={() => setIsImportOpen(false)}
-          >
-            Close
-          </Button>
+          <>
+            <Button
+              className="dialog-cancel-button"
+              onClick={() => setIsImportOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="accounts-primary-button"
+              startIcon={<UploadFileRounded />}
+              onClick={handleUpload}
+              disabled={!importFile}
+            >
+              Upload
+            </Button>
+          </>
         }
       >
         <StatementUpload file={importFile} onFileChange={setImportFile} />

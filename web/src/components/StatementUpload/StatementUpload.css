@@ -20,7 +20,7 @@
     background-color 160ms ease;
 }
 
-.statement-upload-zone:hover,
+.statement-upload-zone:hover:not(.disabled),
 .statement-upload-zone.dragging {
   border-color: var(--color-bronze);
   background: color-mix(in srgb, var(--color-bronze) 8%, var(--color-ink));
