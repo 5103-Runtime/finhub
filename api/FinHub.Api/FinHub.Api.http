@@ -117,3 +117,31 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{FinHub.Api_HostAddress}}/api/statements/parse
+Content-Type: multipart/form-data; boundary=statement
+
+--statement
+Content-Disposition: form-data; name="accountId"
+
+{{accountId}}
+--statement
+Content-Disposition: form-data; name="file"; filename="rbc-chequing-statement.csv"
+Content-Type: text/csv
+
+< ../../test/fixtures/statements/rbc-chequing-statement.csv
+--statement--
+
+###
+
+POST {{FinHub.Api_HostAddress}}/api/statements/import
+Content-Type: application/json
+
+{
+  "accountId": "{{accountId}}",
+  "transactions": [
+    { "statementLine": 2, "transactionDate": "2026-10-01", "description": "DEPOSIT", "amount": 209.77, "balanceAfter": null, "categoryId": null, "confirmPotentialDuplicate": false }
+  ]
+}
+
+###
