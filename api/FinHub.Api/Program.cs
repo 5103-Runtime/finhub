@@ -18,10 +18,12 @@ builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
 
 // The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit and RateLimiting__Auth__WindowSeconds.
 IConfigurationSection authRateLimit = builder.Configuration.GetSection("RateLimiting:Auth");
-int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit")
-    ?? throw new InvalidOperationException("RateLimiting:Auth:PermitLimit is required.");
-TimeSpan authWindow = TimeSpan.FromSeconds(authRateLimit.GetValue<int?>("WindowSeconds")
-    ?? throw new InvalidOperationException("RateLimiting:Auth:WindowSeconds is required."));
+int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit") is int permits and > 0
+    ? permits
+    : throw new InvalidOperationException("RateLimiting:Auth:PermitLimit must be a positive integer.");
+TimeSpan authWindow = authRateLimit.GetValue<int?>("WindowSeconds") is int seconds and > 0
+    ? TimeSpan.FromSeconds(seconds)
+    : throw new InvalidOperationException("RateLimiting:Auth:WindowSeconds must be a positive integer.");
 
 builder.Services.AddRateLimiter(options =>
 {
