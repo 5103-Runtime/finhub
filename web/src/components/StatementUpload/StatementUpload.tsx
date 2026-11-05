@@ -20,14 +20,14 @@ import {
 import "./StatementUpload.css";
 
 type StatementUploadProps = {
-  // The chosen file, held by the parent. It is always a valid CSV or XLSX file, or null.
+  // The chosen file, held by the parent. It is always a valid CSV file, or null.
   file: File | null;
   onFileChange: (file: File | null) => void;
   disabled?: boolean;
 };
 
 /**
- * @brief Drag and drop area for choosing one CSV or XLSX bank statement. Clicking it or
+ * @brief Drag and drop area for choosing one CSV bank statement. Clicking it or
  * pressing Enter or Space opens the file picker instead. Invalid files are
  * rejected here with a message, so the parent only ever receives a valid file.
  * A rejected file leaves any previously chosen valid file in place.
@@ -134,7 +134,7 @@ export default function StatementUpload({
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled}
-        aria-label="Upload a CSV or XLSX statement. Drag a file here, or press Enter to browse."
+        aria-label="Upload a CSV statement. Drag a file here, or press Enter to browse."
         aria-describedby={error ? errorId : undefined}
         onClick={openPicker}
         onKeyDown={handleKeyDown}
@@ -149,7 +149,7 @@ export default function StatementUpload({
         </Typography>
         <Typography className="statement-upload-hint">
           or <span className="statement-upload-browse">browse</span> to choose a
-          CSV or XLSX file
+          CSV file
         </Typography>
         <input
           ref={inputRef}
@@ -171,7 +171,10 @@ export default function StatementUpload({
         <Box className="statement-upload-file">
           <DescriptionRounded className="statement-upload-file-icon" />
           <Box className="statement-upload-file-info">
-            <Typography className="statement-upload-file-name" title={file.name}>
+            <Typography
+              className="statement-upload-file-name"
+              title={file.name}
+            >
               {file.name}
             </Typography>
             <Typography className="statement-upload-file-size">
