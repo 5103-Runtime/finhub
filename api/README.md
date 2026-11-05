@@ -37,6 +37,15 @@ Unit tests live in `FinHub.Api.Tests` and run against the sample statements unde
 dotnet test api/FinHub.Api.Tests
 ```
 
+## Auth rate limit
+
+Register, login, forgot-password and update-password calls are limited per client IP. The production values live in `appsettings.json` under `RateLimiting:Auth` (10 requests per 60 seconds). Adjust them per environment without a code change:
+
+- Local development: add a `RateLimiting` block to `appsettings.Development.json`.
+- CI and deployment: set `RateLimiting__Auth__PermitLimit` and `RateLimiting__Auth__WindowSeconds` as environment variables.
+
+Both keys are required and must be positive; the API refuses to start otherwise. A rejected call returns `429` with a `Retry-After` header and `errorCode: "rate_limited"`.
+
 ## Related Documentation
 
 See the [root README](../README.md) to run it.

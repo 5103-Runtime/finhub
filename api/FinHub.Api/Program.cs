@@ -16,6 +16,15 @@ builder.Services.AddDbContext<FinHubDbContext>(options =>
 builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a bad mapping file fails startup.
 builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
 
+// The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit and RateLimiting__Auth__WindowSeconds.
+IConfigurationSection authRateLimit = builder.Configuration.GetSection("RateLimiting:Auth");
+int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit") is int permits and > 0
+    ? permits
+    : throw new InvalidOperationException("RateLimiting:Auth:PermitLimit must be a positive integer.");
+TimeSpan authWindow = authRateLimit.GetValue<int?>("WindowSeconds") is int seconds and > 0
+    ? TimeSpan.FromSeconds(seconds)
+    : throw new InvalidOperationException("RateLimiting:Auth:WindowSeconds must be a positive integer.");
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -27,8 +36,8 @@ builder.Services.AddRateLimiter(options =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 10,
-            Window = TimeSpan.FromMinutes(1)
+            PermitLimit = authPermitLimit,
+            Window = authWindow
         }));
     options.OnRejected = async (context, cancellationToken) =>
     {
@@ -38,7 +47,7 @@ builder.Services.AddRateLimiter(options =>
         }
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
-            error = "Too many attempts. Please try again in a minute.",
+            error = "Too many attempts. Please try again later.",
             errorCode = "rate_limited"
         }, cancellationToken);
     };
