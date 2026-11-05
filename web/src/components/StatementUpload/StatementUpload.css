@@ -1,3 +1,40 @@
+.app-dialog .MuiDialog-paper:has(.statement-upload) {
+  background: var(--color-ink) !important;
+  color: var(--color-cream) !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogTitle-root,
+.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogContent-root,
+.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogActions-root {
+  color: var(--color-cream) !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button {
+  color: var(--color-cream) !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button:hover {
+  background: color-mix(in srgb, var(--color-cream) 9%, transparent) !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button {
+  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink)) !important;
+  color: var(--color-cream) !important;
+  min-height: 42px !important;
+  border-radius: 10px !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button:hover {
+  background: color-mix(in srgb, var(--color-slate) 45%, var(--color-ink)) !important;
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-primary-button.Mui-disabled {
+  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink)) !important;
+  color: color-mix(in srgb, var(--color-cream) 40%, transparent) !important;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
 .statement-upload {
   display: flex;
   flex-direction: column;

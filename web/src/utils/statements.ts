@@ -34,7 +34,7 @@ export function validateStatementFile(file: File): string | null {
   }
 
   if (file.size > MAX_STATEMENT_BYTES) {
-    return "This file is too large. Statement exports must be under 1 MB.";
+    return "This file is too large. Statement exports must be under 1 MiB.";
   }
 
   return null;
@@ -50,5 +50,5 @@ export function formatFileSize(bytes: number): string {
     return `${bytes} B`;
   }
 
-  return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024).toFixed(1)} KiB`;
 }

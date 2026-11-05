@@ -24,6 +24,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
+import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -60,7 +61,6 @@ import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { getCategoryColor } from "@app/utils/categories";
 import { CategoryFilter } from "./CategoryFilter";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
-import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { DialogBase } from "@app/components/Dialog/DialogBase";
 import StatementUpload from "@app/components/StatementUpload";
 
@@ -980,8 +980,7 @@ export default function Transactions() {
               Close
             </Button>
             <Button
-              className="accounts-primary-button"
-              startIcon={<UploadFileRounded />}
+              className="dialog-primary-button"
               onClick={handleUpload}
               disabled={!importFile}
             >
