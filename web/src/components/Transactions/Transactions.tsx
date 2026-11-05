@@ -24,6 +24,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
+import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -60,6 +61,8 @@ import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { getCategoryColor } from "@app/utils/categories";
 import { CategoryFilter } from "./CategoryFilter";
 import { TransactionEditRow, TransactionRow } from "./TransactionRow";
+import { DialogBase } from "@app/components/Dialog/DialogBase";
+import StatementUpload from "@app/components/StatementUpload";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
@@ -101,6 +104,8 @@ export default function Transactions() {
     useState<TransactionResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draftFilterValues, setDraftFilterValues] = useState({
     search: searchParams.get("search") ?? "",
@@ -477,6 +482,13 @@ export default function Transactions() {
     }
   };
 
+  // FIN-49 will send importFile to the parse endpoint and show the preview.
+  const handleUpload = () => {
+    if (!importFile) {
+      return;
+    }
+  };
+
   // One collapsible card per account, holding that account's transactions.
   const renderAccountSection = (account: AccountResponse) => {
     const accountTransactions = transactionsByAccount.get(account.id) ?? [];
@@ -707,13 +719,22 @@ export default function Transactions() {
               </Typography>
             </Box>
             {accounts.length > 0 && (
-              <Button
-                className="accounts-add-button"
-                startIcon={<AddRounded />}
-                onClick={openCreateModal}
-              >
-                Add transaction
-              </Button>
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<UploadFileRounded />}
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Import statement
+                </Button>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<AddRounded />}
+                  onClick={openCreateModal}
+                >
+                  Add transaction
+                </Button>
+              </Stack>
             )}
           </Box>
 
@@ -942,6 +963,34 @@ export default function Transactions() {
           </Box>
         </Box>
       </FormDialog>
+
+      <DialogBase
+        open={isImportOpen}
+        title="Import statement"
+        maxWidth="sm"
+        busy={false}
+        onClose={() => setIsImportOpen(false)}
+        onExited={() => setImportFile(null)}
+        actions={
+          <>
+            <Button
+              className="dialog-cancel-button"
+              onClick={() => setIsImportOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="dialog-primary-button"
+              onClick={handleUpload}
+              disabled={!importFile}
+            >
+              Upload
+            </Button>
+          </>
+        }
+      >
+        <StatementUpload file={importFile} onFileChange={setImportFile} />
+      </DialogBase>
 
       <ConfirmDialog
         open={isDeleteModalOpen}
