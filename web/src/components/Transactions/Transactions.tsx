@@ -25,6 +25,8 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import ArrowUpward from "@mui/icons-material/ArrowUpward"
+import ArrowDownward  from "@mui/icons-material/ArrowDownward";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -113,6 +115,11 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
+  const [isDateAsc, setDateAsc] = useState(false);
+  const [isDescriptionAsc, setDescriptionAsc] = useState(false);
+  const [isAmountAsc, setAmountAsc] = useState(false);
+  const [isCategoryAsc, setCategoryAsc] = useState(false);
+
   const filterDebounceRef = useRef<number | null>(null);
 
   // Load transactions and supporting data for the current URL filters.
@@ -534,10 +541,30 @@ export default function Transactions() {
           ) : (
             <Box className="ledger-list">
               <Box className="ledger-head">
-                <span>Date</span>
-                <span>Description</span>
-                <span>Category</span>
-                <span className="ledger-head-amount">Amount</span>
+                <span>
+                  Date
+                  <IconButton aria-label="Sort Date" onClick={() => setDateAsc(!isDateAsc)}>
+                    {isDateAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  </IconButton>
+                </span>
+                <span>
+                   Description
+                  <IconButton aria-label="Sort Description" onClick={() => setDescriptionAsc(!isDescriptionAsc)}>
+                    {isDescriptionAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  </IconButton>
+                </span>
+                <span>
+                  Category
+                  <IconButton aria-label="Sort Category" onClick={() => setCategoryAsc(!isCategoryAsc)}>
+                    {isCategoryAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  </IconButton>
+                </span>
+                <span className="ledger-head-amount">
+                  Amount
+                 <IconButton aria-label="Sort Amount" onClick={() => setAmountAsc(!isAmountAsc)}>
+                    {isAmountAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  </IconButton>
+                </span>      
                 <span aria-hidden="true" />
               </Box>
               {accountTransactions.map((transaction) =>
