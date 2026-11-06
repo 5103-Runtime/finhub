@@ -18,7 +18,7 @@ import {
   TextField,
   Stack,
   Typography,
-  TableSortLabel
+  TableSortLabel,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
@@ -83,6 +83,7 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
     search: params.get("search") ?? undefined,
   };
 }
+
 type SortConfig = {
   key: "transactionDate" | "description" | "amount";
   ascending: boolean;
@@ -107,7 +108,11 @@ function getTransactionSort(params: URLSearchParams): {
   const sortBy = params.get("sortBy");
   const sortOrder = params.get("sortOrder");
 
-  if (!sortBy || !(sortBy in sortKeyMap) || (sortOrder !== "asc" && sortOrder !== "desc")) {
+  if (
+    !sortBy ||
+    !(sortBy in sortKeyMap) ||
+    (sortOrder !== "asc" && sortOrder !== "desc")
+  ) {
     return {};
   }
 
@@ -116,7 +121,6 @@ function getTransactionSort(params: URLSearchParams): {
     sortOrder,
   };
 }
-
 
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,7 +154,6 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
-
 
   const filterDebounceRef = useRef<number | null>(null);
   // Load transactions and supporting data for the current URL filters.
@@ -542,7 +545,8 @@ export default function Transactions() {
     const currentSortBy = updatedParams.get("sortBy");
     const currentSortOrder = updatedParams.get("sortOrder");
 
-    const nextSortOrder = currentSortBy === sortBy && currentSortOrder === "asc" ? "desc" : "asc";
+    const nextSortOrder =
+      currentSortBy === sortBy && currentSortOrder === "asc" ? "desc" : "asc";
 
     updatedParams.set("sortBy", sortBy);
     updatedParams.set("sortOrder", nextSortOrder);
@@ -569,10 +573,6 @@ export default function Transactions() {
     const isCollapsed = collapsedAccountIds.has(account.id);
     const Icon = accountTypeIcons[account.accountType];
     const panelId = `ledger-account-${account.id}`;
-
-
-
-
 
     return (
       <Box
@@ -617,7 +617,8 @@ export default function Transactions() {
                     className="transaction-sort-label"
                     active={sortConfig?.key === "transactionDate"}
                     direction={
-                      sortConfig?.key === "transactionDate" && sortConfig.ascending
+                      sortConfig?.key === "transactionDate" &&
+                      sortConfig.ascending
                         ? "asc"
                         : "desc"
                     }
@@ -640,9 +641,7 @@ export default function Transactions() {
                     Description
                   </TableSortLabel>
                 </span>
-                <span>
-                  Category
-                </span>
+                <span>Category</span>
                 <span className="ledger-head-amount">
                   <TableSortLabel
                     className="transaction-sort-label"

@@ -25,11 +25,13 @@ export const CategoryMenuList = forwardRef<HTMLUListElement, MenuListProps>(
     const manageItem = menuItems.pop() as ReactNode;
 
     return (
-      <CategoryOptionsList ref={ref} {...props}>
-        {menuItems}
+      <MenuList ref={ref} {...props}>
+        <Box component="div" className="ledger-category-options-scroll">
+          {menuItems}
+        </Box>
         <Divider />
         {manageItem}
-      </CategoryOptionsList>
+      </MenuList>
     );
   },
 );

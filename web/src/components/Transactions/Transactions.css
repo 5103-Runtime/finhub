@@ -761,7 +761,8 @@
   color: var(--color-bronze);
 }
 
-.transaction-sort-label.MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
+.transaction-sort-label.MuiTableSortLabel-root.Mui-active
+  .MuiTableSortLabel-icon {
   color: var(--color-bronze);
 }
 

@@ -94,7 +94,6 @@ export function getTransactions(
     query.set("sortOrder", sortOrder);
   }
 
-
   const queryString = query.toString();
   return apiGet<TransactionResponse[]>(
     `/api/transactions${queryString ? `?${queryString}` : ""}`,
