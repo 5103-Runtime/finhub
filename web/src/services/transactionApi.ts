@@ -58,12 +58,26 @@ export interface TransactionFilters {
 }
 
 /**
+ * @brief Defines the supported fields that transactions can be sorted by
+ *        when requesting transactions from the API.
+ */
+export type TransactionSortField = "date" | "description" | "amount";
+
+/**
+ * @brief Defines the sort direction for transaction results.
+ *        "asc" sorts in ascending order, while "desc" sorts in descending order.
+ */
+export type SortOrder = "asc" | "desc";
+
+/**
  * @brief Retrieves the authenticated user's transactions, newest first.
  * @returns A promise containing the user's transactions.
  * @throws ApiError If the request fails or the user is not authenticated.
  */
 export function getTransactions(
   filters: TransactionFilters = {},
+  sortBy?: TransactionSortField,
+  sortOrder?: SortOrder,
 ): Promise<TransactionResponse[]> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
@@ -71,6 +85,15 @@ export function getTransactions(
       query.set(key, String(value));
     }
   }
+
+  if (sortBy) {
+    query.set("sortBy", sortBy);
+  }
+
+  if (sortOrder) {
+    query.set("sortOrder", sortOrder);
+  }
+
 
   const queryString = query.toString();
   return apiGet<TransactionResponse[]>(
