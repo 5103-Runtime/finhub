@@ -114,10 +114,7 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);({
-    key: "transactionDate",
-    ascending: false,
-  });
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   type SortConfig = {
     key: "transactionDate" | "description" | "amount" | "categoryId";
     ascending: boolean;
@@ -507,9 +504,7 @@ export default function Transactions() {
     const panelId = `ledger-account-${account.id}`;
 
 
-  const handleSort = (
-    key: "transactionDate" | "description" | "amount" | "categoryId"
-  ) => {
+  const handleSort = (key: SortConfig["key"]) => {
         setSortConfig((current) => ({
           key,
           ascending:
