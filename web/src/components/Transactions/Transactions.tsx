@@ -26,6 +26,9 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import Sort from "@mui/icons-material/Sort";
+import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
+import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -70,6 +73,7 @@ import StatementUpload from "@app/components/StatementUpload";
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 import { ApiError } from "@app/services/apiClient";
+
 
 function getTransactionFilters(params: URLSearchParams): TransactionFilters {
   return {
@@ -165,6 +169,7 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
 
   const filterDebounceRef = useRef<number | null>(null);
   // Load transactions and supporting data for the current URL filters.
@@ -338,6 +343,10 @@ export default function Transactions() {
 
   const toggleFilters = () => {
     setFiltersOpen((open) => !open);
+  };
+
+  const toggleSort = () => {
+    setSortOpen((open) => !open);
   };
 
   // Group the transactions by account. The API order (newest first) is kept
@@ -879,16 +888,83 @@ export default function Transactions() {
               <Typography component="h2" className="section-title">
                 Transactions ({transactions.length})
               </Typography>
-              <Button
-                className={`transaction-filter-toggle${hasActiveFilters ? " has-active-filters" : ""}`}
-                startIcon={<FilterListRounded />}
-                onClick={toggleFilters}
-                aria-expanded={filtersOpen}
-                aria-controls="transaction-filter-panel"
-              >
-                Filters{hasActiveFilters ? " active" : ""}
-              </Button>
+              <Box className="transaction-button-row">
+                <Button
+                  className={`transaction-filter-toggle${hasActiveFilters ? " has-active-filters" : ""}`}
+                  startIcon={<FilterListRounded />}
+                  onClick={toggleFilters}
+                  aria-expanded={filtersOpen}
+                  aria-controls="transaction-filter-panel"
+                >
+                  Filters{hasActiveFilters ? " active" : ""}
+                </Button>
+                <Button
+                  className="transaction-sort-btn"
+                  startIcon={<Sort/>}
+                  onClick={toggleSort}
+                  aria-expanded={sortOpen}
+                  aria-controls="transaction-sort-panel"
+                >
+                  Sort
+                </Button>
+
+              </Box>
+             
             </Box>
+           <Collapse in={sortOpen}>
+              <Box id="transaction-sort-panel" className="transaction-sort-panel">
+                <Button
+                  className="transaction-sort-btn"
+                  variant={sortConfig?.key === "transactionDate" ? "contained" : "outlined"}
+                  onClick={() => handleSort("transactionDate")}
+                  endIcon={
+                    sortConfig?.key === "transactionDate" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                  Date
+                </Button>
+
+                <Button
+                  className="transaction-sort-btn"
+                  variant={sortConfig?.key === "description" ? "contained" : "outlined"}
+                  onClick={() => handleSort("description")}
+                  endIcon={
+                    sortConfig?.key === "description" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                  Description
+                </Button>
+
+                <Button
+                  className="transaction-sort-btn"
+                  variant={sortConfig?.key === "amount" ? "contained" : "outlined"}
+                  onClick={() => handleSort("amount")}
+                  endIcon={
+                    sortConfig?.key === "amount" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                Amount
+                </Button>
+              </Box>
+            </Collapse>
             <Collapse in={filtersOpen}>
               <Box
                 id="transaction-filter-panel"

@@ -770,6 +770,15 @@
   color: var(--color-bronze-hover);
 }
 
+.transaction-sort-panel.MuiBox-root,
+.transaction-button-row.MuiBox-root,
+.transaction-sort-btn.MuiButton-root{
+  display: none;
+}
+
+
+
+
 @media (max-width: 1150px) and (min-width: 851px) {
   .transaction-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -892,6 +901,41 @@
     grid-column: auto;
     grid-row: auto;
     justify-content: flex-start;
+  }
+
+   .transaction-sort-btn.MuiButton-root {
+      display: inline-flex;
+      min-height: 40px !important;
+      border: 1px solid color-mix(in srgb, var(--color-mist) 45%, transparent) !important;
+      border-radius: 10px !important;
+      color: var(--color-mist) !important;
+      font-weight: 700 !important;
+      text-transform: none !important;
+   }
+
+  .transaction-sort-panel.MuiBox-root {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 10px 0 24px;
+    padding: 18px 20px;
+    gap: 8px;
+
+    border: 1px solid
+      color-mix(in srgb, var(--color-bronze) 32%, var(--color-slate));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--color-slate) 34%, var(--color-ink));
+    box-shadow: 0 8px 24px var(--shadow-soft);
+  }
+  .transaction-sort-panel .MuiButton-root.MuiButton-contained {
+    color: var(--color-bronze-hover);
+    background: var(--border-accent);
+  }
+  .transaction-button-row.MuiBox-root {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 18px;
   }
 }
 
