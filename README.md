@@ -19,7 +19,7 @@ Statements are uploaded to the API, which parses them and returns the extracted 
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- [Node.js 24](https://nodejs.org/)
+- [Node.js](https://nodejs.org/) 22.13 or newer
 
 ## Running locally
 
