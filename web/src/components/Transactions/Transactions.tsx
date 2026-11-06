@@ -115,10 +115,10 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
-  const [isDateAsc, setDateAsc] = useState(false);
-  const [isDescriptionAsc, setDescriptionAsc] = useState(false);
-  const [isAmountAsc, setAmountAsc] = useState(false);
-  const [isCategoryAsc, setCategoryAsc] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{
+    key: "transactionDate" | "description" | "amount" | "categoryId";
+    ascending: boolean;
+  } | null>(null);
 
   const filterDebounceRef = useRef<number | null>(null);
 
@@ -503,6 +503,16 @@ export default function Transactions() {
     const Icon = accountTypeIcons[account.accountType];
     const panelId = `ledger-account-${account.id}`;
 
+
+    const handleSort = (
+        key: "transactionDate" | "description" | "amount" | "categoryId"
+      ) => {
+        setSortConfig((current) => ({
+          key,
+          ascending:
+            current?.key === key ? !current.ascending : true,
+        }));
+      };
     return (
       <Box
         id={`ledger-account-${account.id}`}
@@ -543,27 +553,51 @@ export default function Transactions() {
               <Box className="ledger-head">
                 <span>
                   Date
-                  <IconButton aria-label="Sort Date" onClick={() => setDateAsc(!isDateAsc)}>
-                    {isDateAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  <IconButton
+                    aria-label="Sort Date"
+                    onClick={() => handleSort("transactionDate")}
+                  >
+                    {sortConfig?.key === "transactionDate" &&
+                    sortConfig.ascending
+                      ? <ArrowUpward />
+                      : <ArrowDownward />}
                   </IconButton>
                 </span>
                 <span>
                    Description
-                  <IconButton aria-label="Sort Description" onClick={() => setDescriptionAsc(!isDescriptionAsc)}>
-                    {isDescriptionAsc ? <ArrowUpward/> : <ArrowDownward/>}
-                  </IconButton>
+                 <IconButton
+                    aria-label="Sort Description"
+                    onClick={() => handleSort("description")}
+                  >
+                    {sortConfig?.key === "description" &&
+                    sortConfig.ascending
+                      ? <ArrowUpward />
+                      : <ArrowDownward />}
+                 </IconButton>
                 </span>
                 <span>
                   Category
-                  <IconButton aria-label="Sort Category" onClick={() => setCategoryAsc(!isCategoryAsc)}>
-                    {isCategoryAsc ? <ArrowUpward/> : <ArrowDownward/>}
+                  <IconButton
+                    aria-label="Sort Category"
+                    onClick={() => handleSort("categoryId")}
+                  >
+                    {sortConfig?.key === "categoryId" &&
+                    sortConfig.ascending
+                      ? <ArrowUpward />
+                      : <ArrowDownward />}
                   </IconButton>
                 </span>
                 <span className="ledger-head-amount">
                   Amount
-                 <IconButton aria-label="Sort Amount" onClick={() => setAmountAsc(!isAmountAsc)}>
-                    {isAmountAsc ? <ArrowUpward/> : <ArrowDownward/>}
-                  </IconButton>
+                <IconButton
+                  aria-label="Sort Amount"
+                  onClick={() => handleSort("amount")}
+                >
+                  {sortConfig?.key === "amount" &&
+                  sortConfig.ascending
+                    ? <ArrowUpward />
+                    : <ArrowDownward />}
+                </IconButton>
                 </span>      
                 <span aria-hidden="true" />
               </Box>
