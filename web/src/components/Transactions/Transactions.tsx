@@ -590,10 +590,11 @@ export default function Transactions() {
                     aria-label="Sort Date"
                     onClick={() => handleSort("transactionDate")}
                   >
-                    {sortConfig?.key === "transactionDate" &&
-                    sortConfig.ascending
-                      ? <ArrowUpward />
-                      : <ArrowDownward />}
+                  {sortConfig?.key === "transactionDate" && (
+                    sortConfig.ascending ? 
+                    <ArrowUpward /> : 
+                    <ArrowDownward />
+                  )}
                   </IconButton>
                 </span>
                 <span>
@@ -602,10 +603,11 @@ export default function Transactions() {
                     aria-label="Sort Description"
                     onClick={() => handleSort("description")}
                   >
-                    {sortConfig?.key === "description" &&
-                    sortConfig.ascending
-                      ? <ArrowUpward />
-                      : <ArrowDownward />}
+                   {sortConfig?.key === "description" && (
+                    sortConfig.ascending ? 
+                    <ArrowUpward /> : 
+                    <ArrowDownward />
+                  )}
                  </IconButton>
                 </span>
                 <span>
@@ -614,10 +616,11 @@ export default function Transactions() {
                     aria-label="Sort Category"
                     onClick={() => handleSort("categoryId")}
                   >
-                    {sortConfig?.key === "categoryId" &&
-                    sortConfig.ascending
-                      ? <ArrowUpward />
-                      : <ArrowDownward />}
+                  {sortConfig?.key === "categoryId" && (
+                    sortConfig.ascending ? 
+                    <ArrowUpward /> : 
+                    <ArrowDownward />
+                  )}
                   </IconButton>
                 </span>
                 <span className="ledger-head-amount">
@@ -626,10 +629,11 @@ export default function Transactions() {
                   aria-label="Sort Amount"
                   onClick={() => handleSort("amount")}
                 >
-                  {sortConfig?.key === "amount" &&
-                  sortConfig.ascending
-                    ? <ArrowUpward />
-                    : <ArrowDownward />}
+                {sortConfig?.key === "amount" && (
+                    sortConfig.ascending ? 
+                    <ArrowUpward /> : 
+                    <ArrowDownward />
+                )}
                 </IconButton>
                 </span>      
                 <span aria-hidden="true" />
