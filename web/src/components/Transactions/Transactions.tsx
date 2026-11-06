@@ -40,6 +40,7 @@ import {
   updateTransaction,
   type TransactionFilters,
   type TransactionResponse,
+  type TransactionSortField,
 } from "@app/services/transactionApi";
 import {
   getCategories,
@@ -115,13 +116,13 @@ export default function Transactions() {
   });
   const [searchFilterError, setSearchFilterError] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+
   type SortConfig = {
-    key: "transactionDate" | "description" | "amount" | "categoryId";
+    key: TransactionSortField;
     ascending: boolean;
   };
 
   const filterDebounceRef = useRef<number | null>(null);
-
   // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
     let isCurrentRequest = true;
@@ -511,42 +512,6 @@ export default function Transactions() {
           current?.key === key ? !current.ascending : true,
       }));
     };
-    const sortTransactions = (
-      transactions: TransactionResponse[],
-      sortConfig: SortConfig
-    ) => {
-      return [...transactions].sort((a, b) => {
-        let comparison = 0;
-
-        switch (sortConfig.key) {
-          case "transactionDate":
-            comparison = a.transactionDate.localeCompare(b.transactionDate);
-            break;
-
-          case "description":
-            comparison = a.description.localeCompare(b.description);
-            break;
-
-          case "amount":
-            comparison = a.amount - b.amount;
-            break;
-
-          case "categoryId":{
-            const categoryA =
-              categoryOptions.find((option) => option.value === a.categoryId)?.label ?? "None";
-
-            const categoryB =
-              categoryOptions.find((option) => option.value === b.categoryId)?.label ?? "None";
-
-            comparison = categoryA.localeCompare(categoryB);
-            break;
-          }
-        }
-
-        return sortConfig.ascending ? comparison : -comparison;
-      });
-    };
-
     return (
       <Box
         id={`ledger-account-${account.id}`}
@@ -588,13 +553,13 @@ export default function Transactions() {
                 <span>
                   <TableSortLabel
                     className="transaction-sort-label"
-                    active={sortConfig?.key === "transactionDate"}
+                    active={sortConfig?.key === "date"}
                     direction={
-                      sortConfig?.key === "transactionDate" && sortConfig.ascending
+                      sortConfig?.key === "date" && sortConfig.ascending
                         ? "asc"
                         : "desc"
                     }
-                    onClick={() => handleSort("transactionDate")}
+                    onClick={() => handleSort("date")}
                   >
                     Date
                   </TableSortLabel>
@@ -632,10 +597,7 @@ export default function Transactions() {
                 </span>
                 <span aria-hidden="true" />
               </Box>
-              {(sortConfig
-                ? sortTransactions(accountTransactions, sortConfig)
-                : accountTransactions
-              ).map((transaction) =>
+              {accountTransactions.map((transaction) => 
                 editingId === transaction.id ? (
                   <TransactionEditRow
                     key={transaction.id}
