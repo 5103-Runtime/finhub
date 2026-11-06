@@ -1,36 +1,12 @@
-.app-dialog .MuiDialog-paper:has(.statement-upload) {
-  background: var(--color-ink) !important;
-  color: var(--color-cream) !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogTitle-root,
-.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogContent-root,
-.app-dialog .MuiDialog-paper:has(.statement-upload) .MuiDialogActions-root {
-  color: var(--color-cream) !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button {
-  color: var(--color-cream) !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button:hover {
-  background: color-mix(in srgb, var(--color-cream) 9%, transparent) !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button {
-  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink)) !important;
-  color: var(--color-cream) !important;
-  min-height: 42px !important;
-  border-radius: 10px !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-cancel-button:hover {
-  background: color-mix(in srgb, var(--color-slate) 45%, var(--color-ink)) !important;
-}
-
-.app-dialog .MuiDialog-paper:has(.statement-upload) .dialog-primary-button.Mui-disabled {
-  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink)) !important;
-  color: color-mix(in srgb, var(--color-cream) 40%, transparent) !important;
+.app-dialog
+  .MuiDialog-paper:has(.statement-upload)
+  .dialog-primary-button.Mui-disabled {
+  background: color-mix(
+    in srgb,
+    var(--color-slate) 18%,
+    var(--color-paper)
+  ) !important;
+  color: color-mix(in srgb, var(--color-ink) 40%, transparent) !important;
   cursor: not-allowed;
   pointer-events: auto;
 }
@@ -49,7 +25,7 @@
   padding: 32px 20px;
   border: 2px dashed var(--border-subtle);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-slate) 8%, var(--color-paper));
   cursor: pointer;
   text-align: center;
   transition:
@@ -60,7 +36,7 @@
 .statement-upload-zone:hover:not(.disabled),
 .statement-upload-zone.dragging {
   border-color: var(--color-bronze);
-  background: color-mix(in srgb, var(--color-bronze) 8%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-bronze) 8%, var(--color-paper));
 }
 
 .statement-upload-zone:focus-visible {
@@ -83,13 +59,13 @@
 }
 
 .statement-upload-title {
-  color: var(--color-cream) !important;
+  color: var(--color-ink) !important;
   font-size: 16px !important;
   font-weight: 700 !important;
 }
 
 .statement-upload-hint {
-  color: var(--color-mist) !important;
+  color: var(--color-slate) !important;
   font-size: 13px !important;
 }
 
@@ -106,7 +82,7 @@
   padding: 12px 16px;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--color-slate) 29%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-slate) 8%, var(--color-paper));
 }
 
 .statement-upload-file-icon {
@@ -121,7 +97,7 @@
 
 .statement-upload-file-name {
   overflow: hidden;
-  color: var(--color-cream) !important;
+  color: var(--color-ink) !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   text-overflow: ellipsis;
@@ -129,12 +105,12 @@
 }
 
 .statement-upload-file-size {
-  color: var(--color-mist) !important;
+  color: var(--color-slate) !important;
   font-size: 12px !important;
 }
 
 .statement-upload-remove {
-  color: var(--color-mist) !important;
+  color: var(--color-slate) !important;
 }
 
 .statement-upload-remove:hover {
