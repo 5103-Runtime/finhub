@@ -585,6 +585,7 @@ export default function Transactions() {
               <Box className="ledger-head">
                 <span>
                   <TableSortLabel
+                    className="transaction-sort-label"
                     active={sortConfig?.key === "transactionDate"}
                     direction={
                       sortConfig?.key === "transactionDate" && sortConfig.ascending
@@ -598,6 +599,7 @@ export default function Transactions() {
                 </span>
                 <span>
                   <TableSortLabel
+                    className="transaction-sort-label"
                     active={sortConfig?.key === "description"}
                     direction={
                       sortConfig?.key === "description" && sortConfig.ascending
@@ -611,6 +613,7 @@ export default function Transactions() {
                 </span>
                 <span>
                   <TableSortLabel
+                    className="transaction-sort-label"
                     active={sortConfig?.key === "categoryId"}
                     direction={
                       sortConfig?.key === "categoryId" && sortConfig.ascending
@@ -624,6 +627,7 @@ export default function Transactions() {
                 </span>
                 <span className="ledger-head-amount">
                   <TableSortLabel
+                    className="transaction-sort-label"
                     active={sortConfig?.key === "amount"}
                     direction={
                       sortConfig?.key === "amount" && sortConfig.ascending

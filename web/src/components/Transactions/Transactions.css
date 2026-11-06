@@ -757,6 +757,18 @@
   color: var(--color-danger-muted);
 }
 
+.transaction-sort-label.MuiTableSortLabel-root.Mui-active {
+  color: var(--color-bronze);
+}
+
+.transaction-sort-label.MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
+  color: var(--color-bronze);
+}
+
+.transaction-sort-label.MuiTableSortLabel-root:hover {
+  color: var(--color-bronze-hover);
+}
+
 @media (max-width: 1150px) and (min-width: 851px) {
   .transaction-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
