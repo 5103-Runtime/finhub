@@ -84,6 +84,17 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
   };
 }
 
+const transactionFilterKeys = [
+  "accountId",
+  "categoryId",
+  "uncategorized",
+  "fromDate",
+  "toDate",
+  "minAmount",
+  "maxAmount",
+  "search",
+] as const;
+
 type SortConfig = {
   key: "transactionDate" | "description" | "amount";
   ascending: boolean;
@@ -243,16 +254,9 @@ export default function Transactions() {
     })),
   ];
 
-  const hasActiveFilters = [
-    "accountId",
-    "categoryId",
-    "uncategorized",
-    "fromDate",
-    "toDate",
-    "minAmount",
-    "maxAmount",
-    "search",
-  ].some((key) => searchParams.has(key));
+  const hasActiveFilters = transactionFilterKeys.some((key) =>
+    searchParams.has(key),
+  );
 
   const updateFilter = (key: string, value: string) => {
     setFiltersOpen(true);
@@ -325,7 +329,11 @@ export default function Transactions() {
     }
     setDraftFilterValues({ search: "", minAmount: "", maxAmount: "" });
     setSearchFilterError("");
-    setSearchParams(new URLSearchParams());
+    const next = new URLSearchParams(searchParams);
+    for (const key of transactionFilterKeys) {
+      next.delete(key);
+    }
+    setSearchParams(next);
   };
 
   const toggleFilters = () => {
