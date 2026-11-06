@@ -24,9 +24,7 @@ export function Form<T extends FieldValues>({
     <FormProvider {...form}>
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit, (errors) =>
-          console.log("invalid:", errors),
-        )}
+        onSubmit={form.handleSubmit(onSubmit)}
         className={["app-form", className].filter(Boolean).join(" ")}
         {...formProps}
       >
