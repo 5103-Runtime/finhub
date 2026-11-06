@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -18,6 +18,7 @@ import {
   TextField,
   Stack,
   Typography,
+  TableSortLabel,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
@@ -25,6 +26,9 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import Sort from "@mui/icons-material/Sort";
+import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
+import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -39,6 +43,8 @@ import {
   updateTransaction,
   type TransactionFilters,
   type TransactionResponse,
+  type TransactionSortField,
+  type SortOrder,
 } from "@app/services/transactionApi";
 import {
   getCategories,
@@ -81,6 +87,55 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
   };
 }
 
+const transactionFilterKeys = [
+  "accountId",
+  "categoryId",
+  "uncategorized",
+  "fromDate",
+  "toDate",
+  "minAmount",
+  "maxAmount",
+  "search",
+] as const;
+
+type SortConfig = {
+  key: "transactionDate" | "description" | "amount";
+  ascending: boolean;
+};
+
+const sortByMap = {
+  transactionDate: "date",
+  description: "description",
+  amount: "amount",
+} as const satisfies Record<SortConfig["key"], TransactionSortField>;
+
+const sortKeyMap = {
+  date: "transactionDate",
+  description: "description",
+  amount: "amount",
+} as const;
+
+function getTransactionSort(params: URLSearchParams): {
+  sortBy?: TransactionSortField;
+  sortOrder?: SortOrder;
+} {
+  const sortBy = params.get("sortBy");
+  const sortOrder = params.get("sortOrder");
+
+  if (
+    !sortBy ||
+    !(sortBy in sortKeyMap) ||
+    (sortOrder !== "asc" && sortOrder !== "desc")
+  ) {
+    return {};
+  }
+
+  return {
+    sortBy: sortBy as TransactionSortField,
+    sortOrder,
+  };
+}
+
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedAccountId = searchParams.get("accountId");
@@ -113,15 +168,26 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
+
   const filterDebounceRef = useRef<number | null>(null);
+  const sortAnchorRef = useRef<{
+    accountId: string;
+    viewportTop: number;
+  } | null>(null);
 
   // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
     let isCurrentRequest = true;
     const filterParams = new URLSearchParams(filterKey);
+    const sorting = getTransactionSort(filterParams);
 
     Promise.all([
-      getTransactions(getTransactionFilters(filterParams)),
+      getTransactions(
+        getTransactionFilters(filterParams),
+        sorting.sortBy,
+        sorting.sortOrder,
+      ),
       getAccounts(),
       getCategories(),
     ])
@@ -132,6 +198,25 @@ export default function Transactions() {
           setCategories(loadedCategories);
           setLoadFailed(false);
           setServerError("");
+
+          const sortAnchor = sortAnchorRef.current;
+          if (sortAnchor) {
+            sortAnchorRef.current = null;
+            window.requestAnimationFrame(() => {
+              const accountSection = document.getElementById(
+                `ledger-account-${sortAnchor.accountId}`,
+              );
+              if (!accountSection) {
+                return;
+              }
+
+              const targetScrollTop =
+                window.scrollY +
+                accountSection.getBoundingClientRect().top -
+                sortAnchor.viewportTop;
+              window.scrollTo(0, targetScrollTop);
+            });
+          }
         }
       })
       .catch((requestError) => {
@@ -197,16 +282,9 @@ export default function Transactions() {
     })),
   ];
 
-  const hasActiveFilters = [
-    "accountId",
-    "categoryId",
-    "uncategorized",
-    "fromDate",
-    "toDate",
-    "minAmount",
-    "maxAmount",
-    "search",
-  ].some((key) => searchParams.has(key));
+  const hasActiveFilters = transactionFilterKeys.some((key) =>
+    searchParams.has(key),
+  );
 
   const updateFilter = (key: string, value: string) => {
     setFiltersOpen(true);
@@ -279,11 +357,21 @@ export default function Transactions() {
     }
     setDraftFilterValues({ search: "", minAmount: "", maxAmount: "" });
     setSearchFilterError("");
-    setSearchParams(new URLSearchParams());
+    const next = new URLSearchParams(searchParams);
+    for (const key of transactionFilterKeys) {
+      next.delete(key);
+    }
+    setSearchParams(next);
   };
 
   const toggleFilters = () => {
+    setSortOpen(false);
     setFiltersOpen((open) => !open);
+  };
+
+  const toggleSort = () => {
+    setFiltersOpen(false);
+    setSortOpen((open) => !open);
   };
 
   // Group the transactions by account. The API order (newest first) is kept
@@ -317,9 +405,13 @@ export default function Transactions() {
   // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async (): Promise<boolean> => {
     try {
+      const params = new URLSearchParams(searchParams);
+      const sorting = getTransactionSort(params);
       setTransactions(
         await getTransactions(
-          getTransactionFilters(new URLSearchParams(searchParams)),
+          getTransactionFilters(params),
+          sorting.sortBy,
+          sorting.sortOrder,
         ),
       );
       return true;
@@ -488,6 +580,54 @@ export default function Transactions() {
       return;
     }
   };
+  const handleSort = (
+    key: SortConfig["key"],
+    event: MouseEvent<HTMLElement>,
+  ) => {
+    const updatedParams = new URLSearchParams(searchParams);
+    const sortBy = sortByMap[key];
+
+    const currentSortBy = updatedParams.get("sortBy");
+    const currentSortOrder = updatedParams.get("sortOrder");
+
+    const nextSortOrder =
+      currentSortBy === sortBy && currentSortOrder === "asc" ? "desc" : "asc";
+
+    updatedParams.set("sortBy", sortBy);
+    updatedParams.set("sortOrder", nextSortOrder);
+
+    const accountSection =
+      event.currentTarget.closest<HTMLElement>(".ledger-account");
+    if (accountSection) {
+      sortAnchorRef.current = {
+        accountId: accountSection.id.replace("ledger-account-", ""),
+        viewportTop: accountSection.getBoundingClientRect().top,
+      };
+    }
+    setSearchParams(updatedParams, { preventScrollReset: true });
+  };
+
+  const handleClearSort = () => {
+    const updatedParams = new URLSearchParams(searchParams);
+
+    updatedParams.delete("sortBy");
+    updatedParams.delete("sortOrder");
+
+    setSearchParams(updatedParams);
+  };
+
+  const sortConfig = (() => {
+    const { sortBy, sortOrder } = getTransactionSort(searchParams);
+
+    if (!sortBy || !sortOrder) {
+      return null;
+    }
+
+    return {
+      key: sortKeyMap[sortBy],
+      ascending: sortOrder === "asc",
+    };
+  })();
 
   // One collapsible card per account, holding that account's transactions.
   const renderAccountSection = (account: AccountResponse) => {
@@ -534,11 +674,61 @@ export default function Transactions() {
           ) : (
             <Box className="ledger-list">
               <Box className="ledger-head">
-                <span>Date</span>
-                <span>Description</span>
+                <span>
+                  <TableSortLabel
+                    className="transaction-sort-label"
+                    active={sortConfig?.key === "transactionDate"}
+                    direction={
+                      sortConfig?.key === "transactionDate" &&
+                      sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
+                    onClick={(event) => handleSort("transactionDate", event)}
+                  >
+                    Date
+                  </TableSortLabel>
+                </span>
+                <span>
+                  <TableSortLabel
+                    className="transaction-sort-label"
+                    active={sortConfig?.key === "description"}
+                    direction={
+                      sortConfig?.key === "description" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
+                    onClick={(event) => handleSort("description", event)}
+                  >
+                    Description
+                  </TableSortLabel>
+                </span>
                 <span>Category</span>
-                <span className="ledger-head-amount">Amount</span>
-                <span aria-hidden="true" />
+                <span className="ledger-head-amount">
+                  <TableSortLabel
+                    className="transaction-sort-label"
+                    active={sortConfig?.key === "amount"}
+                    direction={
+                      sortConfig?.key === "amount" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
+                    onClick={(event) => handleSort("amount", event)}
+                  >
+                    Amount
+                  </TableSortLabel>
+                </span>
+                <span className="transaction-header-sort-clear">
+                  {sortConfig && (
+                    <IconButton
+                      size="small"
+                      aria-label="Clear sorting"
+                      onClick={handleClearSort}
+                    >
+                      <CloseRounded />
+                    </IconButton>
+                  )}
+                </span>
               </Box>
               {accountTransactions.map((transaction) =>
                 editingId === transaction.id ? (
@@ -753,16 +943,103 @@ export default function Transactions() {
               <Typography component="h2" className="section-title">
                 Transactions ({transactions.length})
               </Typography>
-              <Button
-                className={`transaction-filter-toggle${hasActiveFilters ? " has-active-filters" : ""}`}
-                startIcon={<FilterListRounded />}
-                onClick={toggleFilters}
-                aria-expanded={filtersOpen}
-                aria-controls="transaction-filter-panel"
-              >
-                Filters{hasActiveFilters ? " active" : ""}
-              </Button>
+              <Box className="transaction-button-row">
+                <Button
+                  className={`transaction-filter-toggle${hasActiveFilters ? " has-active-filters" : ""}`}
+                  startIcon={<FilterListRounded />}
+                  onClick={toggleFilters}
+                  aria-expanded={filtersOpen}
+                  aria-controls="transaction-filter-panel"
+                >
+                  Filters{hasActiveFilters ? " active" : ""}
+                </Button>
+                <Button
+                  className="transaction-sort-btn"
+                  startIcon={<Sort />}
+                  onClick={toggleSort}
+                  aria-expanded={sortOpen}
+                  aria-controls="transaction-sort-panel"
+                >
+                  Sort
+                </Button>
+              </Box>
             </Box>
+            <Collapse in={sortOpen}>
+              <Box
+                id="transaction-sort-panel"
+                className="transaction-sort-panel"
+              >
+                <Button
+                  className="transaction-sort-btn"
+                  variant={
+                    sortConfig?.key === "transactionDate"
+                      ? "contained"
+                      : "outlined"
+                  }
+                  onClick={(event) => handleSort("transactionDate", event)}
+                  endIcon={
+                    sortConfig?.key === "transactionDate" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                  Date
+                </Button>
+
+                <Button
+                  className="transaction-sort-btn"
+                  variant={
+                    sortConfig?.key === "description" ? "contained" : "outlined"
+                  }
+                  onClick={(event) => handleSort("description", event)}
+                  endIcon={
+                    sortConfig?.key === "description" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                  Description
+                </Button>
+
+                <Button
+                  className="transaction-sort-btn"
+                  variant={
+                    sortConfig?.key === "amount" ? "contained" : "outlined"
+                  }
+                  onClick={(event) => handleSort("amount", event)}
+                  endIcon={
+                    sortConfig?.key === "amount" ? (
+                      sortConfig.ascending ? (
+                        <ArrowUpwardRounded />
+                      ) : (
+                        <ArrowDownwardRounded />
+                      )
+                    ) : undefined
+                  }
+                >
+                  Amount
+                </Button>
+                {sortConfig && (
+                  <Box className="transaction-sort-clear">
+                    <Button
+                      className="transaction-sort-clear-btn"
+                      startIcon={<CloseRounded />}
+                      onClick={handleClearSort}
+                    >
+                      Clear sorting
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </Collapse>
             <Collapse in={filtersOpen}>
               <Box
                 id="transaction-filter-panel"
