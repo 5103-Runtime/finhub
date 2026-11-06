@@ -614,18 +614,7 @@ export default function Transactions() {
                   </TableSortLabel>
                 </span>
                 <span>
-                  <TableSortLabel
-                    className="transaction-sort-label"
-                    active={sortConfig?.key === "categoryId"}
-                    direction={
-                      sortConfig?.key === "categoryId" && sortConfig.ascending
-                        ? "asc"
-                        : "desc"
-                    }
-                    onClick={() => handleSort("categoryId")}
-                  >
                     Category
-                  </TableSortLabel>
                 </span>
                 <span className="ledger-head-amount">
                   <TableSortLabel
