@@ -115,10 +115,14 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
-  const [sortConfig, setSortConfig] = useState<{
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);({
+    key: "transactionDate",
+    ascending: false,
+  });
+  type SortConfig = {
     key: "transactionDate" | "description" | "amount" | "categoryId";
     ascending: boolean;
-  } | null>(null);
+  };
 
   const filterDebounceRef = useRef<number | null>(null);
 
@@ -504,15 +508,44 @@ export default function Transactions() {
     const panelId = `ledger-account-${account.id}`;
 
 
-    const handleSort = (
-        key: "transactionDate" | "description" | "amount" | "categoryId"
-      ) => {
+  const handleSort = (
+    key: "transactionDate" | "description" | "amount" | "categoryId"
+  ) => {
         setSortConfig((current) => ({
           key,
           ascending:
-            current?.key === key ? !current.ascending : true,
+          current?.key === key ? !current.ascending : true,
         }));
-      };
+  };
+  const sortTransactions = (
+    transactions: TransactionResponse[],
+    sortConfig: SortConfig
+  ) => {
+    return [...transactions].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortConfig.key) {
+        case "transactionDate":
+          comparison = a.transactionDate.localeCompare(b.transactionDate);
+          break;
+
+        case "description":
+          comparison = a.description.localeCompare(b.description);
+          break;
+
+        case "amount":
+          comparison = a.amount - b.amount;
+          break;
+
+        case "categoryId":
+          comparison = (a.categoryId ?? "").localeCompare(b.categoryId ?? "");
+          break;
+      }
+
+      return sortConfig.ascending ? comparison : -comparison;
+    });
+  };
+      
     return (
       <Box
         id={`ledger-account-${account.id}`}
@@ -601,7 +634,10 @@ export default function Transactions() {
                 </span>      
                 <span aria-hidden="true" />
               </Box>
-              {accountTransactions.map((transaction) =>
+              {(sortConfig
+                ? sortTransactions(accountTransactions, sortConfig)
+                : accountTransactions
+              ).map((transaction) =>
                 editingId === transaction.id ? (
                   <TransactionEditRow
                     key={transaction.id}
