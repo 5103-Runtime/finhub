@@ -18,6 +18,7 @@ import {
   TextField,
   Stack,
   Typography,
+  TableSortLabel
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
@@ -25,8 +26,6 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
-import ArrowUpward from "@mui/icons-material/ArrowUpward"
-import ArrowDownward  from "@mui/icons-material/ArrowDownward";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
@@ -585,56 +584,56 @@ export default function Transactions() {
             <Box className="ledger-list">
               <Box className="ledger-head">
                 <span>
-                  Date
-                  <IconButton
-                    aria-label="Sort Date"
+                  <TableSortLabel
+                    active={sortConfig?.key === "transactionDate"}
+                    direction={
+                      sortConfig?.key === "transactionDate" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
                     onClick={() => handleSort("transactionDate")}
                   >
-                  {sortConfig?.key === "transactionDate" && (
-                    sortConfig.ascending ? 
-                    <ArrowUpward /> : 
-                    <ArrowDownward />
-                  )}
-                  </IconButton>
+                    Date
+                  </TableSortLabel>
                 </span>
                 <span>
-                   Description
-                 <IconButton
-                    aria-label="Sort Description"
+                  <TableSortLabel
+                    active={sortConfig?.key === "description"}
+                    direction={
+                      sortConfig?.key === "description" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
                     onClick={() => handleSort("description")}
                   >
-                   {sortConfig?.key === "description" && (
-                    sortConfig.ascending ? 
-                    <ArrowUpward /> : 
-                    <ArrowDownward />
-                  )}
-                 </IconButton>
+                    Description
+                  </TableSortLabel>
                 </span>
                 <span>
-                  Category
-                  <IconButton
-                    aria-label="Sort Category"
+                  <TableSortLabel
+                    active={sortConfig?.key === "categoryId"}
+                    direction={
+                      sortConfig?.key === "categoryId" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
                     onClick={() => handleSort("categoryId")}
                   >
-                  {sortConfig?.key === "categoryId" && (
-                    sortConfig.ascending ? 
-                    <ArrowUpward /> : 
-                    <ArrowDownward />
-                  )}
-                  </IconButton>
+                    Category
+                  </TableSortLabel>
                 </span>
                 <span className="ledger-head-amount">
-                  Amount
-                <IconButton
-                  aria-label="Sort Amount"
-                  onClick={() => handleSort("amount")}
-                >
-                {sortConfig?.key === "amount" && (
-                    sortConfig.ascending ? 
-                    <ArrowUpward /> : 
-                    <ArrowDownward />
-                )}
-                </IconButton>
+                  <TableSortLabel
+                    active={sortConfig?.key === "amount"}
+                    direction={
+                      sortConfig?.key === "amount" && sortConfig.ascending
+                        ? "asc"
+                        : "desc"
+                    }
+                    onClick={() => handleSort("amount")}
+                  >
+                    Amount
+                  </TableSortLabel>
                 </span>      
                 <span aria-hidden="true" />
               </Box>
