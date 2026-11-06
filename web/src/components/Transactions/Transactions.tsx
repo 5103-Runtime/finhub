@@ -537,7 +537,13 @@ export default function Transactions() {
           break;
 
         case "categoryId":
-          comparison = (a.categoryId ?? "").localeCompare(b.categoryId ?? "");
+          const categoryA =
+            categoryOptions.find((option) => option.value === a.categoryId)?.label ?? "None";
+
+          const categoryB =
+            categoryOptions.find((option) => option.value === b.categoryId)?.label ?? "None";
+
+          comparison = categoryA.localeCompare(categoryB);
           break;
       }
 
