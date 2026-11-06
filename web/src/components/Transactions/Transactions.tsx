@@ -571,6 +571,15 @@ export default function Transactions() {
     setSearchParams(updatedParams);
   };
 
+  const handleClearSort = () => {
+    const updatedParams = new URLSearchParams(searchParams);
+
+    updatedParams.delete("sortBy");
+    updatedParams.delete("sortOrder");
+
+    setSearchParams(updatedParams);
+  };
+
   const sortConfig = (() => {
     const { sortBy, sortOrder } = getTransactionSort(searchParams);
 
@@ -635,7 +644,7 @@ export default function Transactions() {
                     active={sortConfig?.key === "transactionDate"}
                     direction={
                       sortConfig?.key === "transactionDate" &&
-                      sortConfig.ascending
+                        sortConfig.ascending
                         ? "asc"
                         : "desc"
                     }
@@ -673,7 +682,17 @@ export default function Transactions() {
                     Amount
                   </TableSortLabel>
                 </span>
-                <span aria-hidden="true" />
+                <span className="transaction-header-sort-clear">
+                  {sortConfig && (
+                    <IconButton
+                      size="small"
+                      aria-label="Clear sorting"
+                      onClick={handleClearSort}
+                    >
+                      <CloseRounded />
+                    </IconButton>
+                  )}
+                </span>
               </Box>
               {accountTransactions.map((transaction) =>
                 editingId === transaction.id ? (
@@ -900,7 +919,7 @@ export default function Transactions() {
                 </Button>
                 <Button
                   className="transaction-sort-btn"
-                  startIcon={<Sort/>}
+                  startIcon={<Sort />}
                   onClick={toggleSort}
                   aria-expanded={sortOpen}
                   aria-controls="transaction-sort-panel"
@@ -909,9 +928,9 @@ export default function Transactions() {
                 </Button>
 
               </Box>
-             
+
             </Box>
-           <Collapse in={sortOpen}>
+            <Collapse in={sortOpen}>
               <Box id="transaction-sort-panel" className="transaction-sort-panel">
                 <Button
                   className="transaction-sort-btn"
@@ -961,9 +980,22 @@ export default function Transactions() {
                     ) : undefined
                   }
                 >
-                Amount
+                  Amount
                 </Button>
+                {sortConfig && (
+                <Box className="transaction-sort-clear">
+                   <Button
+                    className="transaction-sort-btn"
+                    onClick={handleClearSort}
+                  >
+                    Clear
+                  </Button>
+                </Box>
+              )}
+                
+              
               </Box>
+              
             </Collapse>
             <Collapse in={filtersOpen}>
               <Box

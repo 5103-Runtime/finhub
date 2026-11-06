@@ -775,6 +775,25 @@
   display: none;
 }
 
+.transaction-header-sort-clear {
+  display: flex;
+  justify-content: center;
+}
+
+.transaction-header .MuiIconButton-root {
+  color: var(--color-bronze);
+}
+
+.transaction-header .MuiIconButton-root:hover {
+  color: var(--color-bronze-hover);
+  background: var(--border-accent);
+}
+.transaction-sort-clear {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 
 
 
