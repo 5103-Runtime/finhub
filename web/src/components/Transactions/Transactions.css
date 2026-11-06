@@ -771,7 +771,6 @@
 }
 
 .transaction-sort-panel.MuiBox-root,
-.transaction-button-row.MuiBox-root,
 .transaction-sort-btn.MuiButton-root{
   display: none;
 }
