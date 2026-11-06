@@ -504,48 +504,48 @@ export default function Transactions() {
     const panelId = `ledger-account-${account.id}`;
 
 
-  const handleSort = (key: SortConfig["key"]) => {
-        setSortConfig((current) => ({
-          key,
-          ascending:
+    const handleSort = (key: SortConfig["key"]) => {
+      setSortConfig((current) => ({
+        key,
+        ascending:
           current?.key === key ? !current.ascending : true,
-        }));
-  };
-  const sortTransactions = (
-    transactions: TransactionResponse[],
-    sortConfig: SortConfig
-  ) => {
-    return [...transactions].sort((a, b) => {
-      let comparison = 0;
+      }));
+    };
+    const sortTransactions = (
+      transactions: TransactionResponse[],
+      sortConfig: SortConfig
+    ) => {
+      return [...transactions].sort((a, b) => {
+        let comparison = 0;
 
-      switch (sortConfig.key) {
-        case "transactionDate":
-          comparison = a.transactionDate.localeCompare(b.transactionDate);
-          break;
+        switch (sortConfig.key) {
+          case "transactionDate":
+            comparison = a.transactionDate.localeCompare(b.transactionDate);
+            break;
 
-        case "description":
-          comparison = a.description.localeCompare(b.description);
-          break;
+          case "description":
+            comparison = a.description.localeCompare(b.description);
+            break;
 
-        case "amount":
-          comparison = a.amount - b.amount;
-          break;
+          case "amount":
+            comparison = a.amount - b.amount;
+            break;
 
-        case "categoryId":
-          const categoryA =
-            categoryOptions.find((option) => option.value === a.categoryId)?.label ?? "None";
+          case "categoryId":
+            const categoryA =
+              categoryOptions.find((option) => option.value === a.categoryId)?.label ?? "None";
 
-          const categoryB =
-            categoryOptions.find((option) => option.value === b.categoryId)?.label ?? "None";
+            const categoryB =
+              categoryOptions.find((option) => option.value === b.categoryId)?.label ?? "None";
 
-          comparison = categoryA.localeCompare(categoryB);
-          break;
-      }
+            comparison = categoryA.localeCompare(categoryB);
+            break;
+        }
 
-      return sortConfig.ascending ? comparison : -comparison;
-    });
-  };
-      
+        return sortConfig.ascending ? comparison : -comparison;
+      });
+    };
+
     return (
       <Box
         id={`ledger-account-${account.id}`}
@@ -639,7 +639,7 @@ export default function Transactions() {
                   >
                     Amount
                   </TableSortLabel>
-                </span>      
+                </span>
                 <span aria-hidden="true" />
               </Box>
               {(sortConfig
