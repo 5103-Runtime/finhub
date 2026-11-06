@@ -531,7 +531,7 @@ export default function Transactions() {
             comparison = a.amount - b.amount;
             break;
 
-          case "categoryId":
+          case "categoryId":{
             const categoryA =
               categoryOptions.find((option) => option.value === a.categoryId)?.label ?? "None";
 
@@ -540,6 +540,7 @@ export default function Transactions() {
 
             comparison = categoryA.localeCompare(categoryB);
             break;
+          }
         }
 
         return sortConfig.ascending ? comparison : -comparison;
