@@ -41,6 +41,7 @@ import {
   type TransactionFilters,
   type TransactionResponse,
   type TransactionSortField,
+  type SortOrder,
 } from "@app/services/transactionApi";
 import {
   getCategories,
@@ -82,6 +83,40 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
     search: params.get("search") ?? undefined,
   };
 }
+type SortConfig = {
+  key: "transactionDate" | "description" | "amount";
+  ascending: boolean;
+};
+
+const sortByMap = {
+  transactionDate: "date",
+  description: "description",
+  amount: "amount",
+} as const satisfies Record<SortConfig["key"], TransactionSortField>;
+
+const sortKeyMap = {
+  date: "transactionDate",
+  description: "description",
+  amount: "amount",
+} as const;
+
+function getTransactionSort(params: URLSearchParams): {
+  sortBy?: TransactionSortField;
+  sortOrder?: SortOrder;
+} {
+  const sortBy = params.get("sortBy");
+  const sortOrder = params.get("sortOrder");
+
+  if (!sortBy || !(sortBy in sortKeyMap) || (sortOrder !== "asc" && sortOrder !== "desc")) {
+    return {};
+  }
+
+  return {
+    sortBy: sortBy as TransactionSortField,
+    sortOrder,
+  };
+}
+
 
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -115,21 +150,21 @@ export default function Transactions() {
     maxAmount: searchParams.get("maxAmount") ?? "",
   });
   const [searchFilterError, setSearchFilterError] = useState("");
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
-  type SortConfig = {
-    key: TransactionSortField;
-    ascending: boolean;
-  };
 
   const filterDebounceRef = useRef<number | null>(null);
   // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
     let isCurrentRequest = true;
     const filterParams = new URLSearchParams(filterKey);
+    const sorting = getTransactionSort(filterParams);
 
     Promise.all([
-      getTransactions(getTransactionFilters(filterParams)),
+      getTransactions(
+        getTransactionFilters(filterParams),
+        sorting.sortBy,
+        sorting.sortOrder,
+      ),
       getAccounts(),
       getCategories(),
     ])
@@ -325,9 +360,13 @@ export default function Transactions() {
   // Refetch after a save so the list keeps the API's ordering (newest first).
   const reloadTransactions = async (): Promise<boolean> => {
     try {
+      const params = new URLSearchParams(searchParams);
+      const sorting = getTransactionSort(params);
       setTransactions(
         await getTransactions(
-          getTransactionFilters(new URLSearchParams(searchParams)),
+          getTransactionFilters(params),
+          sorting.sortBy,
+          sorting.sortOrder,
         ),
       );
       return true;
@@ -496,6 +535,33 @@ export default function Transactions() {
       return;
     }
   };
+  const handleSort = (key: SortConfig["key"]) => {
+    const updatedParams = new URLSearchParams(searchParams);
+    const sortBy = sortByMap[key];
+
+    const currentSortBy = updatedParams.get("sortBy");
+    const currentSortOrder = updatedParams.get("sortOrder");
+
+    const nextSortOrder = currentSortBy === sortBy && currentSortOrder === "asc" ? "desc" : "asc";
+
+    updatedParams.set("sortBy", sortBy);
+    updatedParams.set("sortOrder", nextSortOrder);
+
+    setSearchParams(updatedParams);
+  };
+
+  const sortConfig = (() => {
+    const { sortBy, sortOrder } = getTransactionSort(searchParams);
+
+    if (!sortBy || !sortOrder) {
+      return null;
+    }
+
+    return {
+      key: sortKeyMap[sortBy],
+      ascending: sortOrder === "asc",
+    };
+  })();
 
   // One collapsible card per account, holding that account's transactions.
   const renderAccountSection = (account: AccountResponse) => {
@@ -505,13 +571,9 @@ export default function Transactions() {
     const panelId = `ledger-account-${account.id}`;
 
 
-    const handleSort = (key: SortConfig["key"]) => {
-      setSortConfig((current) => ({
-        key,
-        ascending:
-          current?.key === key ? !current.ascending : true,
-      }));
-    };
+
+
+
     return (
       <Box
         id={`ledger-account-${account.id}`}
@@ -553,13 +615,13 @@ export default function Transactions() {
                 <span>
                   <TableSortLabel
                     className="transaction-sort-label"
-                    active={sortConfig?.key === "date"}
+                    active={sortConfig?.key === "transactionDate"}
                     direction={
-                      sortConfig?.key === "date" && sortConfig.ascending
+                      sortConfig?.key === "transactionDate" && sortConfig.ascending
                         ? "asc"
                         : "desc"
                     }
-                    onClick={() => handleSort("date")}
+                    onClick={() => handleSort("transactionDate")}
                   >
                     Date
                   </TableSortLabel>
@@ -579,7 +641,7 @@ export default function Transactions() {
                   </TableSortLabel>
                 </span>
                 <span>
-                    Category
+                  Category
                 </span>
                 <span className="ledger-head-amount">
                   <TableSortLabel
@@ -597,7 +659,7 @@ export default function Transactions() {
                 </span>
                 <span aria-hidden="true" />
               </Box>
-              {accountTransactions.map((transaction) => 
+              {accountTransactions.map((transaction) =>
                 editingId === transaction.id ? (
                   <TransactionEditRow
                     key={transaction.id}
