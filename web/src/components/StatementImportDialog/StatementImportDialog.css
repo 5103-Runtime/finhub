@@ -1,0 +1,160 @@
+.statement-import-upload,
+.statement-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12px;
+}
+
+.statement-import-upload .MuiInputBase-input,
+.statement-import-upload .MuiInputLabel-root {
+  color: var(--color-ink);
+}
+
+.app-dialog .MuiDialog-paper:has(.statement-preview) .dialog-primary-button.Mui-disabled {
+  background: color-mix(
+    in srgb,
+    var(--color-slate) 18%,
+    var(--color-paper)
+  ) !important;
+  color: color-mix(in srgb, var(--color-ink) 40%, transparent) !important;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+.statement-preview-summary,
+.statement-preview-empty {
+  color: var(--color-slate) !important;
+  font-size: 13px !important;
+}
+
+.statement-preview-table {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-slate) 6%, var(--color-paper));
+  scrollbar-color: var(--color-slate) var(--color-paper);
+  scrollbar-width: thin;
+}
+
+.statement-preview-row {
+  display: grid;
+  grid-template-columns: 40px 104px minmax(0, 1fr) 170px 110px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 14px 6px 6px;
+}
+
+.statement-preview-row + .statement-preview-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.statement-preview-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 40px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--color-paper);
+  color: var(--color-bronze);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.statement-preview-row.excluded .statement-preview-date,
+.statement-preview-row.excluded .statement-preview-description,
+.statement-preview-row.excluded .statement-preview-amount {
+  opacity: 0.5;
+}
+
+.statement-preview-row .MuiCheckbox-root {
+  color: var(--color-slate);
+}
+
+.statement-preview-row .MuiCheckbox-root.Mui-checked,
+.statement-preview-row .MuiCheckbox-root.MuiCheckbox-indeterminate {
+  color: var(--color-bronze);
+}
+
+.statement-preview-date {
+  color: var(--color-slate) !important;
+  font-size: 13px !important;
+  white-space: nowrap;
+}
+
+.statement-preview-description-cell {
+  min-width: 0;
+}
+
+.statement-preview-description {
+  overflow: hidden;
+  color: var(--color-ink) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statement-preview-duplicate {
+  color: var(--color-warning) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.statement-preview-category.MuiInputBase-root {
+  width: 100%;
+  min-width: 0;
+}
+
+.statement-preview-amount {
+  color: var(--color-ink) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.statement-preview-amount.positive {
+  color: var(--color-success) !important;
+}
+
+@media (max-width: 850px) {
+  .statement-preview-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+
+  .statement-preview-head {
+    display: none;
+  }
+
+  .statement-preview-date {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+
+  .statement-preview-row .MuiCheckbox-root {
+    grid-row: 1 / span 3;
+  }
+
+  .statement-preview-description-cell {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .statement-preview-row > .statement-preview-amount {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .statement-preview-category.MuiInputBase-root {
+    grid-column: 2 / -1;
+    grid-row: 3;
+    width: fit-content;
+    max-width: 100%;
+  }
+}
