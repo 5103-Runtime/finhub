@@ -50,20 +50,29 @@ const refreshExcludedPaths = new Set([
  * @returns A promise that resolves to the parsed response body, or undefined for a 204 response.
  * @throws ApiError When the network request fails or the API returns a non-success response.
  */
-async function sendJson<TBody, TResponse>(
+async function sendRequest<TBody, TResponse>(
   path: string,
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   body?: TBody,
   allowRefresh = true,
 ): Promise<TResponse> {
+  const isForm = body instanceof FormData;
+ 
   let res: Response;
   try {
     res = await fetch(path, {
       method,
       credentials: "include",
       headers:
-        body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+        body === undefined || isForm
+          ? undefined
+          : { "Content-Type": "application/json" },
+      body:
+        body === undefined
+          ? undefined
+          : isForm
+            ? (body as FormData)
+            : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(
@@ -72,23 +81,23 @@ async function sendJson<TBody, TResponse>(
       "network_error",
     );
   }
-
+ 
   if (res.status === 401 && allowRefresh && !refreshExcludedPaths.has(path)) {
     try {
-      await sendJson<undefined, void>(
+      await sendRequest<undefined, void>(
         "/api/auth/refresh",
         "POST",
         undefined,
         false,
       );
-      return sendJson<TBody, TResponse>(path, method, body, false);
+      return sendRequest<TBody, TResponse>(path, method, body, false);
     } catch (refreshError) {
       if (!(refreshError instanceof ApiError)) {
         throw refreshError;
       }
     }
   }
-
+ 
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as ErrorBody | null;
     const firstFieldError = data?.errors
@@ -100,14 +109,14 @@ async function sendJson<TBody, TResponse>(
       data?.detail ??
       data?.title ??
       `Request failed (${res.status})`;
-
+ 
     throw new ApiError(res.status, message, data?.errorCode, data?.errors);
   }
-
+ 
   if (res.status === 204) {
     return undefined as TResponse;
   }
-
+ 
   return (await res.json()) as TResponse;
 }
 
@@ -118,7 +127,7 @@ async function sendJson<TBody, TResponse>(
  * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 export function apiGet<TResponse>(path: string): Promise<TResponse> {
-  return sendJson<undefined, TResponse>(path, "GET");
+  return sendRequest<undefined, TResponse>(path, "GET");
 }
 
 /**
@@ -132,7 +141,21 @@ export function apiPost<TBody, TResponse>(
   path: string,
   body: TBody,
 ): Promise<TResponse> {
-  return sendJson<TBody, TResponse>(path, "POST", body);
+  return sendRequest<TBody, TResponse>(path, "POST", body);
+}
+
+/**
+ * Sends an authenticated multipart/form-data POST request, such as a file upload.
+ * @param path The API endpoint path to send the request to.
+ * @param form The form fields and files to send.
+ * @returns A promise that resolves to the parsed response body.
+ * @throws ApiError When the network request fails or the API returns a non-success response.
+ */
+export function apiPostForm<TResponse>(
+  path: string,
+  form: FormData,
+): Promise<TResponse> {
+  return sendRequest<FormData, TResponse>(path, "POST", form);
 }
 
 /**
@@ -146,7 +169,7 @@ export function apiPut<TBody, TResponse>(
   path: string,
   body: TBody,
 ): Promise<TResponse> {
-  return sendJson<TBody, TResponse>(path, "PUT", body);
+  return sendRequest<TBody, TResponse>(path, "PUT", body);
 }
 
 /**
@@ -160,7 +183,7 @@ export function apiPatch<TBody, TResponse>(
   path: string,
   body: TBody,
 ): Promise<TResponse> {
-  return sendJson<TBody, TResponse>(path, "PATCH", body);
+  return sendRequest<TBody, TResponse>(path, "PATCH", body);
 }
 
 /**
@@ -170,5 +193,5 @@ export function apiPatch<TBody, TResponse>(
  * @throws ApiError When the network request fails or the API returns a non-success response.
  */
 export function apiDelete(path: string): Promise<void> {
-  return sendJson<undefined, void>(path, "DELETE");
+  return sendRequest<undefined, void>(path, "DELETE");
 }
