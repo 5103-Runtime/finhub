@@ -244,11 +244,10 @@ export default function StatementImportDialog({
             <strong>
               {file?.name}
             </strong>
-           
+
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${
-                  parsed.skippedRows === 1 ? "row" : "rows"
-                } skipped`
+              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
+              } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
