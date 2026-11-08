@@ -1,1 +1,1 @@
-export { default } from "./StatementImportDialog"
+export { default } from "./StatementImportDialog";

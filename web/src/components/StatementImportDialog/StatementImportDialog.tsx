@@ -94,9 +94,7 @@ export default function StatementImportDialog({
       );
       setStep("preview");
     } catch (requestError) {
-      setError(
-        getErrorMessage(requestError, "Unable to read the statement."),
-      );
+      setError(getErrorMessage(requestError, "Unable to read the statement."));
     } finally {
       setBusy(false);
     }
@@ -245,13 +243,12 @@ export default function StatementImportDialog({
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
             {file?.name}
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
-              } skipped`
+              ? `, ${parsed.skippedRows} pending ${
+                  parsed.skippedRows === 1 ? "row" : "rows"
+                } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
-
-
 
           {institutionMismatch && (
             <FormAlert severity="warning">
@@ -263,17 +260,16 @@ export default function StatementImportDialog({
             <FormAlert severity="warning">
               This looks like a {columnLabel(parsed.accountType)} export, but{" "}
               {account.name} is a{" "}
-              {accountTypeLabels[account.accountType].toLowerCase()} account.
-              Go back if you chose the wrong account.
+              {accountTypeLabels[account.accountType].toLowerCase()} account. Go
+              back if you chose the wrong account.
             </FormAlert>
           )}
           {duplicateCount > 0 && (
             <FormAlert severity="warning">
               {duplicateCount}{" "}
               {duplicateCount === 1 ? "line may be" : "lines may be"} already in
-              this account and{" "}
-              {duplicateCount === 1 ? "is" : "are"} unchecked. Tick a line to
-              import it anyway.
+              this account and {duplicateCount === 1 ? "is" : "are"} unchecked.
+              Tick a line to import it anyway.
             </FormAlert>
           )}
 
