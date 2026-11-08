@@ -34,11 +34,6 @@
   min-height: 0;
 }
 
-.statement-preview-table {
-  flex: 1 1 auto;
-  min-height: 120px;
-}
-
 .statement-preview-summary,
 .statement-preview-empty {
   color: var(--color-slate) !important;
@@ -138,13 +133,82 @@
   color: var(--color-success) !important;
 }
 
+.statement-preview-select-all-label {
+  display: none;
+}
+
 @media (max-width: 850px) {
+  .statement-preview-select-all-label{
+    display: inline;
+  }
+
+  .app-dialog .MuiDialog-paper:has(.statement-preview) {
+    width: calc(100% - 24px);
+    height: calc(100dvh - 24px);
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    margin: 12px;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.statement-preview)
+    .MuiDialogTitle-root,
+  .app-dialog
+    .MuiDialog-paper:has(.statement-preview)
+    .MuiDialogActions-root {
+    flex-shrink: 0;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.statement-preview)
+    .MuiDialogTitle-root {
+    padding: 24px 16px 8px;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.statement-preview)
+    .MuiDialogContent-root {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    padding: 8px 16px;
+    overflow: hidden;
+  }
+
+  .statement-preview {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .statement-preview-table {
+    flex: 1 1 0;
+    min-height: 120px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.statement-preview)
+    .MuiDialogActions-root {
+    padding: 8px 16px 20px;
+  }
+
   .statement-preview-row {
     grid-template-columns: 40px minmax(0, 1fr) auto;
     row-gap: 4px;
   }
 
   .statement-preview-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .statement-preview-head > *:not(
+    .statement-preview-select-all-checkbox
+  ):not(.statement-preview-select-all-label) {
     display: none;
   }
 

@@ -241,7 +241,10 @@ export default function StatementImportDialog({
           )}
           <Typography className="statement-preview-summary">
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
-            {file?.name}
+            <strong>
+              {file?.name}
+            </strong>
+           
             {parsed && parsed.skippedRows > 0
               ? `, ${parsed.skippedRows} pending ${
                   parsed.skippedRows === 1 ? "row" : "rows"
@@ -260,8 +263,7 @@ export default function StatementImportDialog({
             <FormAlert severity="warning">
               This looks like a {columnLabel(parsed.accountType)} export, but{" "}
               {account.name} is a{" "}
-              {accountTypeLabels[account.accountType].toLowerCase()} account. Go
-              back if you chose the wrong account.
+              {accountTypeLabels[account.accountType].toLowerCase()} account.
             </FormAlert>
           )}
           {duplicateCount > 0 && (
@@ -281,12 +283,16 @@ export default function StatementImportDialog({
             <Box className="statement-preview-table">
               <Box className="statement-preview-row statement-preview-head">
                 <Checkbox
+                  className="statement-preview-select-all-checkbox"
                   size="small"
                   checked={allSelected}
                   indeterminate={selectedRows.length > 0 && !allSelected}
                   onChange={toggleAll}
                   slotProps={{ input: { "aria-label": "Select all lines" } }}
                 />
+                <span className="statement-preview-select-all-label">
+                  Select All
+                </span>
                 <span>Date</span>
                 <span>Description</span>
                 <span>Category</span>
