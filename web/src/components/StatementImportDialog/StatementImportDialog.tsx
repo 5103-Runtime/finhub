@@ -21,6 +21,7 @@ import {
   type ParsedTransactionResponse,
 } from "@app/services/statementApi";
 import { accountTypeLabels } from "@app/utils/accounts";
+import { checkInstitution, getBankLabel } from "@app/utils/banks";
 import { getErrorMessage } from "@app/utils/formErrors";
 import {
   formatSignedCurrency,
@@ -35,7 +36,6 @@ type StatementImportDialogProps = {
   categoryOptions: CategoryOption[];
   defaultAccountId: string;
   onClose: () => void;
-  // Called after the lines were saved, so the page can reload its list.
   onImported: (accountId: string, count: number) => void | Promise<void>;
 };
 
@@ -44,7 +44,7 @@ type PreviewRow = ParsedTransactionResponse & {
   categoryId: string;
 };
 
-export default function StatementImportDialog({
+export function StatementImportDialog({
   open,
   accounts,
   categoryOptions,
@@ -195,6 +195,10 @@ export default function StatementImportDialog({
 
   const mismatch =
     parsed && account && parsed.accountType !== account.accountType;
+  const institutionMismatch =
+    parsed &&
+    account &&
+    checkInstitution(account.institution, parsed.bank) === "mismatch";
 
   return (
     <DialogBase
@@ -229,22 +233,39 @@ export default function StatementImportDialog({
         </Box>
       ) : (
         <Box className="statement-preview">
+           {parsed && (
+            <Typography className="statement-preview-summary">
+              Detected: {getBankLabel(parsed.bank)}{" "}
+              {columnLabel(parsed.accountType)} export
+              {account ? ` for ${account.name}` : ""}
+              {account?.institution ? ` (${account.institution})` : ""}
+            </Typography>
+          )}
           <Typography className="statement-preview-summary">
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
             {file?.name}
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
-              } skipped`
+              ? `, ${parsed.skippedRows} pending ${
+                  parsed.skippedRows === 1 ? "row" : "rows"
+                } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
 
+         
+
+          {institutionMismatch && (
+            <FormAlert severity="warning">
+              This looks like a {getBankLabel(parsed.bank)} export, but{" "}
+              {account.name} is saved under {account.institution}.
+            </FormAlert>
+          )}
           {mismatch && (
             <FormAlert severity="warning">
-              This is possibly a {columnLabel(parsed.accountType)} export, but{" "}
+              This looks like a {columnLabel(parsed.accountType)} export, but{" "}
               {account.name} is a{" "}
               {accountTypeLabels[account.accountType].toLowerCase()} account.
-              Make sure you are importing into the correct account.
+              Go back if you chose the wrong account.
             </FormAlert>
           )}
           {duplicateCount > 0 && (
