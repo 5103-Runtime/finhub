@@ -24,6 +24,21 @@
   pointer-events: auto;
 }
 
+.app-dialog .MuiDialogContent-root:has(.statement-preview) {
+  display: flex;
+  flex-direction: column;
+}
+
+.statement-preview {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.statement-preview-table {
+  flex: 1 1 auto;
+  min-height: 120px;
+}
+
 .statement-preview-summary,
 .statement-preview-empty {
   color: var(--color-slate) !important;
@@ -31,7 +46,8 @@
 }
 
 .statement-preview-table {
-  max-height: 420px;
+  flex: 1 1 auto;
+  min-height: 120px;
   overflow-y: auto;
   isolation: isolate;
   border: 1px solid var(--border-subtle);
