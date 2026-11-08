@@ -9,9 +9,14 @@ import {
   Select,
   Typography,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { DialogBase } from "@app/components/Dialog/DialogBase";
 import { FormAlert } from "@app/components/Form/FormAlert";
-import { CategoryOptionsList } from "@app/components/Category/CategoryMenuList";
+import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
+import {
+  CategoryMenuFooter,
+  MANAGE_CATEGORIES_VALUE,
+} from "@app/components/Category/CategoryMenuFooter";
 import StatementUpload from "@app/components/StatementUpload";
 import type { AccountResponse } from "@app/services/accountsApi";
 import {
@@ -44,6 +49,13 @@ type PreviewRow = ParsedTransactionResponse & {
   categoryId: string;
 };
 
+function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
+  const longestLabelLength = Math.max(
+    ...categoryOptions.map((option) => option.label.length),
+  );
+  return `calc(${longestLabelLength}ch + 48px)`;
+}
+
 export default function StatementImportDialog({
   open,
   accounts,
@@ -52,6 +64,7 @@ export default function StatementImportDialog({
   onClose,
   onImported,
 }: StatementImportDialogProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<"upload" | "preview">("upload");
   const [accountId, setAccountId] = useState(defaultAccountId);
   const [file, setFile] = useState<File | null>(null);
@@ -68,6 +81,7 @@ export default function StatementImportDialog({
     ? accountId
     : fallbackAccountId;
   const account = accounts.find((item) => item.id === selectedAccountId);
+  const categorySelectWidth = getCategorySelectWidth(categoryOptions);
   const selectedRows = rows.filter((row) => row.include);
   const duplicateCount = rows.filter((row) => row.potentialDuplicate).length;
   const allSelected = rows.length > 0 && selectedRows.length === rows.length;
@@ -189,7 +203,7 @@ export default function StatementImportDialog({
       <Button
         className="dialog-primary-button"
         onClick={handleImport}
-        disabled={selectedRows.length === 0}
+        disabled={selectedRows.length === 0 || !selectedAccountId}
         loading={busy}
       >
         Import {selectedRows.length}{" "}
@@ -349,14 +363,18 @@ export default function StatementImportDialog({
                       disabled={!row.include || busy}
                       aria-label={`Category for ${row.description}`}
                       className="ledger-category-form-select statement-preview-category"
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        if (event.target.value === MANAGE_CATEGORIES_VALUE) {
+                          navigate("/categories");
+                          return;
+                        }
                         updateRow(row.statementLine, {
                           categoryId: event.target.value,
-                        })
-                      }
+                        });
+                      }}
                       renderValue={() => selectedCategory.label}
                       MenuProps={{
-                        slots: { list: CategoryOptionsList },
+                        slots: { list: CategoryMenuList },
                         slotProps: {
                           paper: { className: "ledger-category-menu" },
                         },
@@ -364,6 +382,7 @@ export default function StatementImportDialog({
                       style={
                         {
                           "--category-color": selectedCategory.color,
+                          "--category-select-width": categorySelectWidth,
                         } as CSSProperties
                       }
                     >
@@ -381,6 +400,7 @@ export default function StatementImportDialog({
                           {option.label}
                         </MenuItem>
                       ))}
+                      <CategoryMenuFooter />
                     </Select>
                     <Typography
                       className={`statement-preview-amount${row.amount > 0 ? " positive" : ""}`}
