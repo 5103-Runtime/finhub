@@ -60,7 +60,14 @@ export default function StatementImportDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const account = accounts.find((item) => item.id === accountId);
+  const fallbackAccountId =
+    accounts.find((item) => item.id === defaultAccountId)?.id ??
+    accounts[0]?.id ??
+    "";
+  const selectedAccountId = accounts.some((item) => item.id === accountId)
+    ? accountId
+    : fallbackAccountId;
+  const account = accounts.find((item) => item.id === selectedAccountId);
   const selectedRows = rows.filter((row) => row.include);
   const duplicateCount = rows.filter((row) => row.potentialDuplicate).length;
   const allSelected = rows.length > 0 && selectedRows.length === rows.length;
@@ -76,14 +83,14 @@ export default function StatementImportDialog({
   };
 
   const handleParse = async () => {
-    if (!file || !accountId) {
+    if (!file || !selectedAccountId) {
       return;
     }
 
     setBusy(true);
     setError("");
     try {
-      const result = await parseStatement(file, accountId);
+      const result = await parseStatement(file, selectedAccountId);
       setParsed(result);
       setRows(
         result.transactions.map((transaction) => ({
@@ -101,7 +108,7 @@ export default function StatementImportDialog({
   };
 
   const handleImport = async () => {
-    if (selectedRows.length === 0) {
+    if (selectedRows.length === 0 || !selectedAccountId) {
       return;
     }
 
@@ -109,7 +116,7 @@ export default function StatementImportDialog({
     setError("");
     try {
       await importStatement({
-        accountId,
+        accountId: selectedAccountId,
         transactions: selectedRows.map((row) => ({
           statementLine: row.statementLine,
           transactionDate: row.transactionDate,
@@ -120,7 +127,7 @@ export default function StatementImportDialog({
           confirmPotentialDuplicate: row.potentialDuplicate,
         })),
       });
-      await onImported(accountId, selectedRows.length);
+      await onImported(selectedAccountId, selectedRows.length);
       onClose();
     } catch (requestError) {
       setError(
@@ -162,7 +169,7 @@ export default function StatementImportDialog({
       <Button
         className="dialog-primary-button"
         onClick={handleParse}
-        disabled={!file || !accountId}
+        disabled={!file || !selectedAccountId}
         loading={busy}
       >
         Preview
@@ -215,7 +222,7 @@ export default function StatementImportDialog({
             <Select
               labelId="statement-import-account-label"
               label="Account"
-              value={accountId}
+              value={selectedAccountId}
               onChange={(event) => setAccountId(event.target.value)}
               disabled={busy}
             >
@@ -241,13 +248,11 @@ export default function StatementImportDialog({
           )}
           <Typography className="statement-preview-summary">
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
-            <strong>
-              {file?.name}
-            </strong>
-
+            <strong>{file?.name}</strong>
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
-              } skipped`
+              ? `, ${parsed.skippedRows} pending ${
+                  parsed.skippedRows === 1 ? "row" : "rows"
+                } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
