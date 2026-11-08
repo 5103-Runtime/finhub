@@ -12,11 +12,9 @@
 }
 
 .app-dialog .MuiDialog-paper:has(.statement-preview) .dialog-primary-button.Mui-disabled {
-  background: color-mix(
-    in srgb,
-    var(--color-slate) 18%,
-    var(--color-paper)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--color-slate) 18%,
+      var(--color-paper)) !important;
   color: color-mix(in srgb, var(--color-ink) 40%, transparent) !important;
   cursor: not-allowed;
   pointer-events: auto;
@@ -47,7 +45,7 @@
   padding: 6px 14px 6px 6px;
 }
 
-.statement-preview-row + .statement-preview-row {
+.statement-preview-row+.statement-preview-row {
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -143,7 +141,7 @@
     grid-row: 2;
   }
 
-  .statement-preview-row > .statement-preview-amount {
+  .statement-preview-row>.statement-preview-amount {
     grid-column: 3;
     grid-row: 2;
   }

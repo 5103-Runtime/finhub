@@ -57,7 +57,7 @@ async function sendRequest<TBody, TResponse>(
   allowRefresh = true,
 ): Promise<TResponse> {
   const isForm = body instanceof FormData;
- 
+
   let res: Response;
   try {
     res = await fetch(path, {
@@ -81,7 +81,7 @@ async function sendRequest<TBody, TResponse>(
       "network_error",
     );
   }
- 
+
   if (res.status === 401 && allowRefresh && !refreshExcludedPaths.has(path)) {
     try {
       await sendRequest<undefined, void>(
@@ -97,7 +97,7 @@ async function sendRequest<TBody, TResponse>(
       }
     }
   }
- 
+
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as ErrorBody | null;
     const firstFieldError = data?.errors
@@ -109,14 +109,14 @@ async function sendRequest<TBody, TResponse>(
       data?.detail ??
       data?.title ??
       `Request failed (${res.status})`;
- 
+
     throw new ApiError(res.status, message, data?.errorCode, data?.errors);
   }
- 
+
   if (res.status === 204) {
     return undefined as TResponse;
   }
- 
+
   return (await res.json()) as TResponse;
 }
 

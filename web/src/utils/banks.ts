@@ -3,8 +3,8 @@
  * `bank` value the API returns. Add an entry when a new mapping file is added to the API.
  */
 const bankLabels: Record<string, string> = {
-  rbc: "RBC",
-  scotiabank: "Scotiabank",
+    rbc: "RBC",
+    scotiabank: "Scotiabank",
 };
 
 /**
@@ -13,7 +13,7 @@ const bankLabels: Record<string, string> = {
  * @returns The display name, or the key with a capital letter when the bank is not known here.
  */
 export function getBankLabel(bank: string): string {
-  return bankLabels[bank] ?? bank.charAt(0).toUpperCase() + bank.slice(1);
+    return bankLabels[bank] ?? bank.charAt(0).toUpperCase() + bank.slice(1);
 }
 
 /**
@@ -26,14 +26,14 @@ export function getBankLabel(bank: string): string {
  * otherwise "match" or "mismatch".
  */
 export function checkInstitution(
-  institution: string | null | undefined,
-  bank: string,
+    institution: string | null | undefined,
+    bank: string,
 ): "match" | "mismatch" | "unknown" {
-  const saved = institution?.trim().toLowerCase() ?? "";
-  const label = bankLabels[bank]?.toLowerCase();
-  if (saved === "" || !label) {
-    return "unknown";
-  }
+    const saved = institution?.trim().toLowerCase() ?? "";
+    const label = bankLabels[bank]?.toLowerCase();
+    if (saved === "" || !label) {
+        return "unknown";
+    }
 
-  return saved === label ? "match" : "mismatch";
+    return saved === label ? "match" : "mismatch";
 }

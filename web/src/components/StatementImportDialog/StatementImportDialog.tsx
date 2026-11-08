@@ -44,7 +44,7 @@ type PreviewRow = ParsedTransactionResponse & {
   categoryId: string;
 };
 
-export function StatementImportDialog({
+export default function StatementImportDialog({
   open,
   accounts,
   categoryOptions,
@@ -233,7 +233,7 @@ export function StatementImportDialog({
         </Box>
       ) : (
         <Box className="statement-preview">
-           {parsed && (
+          {parsed && (
             <Typography className="statement-preview-summary">
               Detected: {getBankLabel(parsed.bank)}{" "}
               {columnLabel(parsed.accountType)} export
@@ -245,14 +245,13 @@ export function StatementImportDialog({
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
             {file?.name}
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${
-                  parsed.skippedRows === 1 ? "row" : "rows"
-                } skipped`
+              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
+              } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
 
-         
+
 
           {institutionMismatch && (
             <FormAlert severity="warning">
