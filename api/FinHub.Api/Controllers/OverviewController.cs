@@ -17,7 +17,8 @@ namespace FinHub.Api.Controllers;
 public sealed class OverviewController(
     FinHubDbContext dbContext,
     SupabaseAuthClient authClient,
-    TimeProvider timeProvider) : AuthenticatedControllerBase(authClient)
+    TimeProvider timeProvider,
+    TimeZoneInfo dashboardTimeZone) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The default number of months to include in the dashboard trend.
@@ -63,7 +64,7 @@ public sealed class OverviewController(
 
         DashboardPeriod period = CreatePeriod(
             monthCount,
-            DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime));
+            DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), dashboardTimeZone).DateTime));
         List<DashboardAccount> accounts = await LoadAccountsAsync(userId!.Value, cancellationToken);
         Dictionary<Guid, decimal> accountBalancesById = await LoadAccountBalancesAsync(
             userId.Value,
@@ -458,7 +459,7 @@ public sealed class OverviewController(
     /// Represents the calendar boundaries used by dashboard calculations.
     /// </summary>
     /// <param name="PeriodStart">The first date in the requested trend.</param>
-    /// <param name="Today">The current local date.</param>
+    /// <param name="Today">The current date in the configured dashboard timezone.</param>
     /// <param name="CurrentMonth">The first date of the current month.</param>
     /// <param name="PreviousMonthStart">The first date of the previous month.</param>
     /// <param name="PreviousMonthEnd">The last date of the previous month.</param>
