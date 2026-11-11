@@ -1,0 +1,137 @@
+.insights-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      color-mix(in srgb, var(--color-slate) 42%, transparent),
+      transparent 31%
+    ),
+    var(--color-ink);
+}
+
+.insights-shell {
+  padding: 28px 40px 54px;
+}
+
+.insights-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 64px 0 30px;
+}
+
+.insights-currency-control {
+  min-width: 140px;
+}
+
+.insights-currency-control .MuiInputLabel-root,
+.insights-currency-control .MuiOutlinedInput-root {
+  color: var(--color-mist);
+  font-size: 14px;
+}
+
+.insights-currency-control .MuiOutlinedInput-root {
+  min-height: 44px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-slate) 18%, transparent);
+}
+
+.insights-currency-control .MuiOutlinedInput-notchedOutline {
+  border-color: color-mix(in srgb, var(--color-mist) 45%, transparent);
+}
+
+.insights-currency-control
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze);
+}
+
+.insights-currency-control
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-width: 1px;
+  border-color: var(--color-bronze);
+}
+
+.insights-currency-control .MuiInputLabel-root {
+  background: var(--color-ink);
+  padding: 0 4px;
+}
+
+.insights-currency-control .MuiSvgIcon-root {
+  color: var(--color-mist);
+}
+
+.insights-currency-control .MuiSelect-select {
+  min-height: 0 !important;
+  padding: 9px 36px 9px 16px !important;
+  font-weight: 700;
+}
+
+.insights-status {
+  margin-top: 24px !important;
+}
+
+.insights-loading {
+  margin-top: 5px !important;
+  color: var(--color-mist) !important;
+  font-size: 13px !important;
+}
+
+.insights-period {
+  margin: 15px 0;
+  color: var(--color-mist);
+  font-size: 13px;
+}
+
+.insights-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+
+.system-insights-section {
+  margin-top: 52px;
+  padding: 24px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
+}
+
+.system-insights-copy {
+  max-width: 680px;
+  margin-top: 10px !important;
+  color: var(--color-mist);
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 850px) {
+  .insights-shell {
+    padding: 24px 22px 40px;
+  }
+
+  .insights-header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 46px;
+  }
+
+  .insights-chart-grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .insights-shell {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .insights-currency-control {
+    width: 100%;
+  }
+}

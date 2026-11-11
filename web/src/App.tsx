@@ -12,6 +12,7 @@ import ForgotPassword from "@app/components/ForgotPassword";
 import ResetPassword from "@app/components/ResetPassword";
 import Accounts from "@app/components/Accounts";
 import Transactions from "@app/components/Transactions";
+import Insights from "@app/components/Insights";
 import Categories from "@app/components/Categories";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/transactions" element={<Transactions />} />
+        <Route path="/insights" element={<Insights />} />
         <Route path="/categories" element={<Categories />} />
       </Route>
 

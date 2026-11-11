@@ -1,12 +1,4 @@
 /**
- * Formats CAD values for the Overview metric cards.
- */
-export const currencyFormatter = new Intl.NumberFormat("en-CA", {
-  style: "currency",
-  currency: "CAD",
-});
-
-/**
  * Formats a monetary value using the account's supported currency.
  * CAD uses the local dollar symbol, while USD is explicitly prefixed with
  * US$ to avoid ambiguity.
@@ -27,6 +19,13 @@ export function formatCurrency(amount: number, currency: "CAD" | "USD") {
     currency: "CAD",
     currencyDisplay: "narrowSymbol",
   }).format(amount);
+}
+
+/**
+ * Formats a dashboard value when the API returns a currency code as data.
+ */
+export function formatDashboardCurrency(value: number, currency: string) {
+  return formatCurrency(value, currency === "USD" ? "USD" : "CAD");
 }
 
 /**
