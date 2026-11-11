@@ -25,6 +25,11 @@ Accept: application/json
 
 ###
 
+GET {{FinHub.Api_HostAddress}}/api/overview
+Accept: application/json
+
+###
+
 POST {{FinHub.Api_HostAddress}}/api/accounts
 Content-Type: application/json
 

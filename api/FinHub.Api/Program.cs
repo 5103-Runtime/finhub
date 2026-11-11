@@ -10,6 +10,28 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<FinHub.Api.Services.SupabaseAuthClient>();
+builder.Services.AddSingleton(TimeProvider.System);
+
+string dashboardTimeZoneId = builder.Configuration["Dashboard:TimeZone"] ?? "UTC";
+TimeZoneInfo dashboardTimeZone;
+try
+{
+    dashboardTimeZone = TimeZoneInfo.FindSystemTimeZoneById(dashboardTimeZoneId);
+}
+catch (TimeZoneNotFoundException exception)
+{
+    throw new InvalidOperationException(
+        $"Dashboard:TimeZone '{dashboardTimeZoneId}' is not a valid system timezone.",
+        exception);
+}
+catch (InvalidTimeZoneException exception)
+{
+    throw new InvalidOperationException(
+        $"Dashboard:TimeZone '{dashboardTimeZoneId}' is invalid.",
+        exception);
+}
+
+builder.Services.AddSingleton(dashboardTimeZone);
 builder.Services.AddDbContext<FinHubDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")));
 
