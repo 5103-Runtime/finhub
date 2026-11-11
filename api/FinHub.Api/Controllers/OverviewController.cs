@@ -16,7 +16,8 @@ namespace FinHub.Api.Controllers;
 [Route("api/overview")]
 public sealed class OverviewController(
     FinHubDbContext dbContext,
-    SupabaseAuthClient authClient) : AuthenticatedControllerBase(authClient)
+    SupabaseAuthClient authClient,
+    TimeProvider timeProvider) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The default number of months to include in the dashboard trend.
@@ -60,11 +61,28 @@ public sealed class OverviewController(
             });
         }
 
-        DashboardPeriod period = CreatePeriod(monthCount);
+        DashboardPeriod period = CreatePeriod(
+            monthCount,
+            DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime));
         List<DashboardAccount> accounts = await LoadAccountsAsync(userId!.Value, cancellationToken);
+        Dictionary<Guid, decimal> accountBalancesById = await LoadAccountBalancesAsync(
+            userId.Value,
+            period.Today,
+            cancellationToken);
+        Dictionary<string, OverviewCurrencySummary> balancesByCurrency =
+            await LoadCurrencySummariesAsync(
+                userId.Value,
+                period.Today,
+                cancellationToken);
+        Dictionary<string, OverviewCurrencySummary> balancesBeforeCurrentMonthByCurrency =
+            await LoadCurrencySummariesAsync(
+                userId.Value,
+                period.PreviousMonthEnd,
+                cancellationToken);
         List<DashboardTransaction> transactions = await LoadTransactionsAsync(
             userId.Value,
             accounts,
+            period,
             cancellationToken);
         Dictionary<Guid, string> categoryNames = await LoadCategoryNamesAsync(
             userId.Value,
@@ -76,15 +94,15 @@ public sealed class OverviewController(
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        List<OverviewAccountBalance> accountBalances = BuildAccountBalances(accounts, transactions);
-        List<OverviewCurrencySummary> balances = BuildCurrencySummaries(
+        List<OverviewAccountBalance> accountBalances = BuildAccountBalances(
+            accounts,
+            accountBalancesById);
+        List<OverviewCurrencySummary> balances = CreateCurrencySummaries(
             currencies,
-            transactions,
-            _ => true);
-        List<OverviewCurrencySummary> balancesBeforeCurrentMonth = BuildCurrencySummaries(
+            balancesByCurrency);
+        List<OverviewCurrencySummary> balancesBeforeCurrentMonth = CreateCurrencySummaries(
             currencies,
-            transactions,
-            transaction => transaction.TransactionDate <= period.PreviousMonthEnd);
+            balancesBeforeCurrentMonthByCurrency);
         List<OverviewCurrencySummary> currentPeriod = BuildCurrencySummaries(
             currencies,
             transactions,
@@ -123,10 +141,10 @@ public sealed class OverviewController(
     /// Calculates the calendar boundaries used by the dashboard aggregates.
     /// </summary>
     /// <param name="monthCount">The number of months in the trend.</param>
+    /// <param name="today">The date to use as the end of the current period.</param>
     /// <returns>The dashboard period boundaries.</returns>
-    internal static DashboardPeriod CreatePeriod(int monthCount)
+    internal static DashboardPeriod CreatePeriod(int monthCount, DateOnly today)
     {
-        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
         DateOnly currentMonth = new(today.Year, today.Month, 1);
 
         return new DashboardPeriod(
@@ -157,15 +175,84 @@ public sealed class OverviewController(
             .ToListAsync(cancellationToken);
 
     /// <summary>
-    /// Loads transactions belonging to the authenticated user's accounts.
+    /// Loads account balances through the specified date using a database aggregate.
+    /// </summary>
+    /// <param name="userId">The authenticated user's ID.</param>
+    /// <param name="throughDate">The last transaction date to include.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Signed balances keyed by account ID.</returns>
+    private Task<Dictionary<Guid, decimal>> LoadAccountBalancesAsync(
+        Guid userId,
+        DateOnly throughDate,
+        CancellationToken cancellationToken) =>
+        (
+            from transaction in dbContext.Transactions.AsNoTracking()
+            join account in dbContext.FinancialAccounts.AsNoTracking()
+                on transaction.AccountId equals account.Id
+            where account.UserId == userId
+                && transaction.TransactionDate <= throughDate
+            group transaction by transaction.AccountId into transactionGroup
+            select new
+            {
+                AccountId = transactionGroup.Key,
+                Balance = transactionGroup.Sum(transaction => transaction.Amount)
+            })
+            .ToDictionaryAsync(
+                balance => balance.AccountId,
+                balance => balance.Balance,
+                cancellationToken);
+
+    /// <summary>
+    /// Loads cumulative currency summaries through the specified date using a database aggregate.
+    /// </summary>
+    /// <param name="userId">The authenticated user's ID.</param>
+    /// <param name="throughDate">The last transaction date to include.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Currency summaries keyed by currency code.</returns>
+    private async Task<Dictionary<string, OverviewCurrencySummary>> LoadCurrencySummariesAsync(
+        Guid userId,
+        DateOnly throughDate,
+        CancellationToken cancellationToken)
+    {
+        List<CurrencyTotals> totals = await (
+            from transaction in dbContext.Transactions.AsNoTracking()
+            join account in dbContext.FinancialAccounts.AsNoTracking()
+                on transaction.AccountId equals account.Id
+            where account.UserId == userId
+                && transaction.TransactionDate <= throughDate
+            group transaction by account.Currency into transactionGroup
+            select new CurrencyTotals(
+                transactionGroup.Key,
+                transactionGroup.Sum(transaction => transaction.Amount > 0
+                    ? transaction.Amount
+                    : 0m),
+                transactionGroup.Sum(transaction => transaction.Amount < 0
+                    ? -transaction.Amount
+                    : 0m)))
+            .ToListAsync(cancellationToken);
+
+        return totals.ToDictionary(
+            total => total.Currency,
+            total => new OverviewCurrencySummary(
+                total.Currency,
+                total.Income,
+                total.Spending,
+                total.Income - total.Spending),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Loads transactions in the requested dashboard period.
     /// </summary>
     /// <param name="userId">The authenticated user's ID.</param>
     /// <param name="accounts">The user's accounts.</param>
+    /// <param name="period">The dashboard period boundaries.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The transaction fields needed for dashboard aggregation.</returns>
     private Task<List<DashboardTransaction>> LoadTransactionsAsync(
         Guid userId,
         List<DashboardAccount> accounts,
+        DashboardPeriod period,
         CancellationToken cancellationToken)
     {
         if (accounts.Count == 0)
@@ -178,6 +265,8 @@ public sealed class OverviewController(
             join account in dbContext.FinancialAccounts.AsNoTracking()
                 on transaction.AccountId equals account.Id
             where account.UserId == userId
+                && transaction.TransactionDate >= period.PeriodStart
+                && transaction.TransactionDate <= period.Today
             select new DashboardTransaction(
                 transaction.AccountId,
                 transaction.CategoryId,
@@ -202,25 +291,38 @@ public sealed class OverviewController(
             .ToDictionaryAsync(category => category.Id, category => category.Name, cancellationToken);
 
     /// <summary>
-    /// Builds signed balances for the user's accounts.
+    /// Builds account responses from balances already calculated by the database.
     /// </summary>
     /// <param name="accounts">The user's accounts.</param>
-    /// <param name="transactions">The user's transactions.</param>
+    /// <param name="balancesByAccountId">Balances keyed by account ID.</param>
     /// <returns>Account balances ordered by absolute balance and name.</returns>
     internal static List<OverviewAccountBalance> BuildAccountBalances(
         IEnumerable<DashboardAccount> accounts,
-        IEnumerable<DashboardTransaction> transactions) =>
+        IReadOnlyDictionary<Guid, decimal> balancesByAccountId) =>
         accounts
             .Select(account => new OverviewAccountBalance(
                 account.Id,
                 account.Name,
                 account.AccountType,
                 account.Currency,
-                transactions
-                    .Where(transaction => transaction.AccountId == account.Id)
-                    .Sum(transaction => transaction.Amount)))
+                balancesByAccountId.GetValueOrDefault(account.Id)))
             .OrderByDescending(account => Math.Abs(account.Balance))
             .ThenBy(account => account.Name)
+            .ToList();
+
+    /// <summary>
+    /// Creates zero-filled summaries for currencies without transactions.
+    /// </summary>
+    /// <param name="currencies">The currencies to summarize.</param>
+    /// <param name="summariesByCurrency">Summaries keyed by currency code.</param>
+    /// <returns>A summary for every requested currency.</returns>
+    private static List<OverviewCurrencySummary> CreateCurrencySummaries(
+        IEnumerable<string> currencies,
+        IReadOnlyDictionary<string, OverviewCurrencySummary> summariesByCurrency) =>
+        currencies
+            .Select(currency => summariesByCurrency.TryGetValue(currency, out OverviewCurrencySummary? summary)
+                ? summary
+                : new OverviewCurrencySummary(currency, 0m, 0m, 0m))
             .ToList();
 
     /// <summary>
@@ -269,7 +371,8 @@ public sealed class OverviewController(
                     .Where(transaction =>
                         transaction.Currency == currency
                         && transaction.TransactionDate >= month
-                        && transaction.TransactionDate <= monthEnd)
+                        && transaction.TransactionDate <= monthEnd
+                        && transaction.TransactionDate <= period.Today)
                     .ToArray();
                 OverviewCurrencySummary summary = CreateSummary(currency, monthTransactions);
 
@@ -341,10 +444,21 @@ public sealed class OverviewController(
     }
 
     /// <summary>
+    /// Represents database-calculated income and spending totals for one currency.
+    /// </summary>
+    /// <param name="Currency">The currency represented by the totals.</param>
+    /// <param name="Income">The sum of positive transaction amounts.</param>
+    /// <param name="Spending">The absolute sum of negative transaction amounts.</param>
+    private sealed record CurrencyTotals(
+        string Currency,
+        decimal Income,
+        decimal Spending);
+
+    /// <summary>
     /// Represents the calendar boundaries used by dashboard calculations.
     /// </summary>
     /// <param name="PeriodStart">The first date in the requested trend.</param>
-    /// <param name="Today">The current UTC date.</param>
+    /// <param name="Today">The current local date.</param>
     /// <param name="CurrentMonth">The first date of the current month.</param>
     /// <param name="PreviousMonthStart">The first date of the previous month.</param>
     /// <param name="PreviousMonthEnd">The last date of the previous month.</param>

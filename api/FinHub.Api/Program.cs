@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<FinHub.Api.Services.SupabaseAuthClient>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<FinHubDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")));
 

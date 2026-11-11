@@ -13,9 +13,11 @@ public sealed class OverviewControllerTests
     [TestMethod]
     public void CreatePeriod_CreatesTheRequestedNumberOfCalendarMonths()
     {
-        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(6);
+        DateOnly today = new(2026, 11, 9);
+        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(6, today);
 
         Assert.AreEqual(period.CurrentMonth.AddMonths(-5), period.PeriodStart);
+        Assert.AreEqual(today, period.Today);
         Assert.AreEqual(1, period.CurrentMonth.Day);
         Assert.AreEqual(period.CurrentMonth.AddMonths(-1), period.PreviousMonthStart);
         Assert.AreEqual(period.CurrentMonth.AddDays(-1), period.PreviousMonthEnd);
@@ -41,23 +43,23 @@ public sealed class OverviewControllerTests
     }
 
     [TestMethod]
-    public void BuildAccountBalances_OrdersByAbsoluteBalanceThenName()
+    public void BuildAccountBalances_OrdersDatabaseBalancesByAbsoluteBalanceThenName()
     {
         List<OverviewController.DashboardAccount> accounts =
         [
             new(ChequingId, "Chequing", "chequing", "CAD"),
             new(SavingsId, "Savings", "savings", "CAD")
         ];
-        List<OverviewController.DashboardTransaction> transactions =
-        [
-            Transaction("CAD", -1200m, ChequingId),
-            Transaction("CAD", 800m, SavingsId),
-            Transaction("CAD", 500m, SavingsId)
-        ];
+        Dictionary<Guid, decimal> balancesByAccountId =
+            new()
+            {
+                [ChequingId] = -1200m,
+                [SavingsId] = 1300m
+            };
 
         List<OverviewAccountBalance> balances = OverviewController.BuildAccountBalances(
             accounts,
-            transactions);
+            balancesByAccountId);
 
         Assert.AreEqual(SavingsId, balances[0].AccountId);
         Assert.AreEqual(1300m, balances[0].Balance);
@@ -68,11 +70,14 @@ public sealed class OverviewControllerTests
     [TestMethod]
     public void BuildMonthlyTrend_CreatesOnePointPerMonthAndCurrency()
     {
-        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(3);
+        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(
+            3,
+            new DateOnly(2026, 11, 9));
         List<OverviewController.DashboardTransaction> transactions =
         [
             Transaction("CAD", 100m, transactionDate: period.PeriodStart),
-            Transaction("CAD", -25m, transactionDate: period.CurrentMonth)
+            Transaction("CAD", -25m, transactionDate: period.CurrentMonth),
+            Transaction("CAD", 500m, transactionDate: period.Today.AddDays(1))
         ];
 
         List<OverviewMonthlyPoint> trend = OverviewController.BuildMonthlyTrend(
@@ -94,7 +99,9 @@ public sealed class OverviewControllerTests
     [TestMethod]
     public void BuildCategorySpending_GroupsNegativeTransactionsAndLabelsMissingCategories()
     {
-        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(3);
+        OverviewController.DashboardPeriod period = OverviewController.CreatePeriod(
+            3,
+            new DateOnly(2026, 11, 9));
         List<OverviewController.DashboardTransaction> transactions =
         [
             Transaction("CAD", -40m, categoryId: FoodCategoryId, transactionDate: period.PeriodStart),
