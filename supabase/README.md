@@ -9,3 +9,4 @@ Database migrations for the shared Supabase PostgreSQL project.
 - [Transactions](docs/transactions.md) — `public.transactions`, created by `_create_transactions`.
 - [Categories](docs/categories.md) — `public.categories`, created by `_create_categories`.
 - [Transfers](docs/transfers.md) — `public.transfers`, created by `_create_transfers`.
+- [Categorization rules](docs/categorization-rules.md) — `public.categorization_rules`, created by `_create_categorization_rules`.
