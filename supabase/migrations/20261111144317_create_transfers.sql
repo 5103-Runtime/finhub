@@ -1,7 +1,7 @@
 create table public.transfers (
   id uuid primary key default gen_random_uuid(),
-  from_account_id uuid not null references public.financial_accounts (id) on delete cascade,
-  to_account_id uuid not null references public.financial_accounts (id) on delete cascade,
+  from_account_id uuid not null references public.financial_accounts (id) on delete restrict,
+  to_account_id uuid not null references public.financial_accounts (id) on delete restrict,
   amount numeric(14, 2) not null,
   transfer_date date not null,
   description text not null,
@@ -58,13 +58,13 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if old.transfer_id is distinct from new.transfer_id
-    or (old.transfer_id is not null and (
-      old.account_id is distinct from new.account_id
+  if old.transfer_id is not null and (
+      old.transfer_id is distinct from new.transfer_id
+      or old.account_id is distinct from new.account_id
       or old.transaction_date is distinct from new.transaction_date
       or old.description is distinct from new.description
       or old.amount is distinct from new.amount
-    )) then
+    ) then
     raise exception 'Transfer transactions must be changed through the transfer operation';
   end if;
 
@@ -169,54 +169,54 @@ as $$
 declare
   transfer_record public.transfers;
   transaction_count integer;
-  transfer_id uuid;
+  transfer_record_id uuid;
 begin
   if tg_table_name = 'transactions' then
-    transfer_id := case when tg_op = 'DELETE' then old.transfer_id else new.transfer_id end;
-    if transfer_id is null then
+    transfer_record_id := case when tg_op = 'DELETE' then old.transfer_id else new.transfer_id end;
+    if transfer_record_id is null then
       if tg_op = 'DELETE' then
         return old;
       end if;
       return new;
     end if;
-    if not exists (select 1 from public.transfers where id = transfer_id) then
+    if not exists (select 1 from public.transfers t where t.id = transfer_record_id) then
       if tg_op = 'DELETE' then
         return old;
       end if;
       raise exception 'Transaction references a missing transfer';
     end if;
   else
-    transfer_id := case when tg_op = 'DELETE' then old.id else new.id end;
+    transfer_record_id := case when tg_op = 'DELETE' then old.id else new.id end;
   end if;
 
   select *
     into transfer_record
     from public.transfers
-    where id = transfer_id;
+    where id = transfer_record_id;
 
   select count(*)
     into transaction_count
-    from public.transactions
-    where transfer_id = transfer_record.id;
+    from public.transactions t
+    where t.transfer_id = transfer_record.id;
 
   if transaction_count <> 2
      or not exists (
        select 1
-       from public.transactions
-       where transfer_id = transfer_record.id
-         and account_id = transfer_record.from_account_id
-         and amount = -transfer_record.amount
-         and transaction_date = transfer_record.transfer_date
-         and description = transfer_record.description
+       from public.transactions t
+       where t.transfer_id = transfer_record.id
+         and t.account_id = transfer_record.from_account_id
+         and t.amount = -transfer_record.amount
+         and t.transaction_date = transfer_record.transfer_date
+         and t.description = transfer_record.description
      )
      or not exists (
        select 1
-       from public.transactions
-       where transfer_id = transfer_record.id
-         and account_id = transfer_record.to_account_id
-         and amount = transfer_record.amount
-         and transaction_date = transfer_record.transfer_date
-         and description = transfer_record.description
+       from public.transactions t
+       where t.transfer_id = transfer_record.id
+         and t.account_id = transfer_record.to_account_id
+         and t.amount = transfer_record.amount
+         and t.transaction_date = transfer_record.transfer_date
+         and t.description = transfer_record.description
      ) then
     raise exception 'Transfer must have one matching outgoing and incoming transaction';
   end if;
