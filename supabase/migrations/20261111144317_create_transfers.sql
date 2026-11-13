@@ -1,7 +1,11 @@
+create unique index financial_accounts_id_user_id_idx
+  on public.financial_accounts (id, user_id);
+
 create table public.transfers (
   id uuid primary key default gen_random_uuid(),
-  from_account_id uuid not null references public.financial_accounts (id) on delete restrict,
-  to_account_id uuid not null references public.financial_accounts (id) on delete restrict,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  from_account_id uuid not null,
+  to_account_id uuid not null,
   amount numeric(14, 2) not null,
   transfer_date date not null,
   description text not null,
@@ -11,12 +15,24 @@ create table public.transfers (
   constraint transfers_amount_positive check (amount > 0),
   constraint transfers_description_length check (
     description = btrim(description, E' \t\r\n') and char_length(description) between 1 and 500
-  )
+  ),
+  constraint transfers_from_account_owner_fkey
+    foreign key (from_account_id, user_id)
+    references public.financial_accounts (id, user_id)
+    on delete restrict,
+  constraint transfers_to_account_owner_fkey
+    foreign key (to_account_id, user_id)
+    references public.financial_accounts (id, user_id)
+    on delete restrict
 );
 
 comment on table public.transfers is
   'Internal money movements represented by two linked transaction ledger lines.';
 
+comment on column public.transfers.user_id is
+  'The Supabase Auth user who owns both accounts in the transfer.';
+
+create index transfers_user_id_idx on public.transfers (user_id);
 create index transfers_from_account_id_idx on public.transfers (from_account_id);
 create index transfers_to_account_id_idx on public.transfers (to_account_id);
 
@@ -36,13 +52,11 @@ begin
   if not exists (
     select 1
     from public.financial_accounts from_account
-    join public.financial_accounts to_account
-      on to_account.id = new.to_account_id
+    join public.financial_accounts to_account on to_account.id = new.to_account_id
     where from_account.id = new.from_account_id
-      and from_account.user_id = to_account.user_id
       and from_account.currency = to_account.currency
   ) then
-    raise exception 'Transfer accounts must belong to the same user and use the same currency';
+    raise exception 'Transfer accounts must use the same currency';
   end if;
 
   return new;
@@ -50,7 +64,7 @@ end;
 $$;
 
 create trigger transfers_validate_accounts
-  before insert or update of from_account_id, to_account_id on public.transfers
+  before insert or update of user_id, from_account_id, to_account_id on public.transfers
   for each row execute procedure public.validate_transfer_accounts();
 
 create or replace function public.prevent_transfer_transaction_mutation()
@@ -86,12 +100,7 @@ alter policy "Users can create transactions in their own accounts"
       or transfer_id in (
         select id
         from public.transfers
-        where from_account_id in (
-          select id from public.financial_accounts where user_id = (select auth.uid())
-        )
-          and to_account_id in (
-            select id from public.financial_accounts where user_id = (select auth.uid())
-          )
+          where user_id = (select auth.uid())
       )
     )
   );
@@ -106,12 +115,7 @@ alter policy "Users can update transactions in their own accounts"
       or transfer_id in (
         select id
         from public.transfers
-        where from_account_id in (
-          select id from public.financial_accounts where user_id = (select auth.uid())
-        )
-          and to_account_id in (
-            select id from public.financial_accounts where user_id = (select auth.uid())
-          )
+          where user_id = (select auth.uid())
       )
     )
   );
@@ -122,41 +126,26 @@ create policy "Users can view transfers in their own accounts"
   on public.transfers
   for select
   to authenticated
-  using (
-    from_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-    and to_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-  );
+  using (user_id = (select auth.uid()));
 
 create policy "Users can create transfers in their own accounts"
   on public.transfers
   for insert
   to authenticated
-  with check (
-    from_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-    and to_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-  );
+  with check (user_id = (select auth.uid()));
 
 create policy "Users can update transfers in their own accounts"
   on public.transfers
   for update
   to authenticated
-  using (
-    from_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-    and to_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-  )
-  with check (
-    from_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-    and to_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-  );
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 
 create policy "Users can delete transfers in their own accounts"
   on public.transfers
   for delete
   to authenticated
-  using (
-    from_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-    and to_account_id in (select id from public.financial_accounts where user_id = (select auth.uid()))
-  );
+  using (user_id = (select auth.uid()));
 
 create trigger transfers_set_updated_at
   before update on public.transfers
