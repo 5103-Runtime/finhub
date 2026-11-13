@@ -44,7 +44,7 @@ create index transactions_transfer_id_idx on public.transactions (transfer_id);
 comment on column public.transactions.transfer_id is
   'Optional transfer identifier for linked internal transfer ledger lines.';
 
-create or replace function public.validate_transfer_accounts()
+create or replace function public.validate_transfer_currency()
 returns trigger
 language plpgsql
 as $$
@@ -63,33 +63,60 @@ begin
 end;
 $$;
 
-create trigger transfers_validate_accounts
+create trigger transfers_validate_currency
   before insert or update of user_id, from_account_id, to_account_id on public.transfers
-  for each row execute procedure public.validate_transfer_accounts();
+  for each row execute procedure public.validate_transfer_currency();
 
-create or replace function public.prevent_transfer_transaction_mutation()
+create or replace function public.validate_transfer_transaction_update()
 returns trigger
 language plpgsql
 as $$
+declare
+  transfer_record public.transfers;
+  expected_amount numeric(14, 2);
 begin
-  if old.transfer_id is not null and (
-      old.transfer_id is distinct from new.transfer_id
-      or old.account_id is distinct from new.account_id
-      or old.transaction_date is distinct from new.transaction_date
-      or old.description is distinct from new.description
-      or old.amount is distinct from new.amount
-    ) then
-    raise exception 'Transfer transactions must be changed through the transfer operation';
+  if old.transfer_id is null then
+    return new;
+  end if;
+
+  if old.transfer_id is distinct from new.transfer_id
+    or old.account_id is distinct from new.account_id then
+    raise exception 'Transfer transaction links and accounts cannot be changed';
+  end if;
+
+  if old.transaction_date is distinct from new.transaction_date
+    or old.description is distinct from new.description
+    or old.amount is distinct from new.amount then
+    select *
+      into transfer_record
+      from public.transfers
+      where id = old.transfer_id;
+
+    if not found then
+      raise exception 'Transfer transaction references a missing transfer';
+    end if;
+
+    expected_amount := case
+      when new.account_id = transfer_record.from_account_id then -transfer_record.amount
+      when new.account_id = transfer_record.to_account_id then transfer_record.amount
+      else null
+    end;
+
+    if new.transaction_date is distinct from transfer_record.transfer_date
+      or new.description is distinct from transfer_record.description
+      or new.amount is distinct from expected_amount then
+      raise exception 'Transfer transaction fields must match the transfer';
+    end if;
   end if;
 
   return new;
 end;
 $$;
 
-create trigger transactions_prevent_transfer_mutation
+create trigger transactions_validate_transfer_update
   before update of transfer_id, account_id, transaction_date, description, amount
   on public.transactions
-  for each row execute procedure public.prevent_transfer_transaction_mutation();
+  for each row execute procedure public.validate_transfer_transaction_update();
 
 alter policy "Users can create transactions in their own accounts"
   on public.transactions
