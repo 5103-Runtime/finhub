@@ -20,6 +20,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_create_categories` creates `public.categories`, described under [Categories](./categories.md), and adds the optional transaction category relationship.
 - `_seed_system_categories` inserts the shared system categories.
 - `_remove_category_slugs` removes the unused `slug` column, slug indexes, and slug validation while preserving category names, ownership, policies, transaction references, and system-category protection.
+- `_create_transfers` creates `public.transfers`, adds the optional `transactions.transfer_id` relationship, and adds transfer ownership policies, ledger validation, and mutation protections. It is described under [Transfers](./transfers.md).
 
 ## Create a migration
 

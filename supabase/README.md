@@ -8,3 +8,4 @@ Database migrations for the shared Supabase PostgreSQL project.
 - [Financial accounts](docs/financial-accounts.md) — `public.financial_accounts`, created by `_create_financial_accounts`.
 - [Transactions](docs/transactions.md) — `public.transactions`, created by `_create_transactions`.
 - [Categories](docs/categories.md) — `public.categories`, created by `_create_categories`.
+- [Transfers](docs/transfers.md) — `public.transfers`, created by `_create_transfers`.
