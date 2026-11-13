@@ -192,7 +192,11 @@ public sealed class TransactionsController(
         decimal amount = Math.Round(
             request.Amount!.Value, 2, MidpointRounding.AwayFromZero
         );
-
+        bool transactionDetailsChanged = HasTransactionDetailsChanged(
+            transaction,
+            transactionDate,
+            description,
+            amount);
         Guid? categoryId = request.CategoryId;
         if (categoryId is not null
             && !await IsCategoryAvailableAsync(categoryId.Value, userId.Value, cancellationToken))
@@ -200,11 +204,17 @@ public sealed class TransactionsController(
             return CategoryNotFound();
         }
 
-        bool transactionDetailsChanged = HasTransactionDetailsChanged(
-            transaction,
-            transactionDate,
-            description,
-            amount);
+        if (transaction.TransferId is not null && transactionDetailsChanged)
+        {
+            return await UpdateTransferFromTransactionAsync(
+                transaction,
+                transactionDate,
+                description,
+                amount,
+                categoryId,
+                cancellationToken);
+        }
+
         Transaction? duplicate = transactionDetailsChanged
             ? await FindDuplicateTransactionAsync(
                 transaction.AccountId,
@@ -251,6 +261,16 @@ public sealed class TransactionsController(
         if (transaction is null)
         {
             return TransactionNotFound();
+        }
+        if (transaction.TransferId is not null)
+        {
+            return Conflict(new
+            {
+                error = "This transaction belongs to a transfer. Delete the complete transfer instead.",
+                errorCode = "transfer_delete_requires_confirmation",
+                transferId = transaction.TransferId,
+                requiresTransferDeletion = true
+            });
         }
 
         dbContext.Transactions.Remove(transaction);
@@ -487,6 +507,111 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
+    /// Updates the parent transfer and both linked ledger lines atomically.
+    /// </summary>
+    /// <param name="editedTransaction">The transfer ledger line being edited.</param>
+    /// <param name="transactionDate">The new date for the transfer.</param>
+    /// <param name="description">The new description for the transfer.</param>
+    /// <param name="amount">The signed amount from the edited ledger line.</param>
+    /// <param name="categoryId">The category for the edited ledger line.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated ledger line response or a validation error.</returns>
+    private async Task<ActionResult<TransactionResponse>> UpdateTransferFromTransactionAsync(
+        Transaction editedTransaction,
+        DateOnly transactionDate,
+        string description,
+        decimal amount,
+        Guid? categoryId,
+        CancellationToken cancellationToken)
+    {
+        Transfer? transfer = await dbContext.Transfers
+            .SingleOrDefaultAsync(
+                candidate => candidate.Id == editedTransaction.TransferId,
+                cancellationToken);
+        if (transfer is null)
+        {
+            return Conflict(new
+            {
+                error = "The transaction references a transfer that could not be found.",
+                errorCode = "invalid_transfer_reference"
+            });
+        }
+
+        List<Transaction> legs = await dbContext.Transactions
+            .Where(candidate => candidate.TransferId == transfer.Id)
+            .ToListAsync(cancellationToken);
+        Transaction? outgoing = legs.SingleOrDefault(
+            candidate => candidate.AccountId == transfer.FromAccountId);
+        Transaction? incoming = legs.SingleOrDefault(
+            candidate => candidate.AccountId == transfer.ToAccountId);
+        if (outgoing is null || incoming is null || legs.Count != 2)
+        {
+            return Conflict(new
+            {
+                error = "The transfer does not have exactly one ledger line in each account.",
+                errorCode = "invalid_transfer_ledger"
+            });
+        }
+
+        bool editingOutgoing = editedTransaction.Id == outgoing.Id;
+        if (!editingOutgoing && editedTransaction.Id != incoming.Id)
+        {
+            return Conflict(new
+            {
+                error = "The transaction is not one of the transfer ledger lines.",
+                errorCode = "invalid_transfer_ledger"
+            });
+        }
+
+        if (editingOutgoing ? amount >= 0m : amount <= 0m)
+        {
+            return BadRequest(new
+            {
+                error = "Transfer transaction amounts must keep their outgoing or incoming sign.",
+                errorCode = "invalid_transfer_transaction_amount"
+            });
+        }
+
+        decimal transferAmount = Math.Round(
+            Math.Abs(amount),
+            2,
+            MidpointRounding.AwayFromZero);
+        if (transferAmount <= 0m)
+        {
+            return BadRequest(new
+            {
+                error = "The transfer amount must be greater than zero after rounding to two decimal places.",
+                errorCode = "invalid_transfer_amount"
+            });
+        }
+
+        string normalizedDescription = description.Trim();
+        DateTime now = DateTime.UtcNow;
+        await using var databaseTransaction =
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        transfer.Amount = transferAmount;
+        transfer.TransferDate = transactionDate;
+        transfer.Description = normalizedDescription;
+        transfer.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        ApplyDetails(outgoing, transactionDate, normalizedDescription, -transferAmount);
+        ApplyDetails(incoming, transactionDate, normalizedDescription, transferAmount);
+        outgoing.CategoryId = editingOutgoing ? categoryId : outgoing.CategoryId;
+        incoming.CategoryId = editingOutgoing ? incoming.CategoryId : categoryId;
+        outgoing.UpdatedAt = now;
+        incoming.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await databaseTransaction.CommitAsync(cancellationToken);
+
+        Transaction updatedTransaction = editingOutgoing
+            ? outgoing
+            : incoming;
+        return Ok(ToResponse(updatedTransaction));
+    }
+
+    /// <summary>
     /// Checks whether the duplicate-defining transaction details changed.
     /// Category is intentionally excluded because it is mutable metadata.
     /// </summary>
@@ -551,10 +676,12 @@ public sealed class TransactionsController(
     /// Converts a transaction to its response representation.
     /// </summary>
     /// <param name="transaction">The transaction.</param>
+    /// <param name="potentialDuplicate">Whether the transaction may duplicate an existing transaction.</param>
     /// <returns>The transaction response.</returns>
     private static TransactionResponse ToResponse(Transaction transaction, bool? potentialDuplicate = null) => new(
         transaction.Id,
         transaction.AccountId,
+        transaction.TransferId,
         transaction.CategoryId,
         transaction.TransactionDate,
         transaction.Description,

@@ -12,6 +12,8 @@ namespace FinHub.Api.Controllers;
 /// </summary>
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
+/// <param name="timeProvider">The provider used to determine the current time.</param>
+/// <param name="dashboardTimeZone">The time zone used for dashboard date boundaries.</param>
 [ApiController]
 [Route("api/overview")]
 public sealed class OverviewController(
@@ -221,6 +223,7 @@ public sealed class OverviewController(
                 on transaction.AccountId equals account.Id
             where account.UserId == userId
                 && transaction.TransactionDate <= throughDate
+                && transaction.TransferId == null
             group transaction by account.Currency into transactionGroup
             select new CurrencyTotals(
                 transactionGroup.Key,
@@ -270,6 +273,7 @@ public sealed class OverviewController(
                 && transaction.TransactionDate <= period.Today
             select new DashboardTransaction(
                 transaction.AccountId,
+                transaction.TransferId,
                 transaction.CategoryId,
                 transaction.TransactionDate,
                 transaction.Amount,
@@ -342,6 +346,7 @@ public sealed class OverviewController(
                 currency,
                 transactions.Where(transaction =>
                     transaction.Currency == currency
+                    && transaction.TransferId is null
                     && includeTransaction(transaction))))
             .ToList();
 
@@ -371,6 +376,7 @@ public sealed class OverviewController(
                 DashboardTransaction[] monthTransactions = transactions
                     .Where(transaction =>
                         transaction.Currency == currency
+                        && transaction.TransferId is null
                         && transaction.TransactionDate >= month
                         && transaction.TransactionDate <= monthEnd
                         && transaction.TransactionDate <= period.Today)
@@ -405,6 +411,7 @@ public sealed class OverviewController(
             .Where(transaction =>
                 transaction.TransactionDate >= period.PeriodStart
                 && transaction.TransactionDate <= period.Today
+                && transaction.TransferId is null
                 && transaction.Amount < 0)
             .GroupBy(transaction => new
             {
@@ -487,12 +494,14 @@ public sealed class OverviewController(
     /// Represents the transaction fields required by dashboard calculations.
     /// </summary>
     /// <param name="AccountId">The account containing the transaction.</param>
+    /// <param name="TransferId">The optional transfer that created the transaction.</param>
     /// <param name="CategoryId">The optional transaction category.</param>
     /// <param name="TransactionDate">The date of the transaction.</param>
     /// <param name="Amount">The signed transaction amount.</param>
     /// <param name="Currency">The currency of the owning account.</param>
     internal sealed record DashboardTransaction(
         Guid AccountId,
+        Guid? TransferId,
         Guid? CategoryId,
         DateOnly TransactionDate,
         decimal Amount,

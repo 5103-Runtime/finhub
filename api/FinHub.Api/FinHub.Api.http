@@ -2,6 +2,8 @@
 @accountId =
 @categoryId =
 @transactionId =
+@transferId =
+@destinationAccountId =
 
 # Authenticated requests rely on the HttpOnly cookie set by login, so run the login request first in the same client session.
 
@@ -95,6 +97,28 @@ DELETE {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
 
 GET {{FinHub.Api_HostAddress}}/api/transactions
 Accept: application/json
+
+###
+
+POST {{FinHub.Api_HostAddress}}/api/transfers
+Content-Type: application/json
+
+{
+  "fromAccountId": "{{accountId}}",
+  "toAccountId": "{{destinationAccountId}}",
+  "transferDate": "2026-10-29",
+  "description": "Move money to savings",
+  "amount": 100.00
+}
+
+###
+
+GET {{FinHub.Api_HostAddress}}/api/transfers/{{transferId}}
+Accept: application/json
+
+###
+
+DELETE {{FinHub.Api_HostAddress}}/api/transfers/{{transferId}}
 
 ###
 

@@ -21,6 +21,12 @@ public static class HttpRequestExtensions
     /// <returns>The refresh token, or null if it is not found.</returns>
     public static string? GetRefreshToken(this HttpRequest request) => GetCookie(request, AuthCookies.RefreshToken);
 
+    /// <summary>
+    /// Retrieves a non-empty cookie value from the request.
+    /// </summary>
+    /// <param name="request">The HTTP request.</param>
+    /// <param name="name">The cookie name.</param>
+    /// <returns>The cookie value, or null when it is missing or blank.</returns>
     private static string? GetCookie(HttpRequest request, string name) =>
         request.Cookies.TryGetValue(name, out string? value) && !string.IsNullOrWhiteSpace(value) ? value : null;
 }
