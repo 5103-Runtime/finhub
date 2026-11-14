@@ -13,6 +13,7 @@ namespace FinHub.Api.DTOs.Transfer;
 /// <param name="CategoryId">The optional category applied to newly created ledger lines.</param>
 /// <param name="FromTransactionId">An optional existing unlinked outgoing transaction to reuse.</param>
 /// <param name="ToTransactionId">An optional existing unlinked incoming transaction to reuse.</param>
+/// <param name="ConfirmPotentialDuplicate">Whether to create the transfer after the API reports a potential duplicate.</param>
 public sealed record CreateTransferRequest(
     [Required] Guid? FromAccountId,
     [Required] Guid? ToAccountId,
@@ -21,4 +22,5 @@ public sealed record CreateTransferRequest(
     [Required, Range(typeof(decimal), "0.01", "999999999999.99")] decimal? Amount,
     Guid? CategoryId = null,
     Guid? FromTransactionId = null,
-    Guid? ToTransactionId = null);
+    Guid? ToTransactionId = null,
+    bool ConfirmPotentialDuplicate = false);

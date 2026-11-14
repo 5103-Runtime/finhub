@@ -212,6 +212,7 @@ public sealed class TransactionsController(
                 description,
                 amount,
                 categoryId,
+                request.ConfirmPotentialDuplicate,
                 cancellationToken);
         }
 
@@ -514,6 +515,7 @@ public sealed class TransactionsController(
     /// <param name="description">The new description for the transfer.</param>
     /// <param name="amount">The signed amount from the edited ledger line.</param>
     /// <param name="categoryId">The category for the edited ledger line.</param>
+    /// <param name="confirmPotentialDuplicate">Whether to save after a potential duplicate warning.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated ledger line response or a validation error.</returns>
     private async Task<ActionResult<TransactionResponse>> UpdateTransferFromTransactionAsync(
@@ -522,6 +524,7 @@ public sealed class TransactionsController(
         string description,
         decimal amount,
         Guid? categoryId,
+        bool confirmPotentialDuplicate,
         CancellationToken cancellationToken)
     {
         Transfer? transfer = await dbContext.Transfers
@@ -586,6 +589,26 @@ public sealed class TransactionsController(
         }
 
         string normalizedDescription = description.Trim();
+        Transfer? duplicate = await dbContext.Transfers
+            .SingleOrDefaultAsync(
+                candidate => candidate.Id != transfer.Id
+                    && candidate.UserId == transfer.UserId
+                    && candidate.FromAccountId == transfer.FromAccountId
+                    && candidate.ToAccountId == transfer.ToAccountId
+                    && candidate.TransferDate == transactionDate
+                    && candidate.Description == normalizedDescription
+                    && candidate.Amount == transferAmount,
+                cancellationToken);
+        if (duplicate is not null && !confirmPotentialDuplicate)
+        {
+            return Conflict(new
+            {
+                error = "This transfer may be a duplicate. Set confirmPotentialDuplicate to true to save it.",
+                errorCode = "potential_duplicate",
+                existingTransferId = duplicate.Id
+            });
+        }
+
         DateTime now = DateTime.UtcNow;
         await using var databaseTransaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);

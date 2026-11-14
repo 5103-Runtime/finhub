@@ -122,6 +122,25 @@ public sealed class TransfersController(
 
         DateOnly transferDate = request.TransferDate!.Value;
         string description = request.Description.Trim();
+        Transfer? duplicate = await dbContext.Transfers
+            .SingleOrDefaultAsync(
+                transfer => transfer.UserId == currentUserId
+                    && transfer.FromAccountId == fromAccountId
+                    && transfer.ToAccountId == toAccountId
+                    && transfer.TransferDate == transferDate
+                    && transfer.Description == description
+                    && transfer.Amount == amount,
+                cancellationToken);
+        if (duplicate is not null && !request.ConfirmPotentialDuplicate)
+        {
+            return Conflict(new
+            {
+                error = "This transfer may be a duplicate. Set confirmPotentialDuplicate to true to save it.",
+                errorCode = "potential_duplicate",
+                existingTransferId = duplicate.Id
+            });
+        }
+
         Guid transferId = Guid.NewGuid();
         Guid fromTransactionId = Guid.NewGuid();
         Guid toTransactionId = Guid.NewGuid();
@@ -166,8 +185,6 @@ public sealed class TransfersController(
         BadRequestObjectResult? existingTransactionError = ValidateExistingTransaction(
             existingOutgoing,
             fromAccountId,
-            transferDate,
-            description,
             -amount,
             "source");
         if (existingTransactionError is not null)
@@ -178,8 +195,6 @@ public sealed class TransfersController(
         existingTransactionError = ValidateExistingTransaction(
             existingIncoming,
             toAccountId,
-            transferDate,
-            description,
             amount,
             "destination");
         if (existingTransactionError is not null)
@@ -269,6 +284,42 @@ public sealed class TransfersController(
         if (transfer is null)
         {
             return TransferNotFound();
+        }
+
+        dbContext.Transfers.Remove(transfer);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Unlinks both ledger lines from a transfer and preserves them as normal transactions.
+    /// </summary>
+    /// <param name="id">The transfer identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>No content when the transfer was unlinked.</returns>
+    [HttpPost("{id:guid}/unlink")]
+    public async Task<IActionResult> Unlink(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        Transfer? transfer = await FindTransferAsync(id, userId!.Value, cancellationToken);
+        if (transfer is null)
+        {
+            return TransferNotFound();
+        }
+
+        List<Transaction> transactions = await dbContext.Transactions
+            .Where(transaction => transaction.TransferId == id)
+            .ToListAsync(cancellationToken);
+        foreach (Transaction transaction in transactions)
+        {
+            transaction.TransferId = null;
         }
 
         dbContext.Transfers.Remove(transfer);
@@ -384,16 +435,12 @@ public sealed class TransfersController(
     /// </summary>
     /// <param name="transaction">The existing transaction, if supplied.</param>
     /// <param name="expectedAccountId">The account the transaction must belong to.</param>
-    /// <param name="expectedDate">The expected transaction date.</param>
-    /// <param name="expectedDescription">The expected description.</param>
     /// <param name="expectedAmount">The expected signed amount.</param>
     /// <param name="leg">The transfer leg name used in error messages.</param>
     /// <returns>A validation error, or null when the transaction is valid.</returns>
     private static BadRequestObjectResult? ValidateExistingTransaction(
         Transaction? transaction,
         Guid expectedAccountId,
-        DateOnly expectedDate,
-        string expectedDescription,
         decimal expectedAmount,
         string leg)
     {
@@ -420,14 +467,12 @@ public sealed class TransfersController(
             });
         }
 
-        if (transaction.TransactionDate != expectedDate
-            || transaction.Description != expectedDescription
-            || transaction.Amount != expectedAmount)
+        if (transaction.Amount != expectedAmount)
         {
             return new BadRequestObjectResult(new
             {
-                error = $"The existing {leg} transaction does not match the transfer date, description, or amount.",
-                errorCode = "transfer_transaction_details_mismatch"
+                error = $"The existing {leg} transaction does not match the transfer amount.",
+                errorCode = "transfer_transaction_amount_mismatch"
             });
         }
 
