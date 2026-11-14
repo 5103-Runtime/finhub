@@ -67,6 +67,6 @@ Do not run `db reset --linked`. It resets the shared public database and destroy
 
 ## API and EF Core Ownership
 
-Supabase migrations own the creation of `public.profiles`, `public.financial_accounts`, and `public.transactions`, their policies, and their triggers. The ASP.NET API maps these tables with EF Core entities and queries them through `FinHubDbContext`.
+Supabase migrations own the creation of `public.profiles`, `public.financial_accounts`, `public.transactions`, `public.categories`, and `public.transfers`, along with their policies, functions, triggers, indexes, and constraints. The ASP.NET API maps these tables with EF Core entities and queries them through `FinHubDbContext`.
 
 Do not create EF Core migrations for these tables. EF Core should map and query them; Supabase migrations remain the source of truth for the schema.
