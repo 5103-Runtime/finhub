@@ -26,6 +26,11 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
     /// <summary>
+    /// Gets the DbSet of internal account transfers.
+    /// </summary>
+    public DbSet<Transfer> Transfers => Set<Transfer>();
+
+    /// <summary>
     /// Gets the DbSet of system and user-owned categories.
     /// </summary>
     public DbSet<Category> Categories => Set<Category>();
@@ -70,6 +75,7 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.HasKey(transaction => transaction.Id);
             entity.Property(transaction => transaction.Id).HasColumnName("id");
             entity.Property(transaction => transaction.AccountId).HasColumnName("account_id");
+            entity.Property(transaction => transaction.TransferId).HasColumnName("transfer_id");
             entity.Property(transaction => transaction.CategoryId).HasColumnName("category_id");
             entity.Property(transaction => transaction.TransactionDate).HasColumnName("transaction_date");
             entity.Property(transaction => transaction.Description).HasColumnName("description").HasMaxLength(500);
@@ -79,6 +85,29 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(transaction => transaction.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(transaction => transaction.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
             entity.HasIndex(transaction => transaction.AccountId);
+            entity.HasIndex(transaction => transaction.TransferId);
+            entity.HasOne<Transfer>()
+                .WithMany()
+                .HasForeignKey(transaction => transaction.TransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Transfer>(entity =>
+        {
+            entity.ToTable("transfers", "public");
+            entity.HasKey(transfer => transfer.Id);
+            entity.Property(transfer => transfer.Id).HasColumnName("id");
+            entity.Property(transfer => transfer.UserId).HasColumnName("user_id");
+            entity.Property(transfer => transfer.FromAccountId).HasColumnName("from_account_id");
+            entity.Property(transfer => transfer.ToAccountId).HasColumnName("to_account_id");
+            entity.Property(transfer => transfer.Amount).HasColumnName("amount").HasPrecision(14, 2);
+            entity.Property(transfer => transfer.TransferDate).HasColumnName("transfer_date");
+            entity.Property(transfer => transfer.Description).HasColumnName("description").HasMaxLength(500);
+            entity.Property(transfer => transfer.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(transfer => transfer.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
+            entity.HasIndex(transfer => transfer.FromAccountId);
+            entity.HasIndex(transfer => transfer.ToAccountId);
+            entity.HasIndex(transfer => transfer.UserId);
         });
 
         modelBuilder.Entity<Category>(entity =>
