@@ -21,6 +21,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_seed_system_categories` inserts the shared system categories.
 - `_remove_category_slugs` removes the unused `slug` column, slug indexes, and slug validation while preserving category names, ownership, policies, transaction references, and system-category protection.
 - `_create_transfers` creates `public.transfers`, adds the optional `transactions.transfer_id` relationship, and adds transfer ownership policies, ledger validation, and mutation protections. It is described under [Transfers](./transfers.md).
+- `_create_categorization_rules` creates `public.categorization_rules`, described under [Categorization rules](./categorization-rules.md).
 
 ## Create a migration
 
