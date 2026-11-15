@@ -159,7 +159,7 @@ public sealed class AccountsController(
         {
             return Conflict(new
             {
-                error = "This account cannot be deleted while it is linked to a transfer. Delete the complete transfer first.",
+                error = "This account cannot be deleted while it is linked to a transfer. Delete or unlink the complete transfer first.",
                 errorCode = "account_has_transfers",
                 requiresTransferDeletion = true
             });

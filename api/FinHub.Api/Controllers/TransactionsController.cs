@@ -267,7 +267,7 @@ public sealed class TransactionsController(
         {
             return Conflict(new
             {
-                error = "This transaction belongs to a transfer. Delete the complete transfer instead.",
+                error = "This transaction belongs to a transfer. Delete or unlink the complete transfer first.",
                 errorCode = "transfer_delete_requires_confirmation",
                 transferId = transaction.TransferId,
                 requiresTransferDeletion = true
@@ -508,11 +508,11 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
-    /// Updates the parent transfer and both linked ledger lines atomically.
+    /// Updates one transfer ledger line while preserving the transfer's paired amount.
     /// </summary>
     /// <param name="editedTransaction">The transfer ledger line being edited.</param>
-    /// <param name="transactionDate">The new date for the transfer.</param>
-    /// <param name="description">The new description for the transfer.</param>
+    /// <param name="transactionDate">The new date for the edited ledger line.</param>
+    /// <param name="description">The new description for the edited ledger line.</param>
     /// <param name="amount">The signed amount from the edited ledger line.</param>
     /// <param name="categoryId">The category for the edited ledger line.</param>
     /// <param name="confirmPotentialDuplicate">Whether to save after a potential duplicate warning.</param>
@@ -589,49 +589,38 @@ public sealed class TransactionsController(
         }
 
         string normalizedDescription = description.Trim();
-        Transfer? duplicate = await dbContext.Transfers
-            .SingleOrDefaultAsync(
-                candidate => candidate.Id != transfer.Id
-                    && candidate.UserId == transfer.UserId
-                    && candidate.FromAccountId == transfer.FromAccountId
-                    && candidate.ToAccountId == transfer.ToAccountId
-                    && candidate.TransferDate == transactionDate
-                    && candidate.Description == normalizedDescription
-                    && candidate.Amount == transferAmount,
-                cancellationToken);
+        Transaction? duplicate = await FindDuplicateTransactionAsync(
+            editedTransaction.AccountId,
+            transactionDate,
+            normalizedDescription,
+            amount,
+            editedTransaction.Id,
+            cancellationToken);
         if (duplicate is not null && !confirmPotentialDuplicate)
         {
-            return Conflict(new
-            {
-                error = "This transfer may be a duplicate. Set confirmPotentialDuplicate to true to save it.",
-                errorCode = "potential_duplicate",
-                existingTransferId = duplicate.Id
-            });
+            return PotentialDuplicateConflict(duplicate);
         }
 
         DateTime now = DateTime.UtcNow;
         await using var databaseTransaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        transfer.Amount = transferAmount;
-        transfer.TransferDate = transactionDate;
-        transfer.Description = normalizedDescription;
-        transfer.UpdatedAt = now;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (transfer.Amount != transferAmount)
+        {
+            transfer.Amount = transferAmount;
+            transfer.UpdatedAt = now;
+            Transaction pairedTransaction = editingOutgoing ? incoming : outgoing;
+            pairedTransaction.Amount = editingOutgoing ? transferAmount : -transferAmount;
+            pairedTransaction.UpdatedAt = now;
+        }
 
-        ApplyDetails(outgoing, transactionDate, normalizedDescription, -transferAmount);
-        ApplyDetails(incoming, transactionDate, normalizedDescription, transferAmount);
-        outgoing.CategoryId = editingOutgoing ? categoryId : outgoing.CategoryId;
-        incoming.CategoryId = editingOutgoing ? incoming.CategoryId : categoryId;
-        outgoing.UpdatedAt = now;
-        incoming.UpdatedAt = now;
+        ApplyDetails(editedTransaction, transactionDate, normalizedDescription, amount);
+        editedTransaction.CategoryId = categoryId;
+        editedTransaction.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
         await databaseTransaction.CommitAsync(cancellationToken);
 
-        Transaction updatedTransaction = editingOutgoing
-            ? outgoing
-            : incoming;
-        return Ok(ToResponse(updatedTransaction));
+        return Ok(ToResponse(editedTransaction, duplicate is not null));
     }
 
     /// <summary>

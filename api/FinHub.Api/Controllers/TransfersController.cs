@@ -123,7 +123,7 @@ public sealed class TransfersController(
         DateOnly transferDate = request.TransferDate!.Value;
         string description = request.Description.Trim();
         Transfer? duplicate = await dbContext.Transfers
-            .SingleOrDefaultAsync(
+            .FirstOrDefaultAsync(
                 transfer => transfer.UserId == currentUserId
                     && transfer.FromAccountId == fromAccountId
                     && transfer.ToAccountId == toAccountId
