@@ -609,6 +609,8 @@ public sealed class TransactionsController(
         {
             transfer.Amount = transferAmount;
             transfer.UpdatedAt = now;
+            await dbContext.SaveChangesAsync(cancellationToken);
+
             Transaction pairedTransaction = editingOutgoing ? incoming : outgoing;
             pairedTransaction.Amount = editingOutgoing ? transferAmount : -transferAmount;
             pairedTransaction.UpdatedAt = now;
