@@ -19,7 +19,6 @@ import { Link } from "react-router-dom";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { CategoryChip } from "@app/components/Category/CategoryChip";
-import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
 import {
   getTransactions,
@@ -29,35 +28,48 @@ import {
   getCategories,
   type CategoryResponse,
 } from "@app/services/categoriesApi";
-import { currencyFormatter, getPercentageChange } from "@app/utils/finance";
+import {
+  formatDashboardCurrency,
+  getPercentageChange,
+} from "@app/utils/finance";
 import {
   formatSignedCurrency,
   formatTransactionDate,
 } from "@app/utils/transactions";
+import { accountTypeIcons, accountTypeLabels } from "@app/utils/accounts";
 import {
-  accountTypeIcons,
-  accountTypeLabels,
-  formatAccountBalance,
-  getAccountBalanceInCad,
-  withTransactionBalances,
-} from "@app/utils/accounts";
+  getOverview,
+  type OverviewDashboardResponse,
+} from "@app/services/overviewApi";
 import "./Overview.css";
 
-// TODO: Replace monthly spending and comparison values with overview API data
-const totalBalance = 15872.18;
-const monthlySpending = 1284.6;
-const previousTotalBalance = 14642.22;
-const previousMonthlySpending = 1470.15;
-
 const RECENT_TRANSACTION_COUNT = 4;
+const OVERVIEW_MONTHS = 6;
+const INSIGHT_SPENDING_PERCENTAGE = 8.1;
+
+/**
+ * Returns a stable percentage change when the previous value is zero.
+ *
+ * @param currentValue The current-period value.
+ * @param previousValue The previous-period value.
+ * @returns The percentage change, using 100 when growth starts from zero.
+ */
+function getSafePercentageChange(currentValue: number, previousValue: number) {
+  if (previousValue === 0) {
+    return currentValue === 0 ? 0 : 100;
+  }
+
+  return getPercentageChange(currentValue, previousValue);
+}
 
 export default function Overview() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
-  const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+  const [accounts, setAccounts] = useState<
+    OverviewDashboardResponse["accounts"]
+  >([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
-  const [accountsError, setAccountsError] = useState("");
   const [accountsById, setAccountsById] = useState<
-    Map<string, AccountResponse>
+    Map<string, OverviewDashboardResponse["accounts"][number]>
   >(new Map());
   const [recentTransactions, setRecentTransactions] = useState<
     TransactionResponse[]
@@ -67,7 +79,13 @@ export default function Overview() {
   const [categoriesById, setCategoriesById] = useState<
     Map<string, CategoryResponse>
   >(new Map());
+  const [dashboard, setDashboard] = useState<OverviewDashboardResponse | null>(
+    null,
+  );
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
 
+  // Load the authenticated user's profile.
   useEffect(() => {
     let isCurrentRequest = true;
 
@@ -88,55 +106,81 @@ export default function Overview() {
     };
   }, []);
 
+  // Load dashboard metrics and backend-calculated account balances.
   useEffect(() => {
     let isCurrentRequest = true;
 
-    Promise.all([getAccounts(), getTransactions(), getCategories()])
-      .then(([loadedAccounts, loadedTransactions, loadedCategories]) => {
+    getOverview(OVERVIEW_MONTHS)
+      .then((loadedDashboard) => {
+        if (isCurrentRequest) {
+          setDashboard(loadedDashboard);
+          setAccounts(loadedDashboard.accounts.slice(0, 3));
+          setAccountsById(
+            new Map(
+              loadedDashboard.accounts.map((account) => [
+                account.accountId,
+                account,
+              ]),
+            ),
+          );
+          setAccountsLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (isCurrentRequest) {
+          console.error("Unable to load dashboard metrics:", error);
+          setDashboardError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load dashboard metrics.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) {
+          setDashboardLoading(false);
+          setAccountsLoading(false);
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  // Load transactions and categories for the overview lists.
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    Promise.all([getTransactions(), getCategories()])
+      .then(([loadedTransactions, loadedCategories]) => {
         if (isCurrentRequest) {
           setCategoriesById(
             new Map(
               loadedCategories.map((category) => [category.id, category]),
             ),
           );
-          const accountsWithBalances = withTransactionBalances(
-            loadedAccounts,
-            loadedTransactions,
-          );
-          setAccountsById(
-            new Map(
-              accountsWithBalances.map((account) => [account.id, account]),
-            ),
-          );
           // API returns newest first.
           setRecentTransactions(
             loadedTransactions.slice(0, RECENT_TRANSACTION_COUNT),
-          );
-          setAccounts(
-            // Keep the overview focused by showing the three highest balances.
-            [...accountsWithBalances]
-              .sort(
-                (left, right) =>
-                  getAccountBalanceInCad(right) - getAccountBalanceInCad(left),
-              )
-              .slice(0, 3),
           );
         }
       })
       .catch((error) => {
         if (isCurrentRequest) {
-          console.error("Unable to load accounts for overview:", error);
+          console.error(
+            "Unable to load transactions and categories for overview:",
+            error,
+          );
           const message =
             error instanceof Error
               ? error.message
               : "Unable to load overview data.";
-          setAccountsError(message);
           setTransactionsError(message);
         }
       })
       .finally(() => {
         if (isCurrentRequest) {
-          setAccountsLoading(false);
           setTransactionsLoading(false);
         }
       });
@@ -156,12 +200,28 @@ export default function Overview() {
       }).format(new Date()),
     [],
   );
-  const spendingPercentage = (monthlySpending / totalBalance) * 100;
-  const totalBalanceChange = getPercentageChange(
+  const dashboardCurrency = dashboard?.currencies[0] ?? "CAD";
+  const dashboardBalance = dashboard?.balances.find(
+    (summary) => summary.currency === dashboardCurrency,
+  );
+  const dashboardPreviousBalance = dashboard?.balancesBeforeCurrentMonth.find(
+    (summary) => summary.currency === dashboardCurrency,
+  );
+  const dashboardCurrentPeriod = dashboard?.currentPeriod.find(
+    (summary) => summary.currency === dashboardCurrency,
+  );
+  const totalBalance = dashboardBalance?.net ?? 0;
+  const monthlySpending = dashboardCurrentPeriod?.spending ?? 0;
+  const previousTotalBalance = dashboardPreviousBalance?.net ?? 0;
+  const previousMonthlySpending =
+    dashboard?.previousPeriod.find(
+      (summary) => summary.currency === dashboardCurrency,
+    )?.spending ?? 0;
+  const totalBalanceChange = getSafePercentageChange(
     totalBalance,
     previousTotalBalance,
   );
-  const monthlySpendingChange = getPercentageChange(
+  const monthlySpendingChange = getSafePercentageChange(
     monthlySpending,
     previousMonthlySpending,
   );
@@ -209,7 +269,9 @@ export default function Overview() {
               <CardContent>
                 <Typography className="metric-label">TOTAL BALANCE</Typography>
                 <Typography className="metric-value">
-                  {currencyFormatter.format(totalBalance)}
+                  {dashboardLoading
+                    ? "Loading..."
+                    : formatDashboardCurrency(totalBalance, dashboardCurrency)}
                 </Typography>
                 <Stack
                   direction="row"
@@ -234,7 +296,12 @@ export default function Overview() {
                   SPENDING THIS MONTH
                 </Typography>
                 <Typography className="metric-value">
-                  {currencyFormatter.format(monthlySpending)}
+                  {dashboardLoading
+                    ? "Loading..."
+                    : formatDashboardCurrency(
+                        monthlySpending,
+                        dashboardCurrency,
+                      )}
                 </Typography>
                 <Stack
                   direction="row"
@@ -254,6 +321,16 @@ export default function Overview() {
               </CardContent>
             </Card>
           </Box>
+
+          {dashboardError && (
+            <Alert
+              className="overview-accounts-error"
+              severity="error"
+              variant="outlined"
+            >
+              {dashboardError}
+            </Alert>
+          )}
 
           <Box className="overview-grid">
             <Box
@@ -279,13 +356,13 @@ export default function Overview() {
                   </Button>
                 )}
               </Box>
-              {accountsError ? (
+              {dashboardError ? (
                 <Alert
                   className="overview-accounts-error"
                   severity="error"
                   variant="outlined"
                 >
-                  {accountsError}
+                  {dashboardError}
                 </Alert>
               ) : accountsLoading ? (
                 <Typography className="overview-accounts-status">
@@ -317,9 +394,9 @@ export default function Overview() {
                     return (
                       <Card
                         component={Link}
-                        to={`/transactions?accountId=${account.id}`}
+                        to={`/transactions?accountId=${account.accountId}`}
                         className="account-card"
-                        key={account.id}
+                        key={account.accountId}
                       >
                         <CardContent>
                           <Box
@@ -336,7 +413,10 @@ export default function Overview() {
                             </Typography>
                           </Box>
                           <Typography className="account-amount">
-                            {formatAccountBalance(account)}
+                            {formatDashboardCurrency(
+                              account.balance,
+                              account.currency,
+                            )}
                           </Typography>
                         </CardContent>
                       </Card>
@@ -362,7 +442,6 @@ export default function Overview() {
                 </Box>
               </Box>
 
-              {/* TODO: Replace with dynamic insights once the insights API is available */}
               <Card className="insight-card">
                 <CardContent>
                   <Box className="insight-visual">
@@ -374,8 +453,9 @@ export default function Overview() {
                     You&apos;re spending less on essentials
                   </Typography>
                   <Typography className="insight-copy">
-                    Your essential spending is {spendingPercentage.toFixed(1)}%
-                    of your total balance. Nice work keeping things steady.
+                    Your essential spending is{" "}
+                    {INSIGHT_SPENDING_PERCENTAGE.toFixed(1)}% of your total
+                    balance. Nice work keeping things steady.
                   </Typography>
                   <Button
                     component={Link}
