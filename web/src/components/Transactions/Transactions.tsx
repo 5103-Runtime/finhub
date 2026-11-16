@@ -566,7 +566,9 @@ export default function Transactions() {
 
   const onSubmit: SubmitHandler<TransferFormData> = async (data) => {
     setServerError("");
+    setSuccessMessage("");
     setSuccessTransactionId(null);
+    const creatingTransfer = Boolean(data.fromAccountId);
     try {
       if (!data.fromAccountId) {
         await createTransaction({
@@ -614,7 +616,13 @@ export default function Transactions() {
         });
       }
       closeModal();
-      await reloadTransactions();
+      if (await reloadTransactions()) {
+        setSuccessMessage(
+          creatingTransfer
+            ? "Transfer created successfully."
+            : "Transaction created successfully.",
+        );
+      }
     } catch (requestError) {
       applyFieldErrors(
         requestError,
@@ -645,12 +653,14 @@ export default function Transactions() {
     data: TransactionEditFormData,
     confirmPotentialDuplicate: boolean,
   ) => {
+    const editedTransaction = transactions.find(
+      (transaction) => transaction.id === id,
+    );
     setServerError("");
+    setSuccessMessage("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
-      categoryId:
-        transactions.find((transaction) => transaction.id === id)?.categoryId ??
-        null,
+      categoryId: editedTransaction?.categoryId ?? null,
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
@@ -658,7 +668,11 @@ export default function Transactions() {
     });
     if (await reloadTransactions()) {
       setEditingId(null);
-      setSuccessTransactionId(id);
+      if (editedTransaction?.transferId) {
+        setSuccessMessage("Transfer updated successfully.");
+      } else {
+        setSuccessTransactionId(id);
+      }
     } else {
       throw new Error("Saved, but unable to refresh the transactions.");
     }
