@@ -230,6 +230,7 @@ public sealed class StatementsController(
     private static TransactionResponse ToTransactionResponse(Transaction transaction) => new(
         transaction.Id,
         transaction.AccountId,
+        transaction.TransferId,
         transaction.CategoryId,
         transaction.TransactionDate,
         transaction.Description,

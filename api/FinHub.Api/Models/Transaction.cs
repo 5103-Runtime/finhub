@@ -16,6 +16,11 @@ public sealed class Transaction
     public Guid AccountId { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional transfer that created this ledger line.
+    /// </summary>
+    public Guid? TransferId { get; set; }
+
+    /// <summary>
     /// Gets or sets the optional category ID.
     /// </summary>
     public Guid? CategoryId { get; set; }

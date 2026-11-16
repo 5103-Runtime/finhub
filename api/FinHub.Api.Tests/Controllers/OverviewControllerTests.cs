@@ -9,6 +9,7 @@ public sealed class OverviewControllerTests
     private static readonly Guid ChequingId = Guid.NewGuid();
     private static readonly Guid SavingsId = Guid.NewGuid();
     private static readonly Guid FoodCategoryId = Guid.NewGuid();
+    private static readonly Guid TransferId = Guid.NewGuid();
 
     [TestMethod]
     public void CreatePeriod_CreatesTheRequestedNumberOfCalendarMonths()
@@ -40,6 +41,23 @@ public sealed class OverviewControllerTests
 
         Assert.AreEqual(new OverviewCurrencySummary("CAD", 1000m, 250m, 750m), summaries[0]);
         Assert.AreEqual(new OverviewCurrencySummary("USD", 500m, 0m, 500m), summaries[1]);
+    }
+
+    [TestMethod]
+    public void BuildCurrencySummaries_ExcludesTransferLegs()
+    {
+        List<OverviewController.DashboardTransaction> transactions =
+        [
+            Transaction("CAD", 100m),
+            Transaction("CAD", -100m, transferId: TransferId)
+        ];
+
+        List<OverviewCurrencySummary> summaries = OverviewController.BuildCurrencySummaries(
+            ["CAD"],
+            transactions,
+            _ => true);
+
+        Assert.AreEqual(new OverviewCurrencySummary("CAD", 100m, 0m, 100m), summaries[0]);
     }
 
     [TestMethod]
@@ -131,6 +149,7 @@ public sealed class OverviewControllerTests
     /// <param name="currency">The currency of the transaction.</param>
     /// <param name="amount">The amount of the transaction.</param>
     /// <param name="accountId">The ID of the account associated with the transaction.</param>
+    /// <param name="transferId">The optional transfer ID associated with the transaction.</param>
     /// <param name="categoryId">The ID of the category associated with the transaction.</param>
     /// <param name="transactionDate">The date of the transaction.</param>
     /// <returns>A new dashboard transaction with the specified properties.</returns>
@@ -138,10 +157,12 @@ public sealed class OverviewControllerTests
         string currency,
         decimal amount,
         Guid? accountId = null,
+        Guid? transferId = null,
         Guid? categoryId = null,
         DateOnly? transactionDate = null) =>
         new(
             accountId ?? ChequingId,
+            transferId,
             categoryId,
             transactionDate ?? new DateOnly(2026, 1, 15),
             amount,
