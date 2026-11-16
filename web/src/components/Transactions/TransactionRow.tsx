@@ -276,8 +276,9 @@ export function TransactionRow({
         <Box className="ledger-row-feedback">
           {potentialDuplicate && (
             <FormAlert severity="warning">
-              This transaction may be a duplicate of an existing transaction.
-              Please review your transactions.
+              {transaction.transferId
+                ? "This transfer may be a duplicate of an existing transfer. Please review your transfers."
+                : "This transaction may be a duplicate of an existing transaction. Please review your transactions."}
             </FormAlert>
           )}
           <Fade in={Boolean(successMessage)} timeout={250}>
@@ -363,7 +364,9 @@ export function TransactionEditRow({
       ) {
         setServerErrorSeverity("warning");
         setServerError(
-          "This transaction might be a duplicate. Submit again if you still wish to add transaction.",
+          transaction.transferId
+            ? "This transfer might be a duplicate. Submit again if you still wish to save it."
+            : "This transaction might be a duplicate. Submit again if you still wish to save it.",
         );
         setConfirmPotentialDuplicate(true);
         return;
