@@ -1,12 +1,4 @@
 /**
- * Formats CAD values for the Overview metric cards.
- */
-export const currencyFormatter = new Intl.NumberFormat("en-CA", {
-  style: "currency",
-  currency: "CAD",
-});
-
-/**
  * Formats a monetary value using the account's supported currency.
  * CAD uses the local dollar symbol, while USD is explicitly prefixed with
  * US$ to avoid ambiguity.
@@ -30,7 +22,16 @@ export function formatCurrency(amount: number, currency: "CAD" | "USD") {
 }
 
 /**
+ * Formats a dashboard value when the API returns a currency code as data.
+ */
+export function formatDashboardCurrency(value: number, currency: string) {
+  return formatCurrency(value, currency === "USD" ? "USD" : "CAD");
+}
+
+/**
  * Calculates the percentage change between two numeric values.
+ * Uses the magnitude of the previous value so changes from negative balances
+ * keep the expected direction.
  * @param currentValue The current period value.
  * @param previousValue The comparison period value.
  * @returns The percentage change from the previous value.
@@ -39,5 +40,5 @@ export function getPercentageChange(
   currentValue: number,
   previousValue: number,
 ) {
-  return ((currentValue - previousValue) / previousValue) * 100;
+  return ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
 }
