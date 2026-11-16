@@ -38,6 +38,7 @@ import {
   withTransactionBalances,
 } from "@app/utils/accounts";
 import { getTransactions } from "@app/services/transactionApi";
+import { ApiError } from "@app/services/apiClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectFormField, TextFormField } from "@app/components/Form";
 import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
@@ -183,6 +184,16 @@ export default function Accounts() {
       }
       setIsDeleteModalOpen(false);
     } catch (requestError) {
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "account_has_transfers"
+      ) {
+        setServerError(
+          "This account is linked to a transfer. Delete or unlink the transfer from the Transactions page before deleting this account.",
+        );
+        setIsDeleteModalOpen(false);
+        return;
+      }
       setServerError(
         requestError instanceof Error
           ? requestError.message
@@ -285,11 +296,7 @@ export default function Accounts() {
           </Box>
 
           {serverError && !isModalOpen && (
-            <Alert
-              className="accounts-error"
-              severity="error"
-              variant="outlined"
-            >
+            <Alert className="page-error" severity="error" variant="outlined">
               {serverError}
             </Alert>
           )}

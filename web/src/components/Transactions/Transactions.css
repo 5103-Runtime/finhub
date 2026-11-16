@@ -527,7 +527,6 @@
 .ledger-category-amount-row > .MuiFormControl-root:first-child {
   min-width: 0;
   align-self: center;
-  transform: translateY(-8px);
 }
 
 .ledger-category-amount-row
@@ -536,6 +535,10 @@
   width: max-content;
   min-width: 170px;
   max-width: 100%;
+}
+
+.ledger-transfer-category-amount-row > .MuiFormControl-root:first-child {
+  transform: none;
 }
 
 .ledger-category-form-select {

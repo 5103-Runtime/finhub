@@ -6,6 +6,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from "./apiClient";
 export interface TransactionResponse {
   id: string;
   accountId: string;
+  transferId: string | null;
   categoryId: string | null;
   // Date only, formatted as YYYY-MM-DD
   transactionDate: string;
