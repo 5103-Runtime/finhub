@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useEffect, useRef, useId, type ReactNode } from "react";
 import { Button, Stack } from "@mui/material";
 import type {
   FieldValues,
@@ -33,7 +33,23 @@ export function FormDialog<T extends FieldValues>({
   ...dialogProps
 }: FormDialogProps<T>) {
   const formId = useId();
+  const errorRef = useRef<HTMLDivElement>(null);
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      errorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [error]);
 
   return (
     <DialogBase
@@ -63,7 +79,9 @@ export function FormDialog<T extends FieldValues>({
       <Form id={formId} form={form} onSubmit={onSubmit}>
         <Stack spacing={2.25}>
           {children}
-          <FormAlert severity={errorSeverity}>{error}</FormAlert>
+          <div ref={errorRef}>
+            <FormAlert severity={errorSeverity}>{error}</FormAlert>
+          </div>
         </Stack>
       </Form>
     </DialogBase>

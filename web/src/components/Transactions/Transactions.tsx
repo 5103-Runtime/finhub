@@ -32,6 +32,7 @@ import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
 import { FormAlert } from "@app/components/Form/FormAlert";
 import { TransactionEntryDialog } from "./TransactionEntryDialog";
+import { TransferEntryDialog } from "./TransferEntryDialog";
 import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import {
@@ -54,8 +55,11 @@ import {
   type CategoryResponse,
 } from "@app/services/categoriesApi";
 import {
+  getEmptyTransactionForm,
   transactionFilterSchema,
+  transactionSchema,
   type TransactionEditFormData,
+  type TransactionFormData,
 } from "@app/validators/transactionSchemas";
 import {
   getEmptyTransferForm,
@@ -148,7 +152,8 @@ export default function Transactions() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [collapsedAccountIds, setCollapsedAccountIds] = useState<Set<string>>(
     new Set(),
@@ -174,10 +179,35 @@ export default function Transactions() {
   const [sortOpen, setSortOpen] = useState(false);
 
   const filterDebounceRef = useRef<number | null>(null);
+  const pageFeedbackRef = useRef<HTMLDivElement>(null);
   const sortAnchorRef = useRef<{
     accountId: string;
     viewportTop: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (
+      (!serverError && !successMessage) ||
+      isTransactionModalOpen ||
+      isTransferModalOpen
+    ) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      pageFeedbackRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    isTransactionModalOpen,
+    isTransferModalOpen,
+    serverError,
+    successMessage,
+  ]);
 
   // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
@@ -256,6 +286,11 @@ export default function Transactions() {
   const transferForm = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
     defaultValues: getEmptyTransferForm(),
+    mode: "onTouched",
+  });
+  const transactionForm = useForm<TransactionFormData>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: getEmptyTransactionForm(),
     mode: "onTouched",
   });
   const transferFromAccountId = useWatch({
@@ -548,80 +583,123 @@ export default function Transactions() {
     });
   };
 
-  const openCreateModal = () => {
-    transferForm.reset(getEmptyTransferForm("", accounts[0]?.id ?? ""));
-    setServerError("");
-    setSuccessTransactionId(null);
-    setEditingId(null);
-    setIsDuplicate(false);
-    setIsModalOpen(true);
-  };
-
-  // Clear the error too, so a failed add does not leave a stale page banner.
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setServerError("");
-    setIsDuplicate(false);
-  };
-
-  const onSubmit: SubmitHandler<TransferFormData> = async (data) => {
+  const resetEntryState = () => {
     setServerError("");
     setSuccessMessage("");
     setSuccessTransactionId(null);
-    const creatingTransfer = Boolean(data.fromAccountId);
-    try {
-      if (!data.fromAccountId) {
-        await createTransaction({
-          accountId: data.toAccountId,
-          categoryId: data.categoryId || null,
-          transactionDate: data.transferDate,
-          description: data.description,
-          amount: Number(data.amount),
-          confirmPotentialDuplicate: isDuplicate,
-        });
-        setCollapsedAccountIds((current) => {
-          const next = new Set(current);
-          next.delete(data.toAccountId);
-          return next;
-        });
-      } else {
-        const sourceTransaction = transactions.find(
-          (transaction) => transaction.id === data.fromTransactionId,
-        );
-        const destinationTransaction = transactions.find(
-          (transaction) => transaction.id === data.toTransactionId,
-        );
-        if (
-          sourceTransaction &&
-          destinationTransaction &&
-          Math.abs(sourceTransaction.amount) !==
-            Math.abs(destinationTransaction.amount)
-        ) {
-          setServerError(
-            "The selected transactions must have the same amount.",
-          );
-          return;
-        }
+    setEditingId(null);
+    setIsDuplicate(false);
+  };
 
-        await createTransfer({
-          fromAccountId: data.fromAccountId,
-          toAccountId: data.toAccountId,
-          transferDate: data.transferDate,
-          description: data.description,
-          amount: Number(data.amount),
-          categoryId: data.categoryId || null,
-          fromTransactionId: data.fromTransactionId || undefined,
-          toTransactionId: data.toTransactionId || undefined,
-          confirmPotentialDuplicate: isDuplicate,
-        });
-      }
-      closeModal();
+  const openCreateTransactionModal = () => {
+    transactionForm.reset({
+      ...getEmptyTransactionForm(),
+      accountId: accounts[0]?.id ?? "",
+    });
+    resetEntryState();
+    setIsTransactionModalOpen(true);
+  };
+
+  const openCreateTransferModal = () => {
+    transferForm.reset(getEmptyTransferForm());
+    resetEntryState();
+    setIsTransferModalOpen(true);
+  };
+
+  // Clear the error too, so a failed add does not leave a stale page banner.
+  const closeTransactionModal = () => {
+    setIsTransactionModalOpen(false);
+    setServerError("");
+    setIsDuplicate(false);
+  };
+
+  const closeTransferModal = () => {
+    setIsTransferModalOpen(false);
+    setServerError("");
+    setIsDuplicate(false);
+  };
+
+  const onSubmitTransaction: SubmitHandler<TransactionFormData> = async (
+    data,
+  ) => {
+    setServerError("");
+    setSuccessMessage("");
+    setSuccessTransactionId(null);
+    try {
+      await createTransaction({
+        accountId: data.accountId,
+        categoryId: data.categoryId || null,
+        transactionDate: data.transactionDate,
+        description: data.description,
+        amount: Number(data.amount),
+        confirmPotentialDuplicate: isDuplicate,
+      });
+      setCollapsedAccountIds((current) => {
+        const next = new Set(current);
+        next.delete(data.accountId);
+        return next;
+      });
+      closeTransactionModal();
       if (await reloadTransactions()) {
-        setSuccessMessage(
-          creatingTransfer
-            ? "Transfer created successfully."
-            : "Transaction created successfully.",
+        setSuccessMessage("Transaction created successfully.");
+      }
+    } catch (requestError) {
+      applyFieldErrors(
+        requestError,
+        transactionForm.setError,
+        Object.keys(getEmptyTransactionForm()),
+      );
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "potential_duplicate"
+      ) {
+        setServerError(
+          "This transaction might be a duplicate. Submit again if you still wish to add it.",
         );
+        setIsDuplicate(true);
+        return;
+      }
+      setServerError(
+        getErrorMessage(requestError, "Unable to save the transaction."),
+      );
+    }
+  };
+
+  const onSubmitTransfer: SubmitHandler<TransferFormData> = async (data) => {
+    setServerError("");
+    setSuccessMessage("");
+    setSuccessTransactionId(null);
+    try {
+      const sourceTransaction = transactions.find(
+        (transaction) => transaction.id === data.fromTransactionId,
+      );
+      const destinationTransaction = transactions.find(
+        (transaction) => transaction.id === data.toTransactionId,
+      );
+      if (
+        sourceTransaction &&
+        destinationTransaction &&
+        Math.abs(sourceTransaction.amount) !==
+          Math.abs(destinationTransaction.amount)
+      ) {
+        setServerError("The selected transactions must have the same amount.");
+        return;
+      }
+
+      await createTransfer({
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        transferDate: data.transferDate,
+        description: data.description,
+        amount: Number(data.amount),
+        categoryId: data.categoryId || null,
+        fromTransactionId: data.fromTransactionId || undefined,
+        toTransactionId: data.toTransactionId || undefined,
+        confirmPotentialDuplicate: isDuplicate,
+      });
+      closeTransferModal();
+      if (await reloadTransactions()) {
+        setSuccessMessage("Transfer created successfully.");
       }
     } catch (requestError) {
       applyFieldErrors(
@@ -634,15 +712,13 @@ export default function Transactions() {
         requestError.errorCode === "potential_duplicate"
       ) {
         setServerError(
-          data.fromAccountId
-            ? "This transfer might be a duplicate. Submit again if you still wish to add it."
-            : "This transaction might be a duplicate. Submit again if you still wish to add it.",
+          "This transfer might be a duplicate. Submit again if you still wish to add it.",
         );
         setIsDuplicate(true);
         return;
       }
       setServerError(
-        getErrorMessage(requestError, "Unable to save the transaction."),
+        getErrorMessage(requestError, "Unable to save the transfer."),
       );
     }
   };
@@ -686,17 +762,20 @@ export default function Transactions() {
     const transaction = transactionToDelete;
     setDeletingId(transaction.id);
     setServerError("");
+    setSuccessMessage("");
     try {
       if (transaction.transferId) {
         await deleteTransfer(transaction.transferId);
         setTransactions((current) =>
           current.filter((item) => item.transferId !== transaction.transferId),
         );
+        setSuccessMessage("Transfer deleted successfully.");
       } else {
         await deleteTransaction(transaction.id);
         setTransactions((current) =>
           current.filter((item) => item.id !== transaction.id),
         );
+        setSuccessMessage("Transaction deleted successfully.");
       }
       setIsDeleteModalOpen(false);
     } catch (requestError) {
@@ -715,6 +794,7 @@ export default function Transactions() {
 
     setDeletingId(transactionToDelete.id);
     setServerError("");
+    setSuccessMessage("");
     try {
       await unlinkTransfer(transactionToDelete.transferId);
       setIsDeleteModalOpen(false);
@@ -877,7 +957,7 @@ export default function Transactions() {
               <Button
                 className="accounts-primary-button empty-action"
                 startIcon={<AddRounded />}
-                onClick={openCreateModal}
+                onClick={openCreateTransactionModal}
               >
                 Add transaction
               </Button>
@@ -935,7 +1015,11 @@ export default function Transactions() {
               </Typography>
             </Box>
             {accounts.length > 0 && (
-              <Stack direction="row" spacing={1.5}>
+              <Stack
+                className="transaction-primary-actions"
+                direction="row"
+                spacing={1.5}
+              >
                 <Button
                   className="accounts-add-button"
                   startIcon={<UploadFileRounded />}
@@ -946,22 +1030,38 @@ export default function Transactions() {
                 <Button
                   className="accounts-add-button"
                   startIcon={<AddRounded />}
-                  onClick={openCreateModal}
+                  onClick={openCreateTransactionModal}
                 >
-                  Add
+                  Add transaction
+                </Button>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<AddRounded />}
+                  onClick={openCreateTransferModal}
+                >
+                  Add transfer
                 </Button>
               </Stack>
             )}
           </Box>
 
-          {serverError && !isModalOpen && (
-            <Alert className="page-error" severity="error" variant="outlined">
-              {serverError}
-            </Alert>
-          )}
-          {!serverError && !isModalOpen && (
-            <FormAlert severity="success">{successMessage}</FormAlert>
-          )}
+          {!isTransactionModalOpen &&
+            !isTransferModalOpen &&
+            (serverError || successMessage) && (
+              <Box ref={pageFeedbackRef}>
+                {serverError ? (
+                  <Alert
+                    className="page-error"
+                    severity="error"
+                    variant="outlined"
+                  >
+                    {serverError}
+                  </Alert>
+                ) : (
+                  <FormAlert severity="success">{successMessage}</FormAlert>
+                )}
+              </Box>
+            )}
 
           <Box component="section" className="accounts-list-section">
             <Box className="section-heading transaction-section-heading">
@@ -1209,9 +1309,18 @@ export default function Transactions() {
       </Container>
 
       <TransactionEntryDialog
-        open={isModalOpen}
+        open={isTransactionModalOpen}
+        form={transactionForm}
+        accountOptions={accountOptions}
+        categoryOptions={categoryOptions}
+        error={serverError}
+        isDuplicate={isDuplicate}
+        onSubmit={onSubmitTransaction}
+        onClose={closeTransactionModal}
+      />
+      <TransferEntryDialog
+        open={isTransferModalOpen}
         form={transferForm}
-        isTransferMode={Boolean(transferFromAccountId)}
         accountOptions={accountOptions}
         categoryOptions={categoryOptions}
         sourceTransactionOptions={sourceTransactionOptions}
@@ -1219,8 +1328,8 @@ export default function Transactions() {
         selectedExistingTransaction={selectedExistingTransaction}
         error={serverError}
         isDuplicate={isDuplicate}
-        onSubmit={onSubmit}
-        onClose={closeModal}
+        onSubmit={onSubmitTransfer}
+        onClose={closeTransferModal}
       />
       <StatementImportDialog
         open={isImportOpen}

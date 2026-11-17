@@ -2,34 +2,25 @@ import { Box } from "@mui/material";
 import type { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { FormDialog } from "@app/components/Dialog";
 import { SelectFormField, TextFormField } from "@app/components/Form";
-import type { TransactionResponse } from "@app/services/transactionApi";
 import type { SelectOption } from "@app/components/Form/SelectFormField";
-import type { TransferFormData } from "@app/validators/transferSchemas";
+import type { TransactionFormData } from "@app/validators/transactionSchemas";
 
 type TransactionEntryDialogProps = {
   open: boolean;
-  form: UseFormReturn<TransferFormData>;
-  isTransferMode: boolean;
+  form: UseFormReturn<TransactionFormData>;
   accountOptions: SelectOption[];
   categoryOptions: SelectOption[];
-  sourceTransactionOptions: SelectOption[];
-  destinationTransactionOptions: SelectOption[];
-  selectedExistingTransaction?: TransactionResponse;
   error: string;
   isDuplicate: boolean;
-  onSubmit: SubmitHandler<TransferFormData>;
+  onSubmit: SubmitHandler<TransactionFormData>;
   onClose: () => void;
 };
 
 export function TransactionEntryDialog({
   open,
   form,
-  isTransferMode,
   accountOptions,
   categoryOptions,
-  sourceTransactionOptions,
-  destinationTransactionOptions,
-  selectedExistingTransaction,
   error,
   isDuplicate,
   onSubmit,
@@ -38,7 +29,7 @@ export function TransactionEntryDialog({
   return (
     <FormDialog
       open={open}
-      title={isTransferMode ? "Add a transfer" : "Add a transaction"}
+      title="Add a transaction"
       form={form}
       onSubmit={onSubmit}
       onClose={onClose}
@@ -46,35 +37,26 @@ export function TransactionEntryDialog({
         form.setFocus("description");
         form.clearErrors("description");
       }}
-      submitLabel={isTransferMode ? "Add transfer" : "Add transaction"}
+      submitLabel="Add transaction"
       error={error}
       errorSeverity={isDuplicate ? "warning" : "error"}
     >
       <Box className="ledger-transaction-form-grid">
-        <SelectFormField<TransferFormData>
-          name="fromAccountId"
-          label="From account (optional)"
-          options={[
-            { value: "", label: "Regular transaction" },
-            ...accountOptions,
-          ]}
-          displayEmpty
-        />
-        <SelectFormField<TransferFormData>
-          name="toAccountId"
-          label="To account"
+        <SelectFormField<TransactionFormData>
+          name="accountId"
+          label="Account"
           options={accountOptions}
         />
         <Box className="ledger-transaction-form-row ledger-date-description-row">
-          <TextFormField<TransferFormData>
-            name="transferDate"
+          <TextFormField<TransactionFormData>
+            name="transactionDate"
             label="Date"
             type="date"
             required
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
           />
-          <TextFormField<TransferFormData>
+          <TextFormField<TransactionFormData>
             name="description"
             label="Description"
             required
@@ -83,49 +65,23 @@ export function TransactionEntryDialog({
           />
         </Box>
         <Box className="ledger-transaction-form-row ledger-category-amount-row">
-          <SelectFormField<TransferFormData>
+          <SelectFormField<TransactionFormData>
             name="categoryId"
             label="Category (optional)"
             options={categoryOptions}
             selectClassName="ledger-category-form-select"
             displayEmpty
+            helperText=" " // Need to align category selector vertically with the amount field
           />
-          <TextFormField<TransferFormData>
+          <TextFormField<TransactionFormData>
             name="amount"
             label="Amount"
             required
-            disabled={Boolean(selectedExistingTransaction)}
             fullWidth
-            helperText={
-              selectedExistingTransaction
-                ? "Amount must match the selected transaction."
-                : undefined
-            }
+            helperText="Use a negative amount for money out"
             slotProps={{ htmlInput: { inputMode: "decimal" } }}
           />
         </Box>
-        {isTransferMode && (
-          <>
-            <SelectFormField<TransferFormData>
-              name="fromTransactionId"
-              label="Existing source transaction (optional)"
-              options={[
-                { value: "", label: "Create a new source transaction" },
-                ...sourceTransactionOptions,
-              ]}
-              displayEmpty
-            />
-            <SelectFormField<TransferFormData>
-              name="toTransactionId"
-              label="Existing destination transaction (optional)"
-              options={[
-                { value: "", label: "Create a new destination transaction" },
-                ...destinationTransactionOptions,
-              ]}
-              displayEmpty
-            />
-          </>
-        )}
       </Box>
     </FormDialog>
   );

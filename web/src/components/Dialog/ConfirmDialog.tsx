@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { DialogBase } from "./DialogBase";
 import { FormAlert } from "@app/components/Form/FormAlert";
 
@@ -39,7 +39,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       onExited={onExited}
       actions={
-        <>
+        <Box className={secondaryLabel ? "dialog-transfer-actions" : undefined}>
           <Button
             className="dialog-cancel-button"
             onClick={onCancel}
@@ -63,7 +63,7 @@ export function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-        </>
+        </Box>
       }
     >
       <Typography component="div">{message}</Typography>

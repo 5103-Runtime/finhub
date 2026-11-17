@@ -6,7 +6,8 @@ import { getTodayDate } from "@app/utils/transactions";
  */
 export const transferSchema = z
   .object({
-    fromAccountId: z.string(),
+    transferMode: z.enum(["new", "existing"]),
+    fromAccountId: z.string().min(1, "Choose a source account."),
     toAccountId: z.string().min(1, "Choose a destination account."),
     transferDate: z.string().min(1, "Date is required."),
     description: z
@@ -17,9 +18,10 @@ export const transferSchema = z
     amount: z
       .string()
       .trim()
+      .min(1, "Amount is required.")
       .regex(
         /^-?\d+(\.\d{1,2})?$/,
-        "Enter an amount with up to 2 decimals, such as -12.50.",
+        "Enter a positive amount with up to 2 decimals, such as 12.50.",
       )
       .refine(
         (value) => Math.abs(Number(value)) <= 999_999_999_999.99,
@@ -30,6 +32,20 @@ export const transferSchema = z
     toTransactionId: z.string(),
   })
   .superRefine((data, context) => {
+    if (
+      data.transferMode === "existing" &&
+      !data.fromTransactionId &&
+      !data.toTransactionId
+    ) {
+      for (const path of ["fromTransactionId", "toTransactionId"] as const) {
+        context.addIssue({
+          code: "custom",
+          path: [path],
+          message: "Choose at least one existing transaction.",
+        });
+      }
+    }
+
     if (data.fromAccountId && Number(data.amount) <= 0) {
       context.addIssue({
         code: "custom",
@@ -49,6 +65,7 @@ export function getEmptyTransferForm(
   toAccountId = "",
 ): TransferFormData {
   return {
+    transferMode: "new",
     fromAccountId,
     toAccountId,
     transferDate: getTodayDate(),

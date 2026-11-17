@@ -101,3 +101,22 @@
     var(--color-ink)
   ) !important;
 }
+
+.dialog-transfer-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .dialog-transfer-actions .dialog-cancel-button,
+  .dialog-transfer-actions .dialog-danger-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px !important;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+}
