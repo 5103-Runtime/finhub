@@ -13,6 +13,7 @@ owned by users. Transactions reference a category; see [Transactions](./transact
 - A transaction has at most one category through its nullable `category_id` foreign key. Null means the transaction is uncategorized.
 - Deleting a custom category sets `transactions.category_id` to null rather than deleting transactions.
 - `categories_user_id_idx` and `categories_user_name_idx` support ownership and category lookups.
+- Automatic categorization rules live in their own table; see [Categorization rules](./categorization-rules.md).
 
 The default system categories are:
 
@@ -25,10 +26,6 @@ The default system categories are:
 - Income
 - Savings
 - Other
-
-Deliberately left out:
-
-- Automatic categorization. Categories are assigned manually for now; import rules can be added later.
 
 ## Security
 

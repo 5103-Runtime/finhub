@@ -23,6 +23,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_create_transfers` creates `public.transfers`, adds the optional `transactions.transfer_id` relationship, and adds transfer ownership policies, ledger validation, and mutation protections. It is described under [Transfers](./transfers.md).
 - `_add_transfer_unlink_support` allows linked transactions to be detached safely for the transfer unlink workflow.
 - `_allow_transfer_legs_different_details` allows the two ledger legs to have different dates and descriptions while preserving transfer amount and ledger integrity.
+- `_create_categorization_rules` creates `public.categorization_rules`, described under [Categorization rules](./categorization-rules.md).
 
 ## Create a migration
 
