@@ -36,6 +36,11 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     public DbSet<Category> Categories => Set<Category>();
 
     /// <summary>
+    /// Gets the categorization rules owned by users.
+    /// </summary>
+    public DbSet<CategorizationRule> CategorizationRules => Set<CategorizationRule>();
+
+    /// <summary>
     /// Configures the model for the FinHub database context, including entity mappings and relationships.
     /// </summary>
     /// <param name="modelBuilder">The ModelBuilder instance used to configure the model.</param>
@@ -121,6 +126,25 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(category => category.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(category => category.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
             entity.HasIndex(category => category.UserId);
+        });
+
+        modelBuilder.Entity<CategorizationRule>(entity =>
+        {
+            entity.ToTable("categorization_rules", "public");
+            entity.HasKey(rule => rule.Id);
+            entity.Property(rule => rule.Id).HasColumnName("id");
+            entity.Property(rule => rule.UserId).HasColumnName("user_id");
+            entity.Property(rule => rule.CategoryId).HasColumnName("category_id");
+            entity.Property(rule => rule.AccountId).HasColumnName("account_id");
+            entity.Property(rule => rule.DescriptionContains).HasColumnName("description_contains").HasMaxLength(500);
+            entity.Property(rule => rule.AmountDirection).HasColumnName("amount_direction");
+            entity.Property(rule => rule.Priority).HasColumnName("priority");
+            entity.Property(rule => rule.IsEnabled).HasColumnName("is_enabled");
+            entity.Property(rule => rule.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
+            entity.Property(rule => rule.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
+            entity.HasIndex(rule => new { rule.UserId, rule.Priority });
+            entity.HasIndex(rule => rule.CategoryId);
+            entity.HasIndex(rule => rule.AccountId);
         });
     }
 }
