@@ -126,13 +126,17 @@
   background: color-mix(in srgb, var(--color-ink) 9%, transparent) !important;
 }
 
-.accounts-error {
+.page-error {
   align-items: flex-start;
   margin-bottom: 24px;
   border-color: var(--color-danger) !important;
   background: var(--surface-danger) !important;
   color: var(--color-danger-muted) !important;
   font-size: 13px !important;
+}
+
+.page-error .MuiAlert-message {
+  font-weight: 600 !important;
 }
 
 .section-heading {

@@ -151,11 +151,7 @@ export default function Categories() {
             </Button>
           </Box>
           {loadError && (
-            <Alert
-              className="accounts-error"
-              severity="error"
-              variant="outlined"
-            >
+            <Alert className="page-error" severity="error" variant="outlined">
               {loadError}
             </Alert>
           )}

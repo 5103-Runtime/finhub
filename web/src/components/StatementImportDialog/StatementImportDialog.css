@@ -52,6 +52,24 @@
   scrollbar-width: thin;
 }
 
+.statement-preview-table::-webkit-scrollbar {
+  width: 8px;
+}
+
+.statement-preview-table::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+
+.statement-preview-table::-webkit-scrollbar-thumb {
+  border: 2px solid var(--color-paper);
+  border-radius: 999px;
+  background: var(--color-slate);
+}
+
+.statement-preview-table::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bronze);
+}
+
 .statement-preview-row {
   display: grid;
   grid-template-columns: 40px 104px minmax(0, 1fr) 170px 110px;

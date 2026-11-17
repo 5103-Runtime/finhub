@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { DialogBase } from "./DialogBase";
 import { FormAlert } from "@app/components/Form/FormAlert";
 
@@ -8,9 +8,11 @@ type ConfirmDialogProps = {
   title: string;
   message: ReactNode;
   confirmLabel: string;
+  secondaryLabel?: string;
   error?: string;
   loading?: boolean;
   onConfirm: () => void;
+  onSecondary?: () => void;
   onCancel: () => void;
   onExited?: () => void;
 };
@@ -20,9 +22,11 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  secondaryLabel,
   error,
   loading = false,
   onConfirm,
+  onSecondary,
   onCancel,
   onExited,
 }: ConfirmDialogProps) {
@@ -35,7 +39,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       onExited={onExited}
       actions={
-        <>
+        <Box className={secondaryLabel ? "dialog-transfer-actions" : undefined}>
           <Button
             className="dialog-cancel-button"
             onClick={onCancel}
@@ -43,6 +47,15 @@ export function ConfirmDialog({
           >
             Cancel
           </Button>
+          {secondaryLabel && onSecondary && (
+            <Button
+              className="dialog-cancel-button"
+              onClick={onSecondary}
+              disabled={loading}
+            >
+              {secondaryLabel}
+            </Button>
+          )}
           <Button
             className="dialog-danger-button"
             onClick={onConfirm}
@@ -50,10 +63,10 @@ export function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-        </>
+        </Box>
       }
     >
-      <Typography>{message}</Typography>
+      <Typography component="div">{message}</Typography>
       <FormAlert severity="error">{error}</FormAlert>
     </DialogBase>
   );

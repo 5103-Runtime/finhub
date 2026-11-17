@@ -491,6 +491,10 @@
   gap: 14px;
 }
 
+.ledger-account-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
 .ledger-date-description-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 }
@@ -526,8 +530,8 @@
 
 .ledger-category-amount-row > .MuiFormControl-root:first-child {
   min-width: 0;
-  align-self: center;
-  transform: translateY(-8px);
+  align-self: flex-start;
+  margin-top: 10px;
 }
 
 .ledger-category-amount-row
@@ -539,6 +543,8 @@
 }
 
 .ledger-category-form-select {
+  height: auto !important;
+  min-height: 0 !important;
   border-radius: 999px !important;
   color: color-mix(
     in srgb,
@@ -580,6 +586,41 @@
 .ledger-category-form-select:hover .MuiOutlinedInput-notchedOutline,
 .ledger-category-form-select.Mui-focused .MuiOutlinedInput-notchedOutline {
   border-width: 1px !important;
+}
+
+.ledger-transfer-mode {
+  padding: 2px 0;
+  background: transparent !important;
+}
+
+.ledger-transfer-mode .MuiFormLabel-root {
+  margin-left: 14px;
+  color: var(--color-slate);
+  font-size: 13px;
+}
+
+.ledger-transfer-mode .MuiFormLabel-root.Mui-focused {
+  color: var(--color-slate);
+}
+
+.ledger-transfer-mode .MuiRadioGroup-root {
+  width: 100%;
+  gap: 12px;
+}
+
+.ledger-transfer-mode .MuiFormControlLabel-root {
+  flex: 1 1 0;
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.ledger-transfer-mode .MuiRadio-root {
+  padding: 6px;
+  color: var(--color-slate);
+}
+
+.ledger-transfer-mode .MuiRadio-root.Mui-checked {
+  color: var(--color-bronze);
 }
 
 .ledger-category-menu {
@@ -737,9 +778,21 @@
 }
 
 .ledger-edit-form .MuiOutlinedInput-root:not(.ledger-category-select) {
+  height: 30px !important;
   min-height: 30px;
   border-radius: 10px !important;
   background: var(--color-cream);
+}
+
+.ledger-edit-form .ledger-category-select {
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.ledger-edit-form .ledger-category-select .MuiSelect-select {
+  min-height: 0 !important;
+  padding: 3px 12px !important;
+  line-height: 22px !important;
 }
 
 .ledger-edit-form .MuiOutlinedInput-input {
@@ -826,6 +879,10 @@
   width: 100%;
 }
 
+.transaction-primary-actions {
+  flex-shrink: 0;
+}
+
 @media (max-width: 1150px) and (min-width: 851px) {
   .transaction-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -838,6 +895,24 @@
 }
 
 @media (max-width: 850px) {
+  .transaction-primary-actions {
+    width: 100%;
+    gap: 8px !important;
+  }
+
+  .transaction-primary-actions .accounts-add-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 8px !important;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .transaction-primary-actions .accounts-add-button .MuiButton-startIcon {
+    margin-right: 4px;
+  }
+
   .transaction-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -868,7 +943,7 @@
   }
 
   .ledger-category-amount-row > .MuiFormControl-root:first-child {
-    transform: none;
+    margin-top: 0;
   }
 
   .ledger-category-amount-row
@@ -1027,6 +1102,10 @@
 }
 
 @media (max-width: 480px) {
+  .ledger-account-row {
+    grid-template-columns: 1fr;
+  }
+
   .transaction-filters {
     padding: 16px;
   }

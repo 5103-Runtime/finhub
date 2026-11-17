@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  ButtonBase,
   Card,
   CardContent,
   Collapse,
@@ -18,14 +17,13 @@ import {
   TextField,
   Stack,
   Typography,
-  TableSortLabel,
 } from "@mui/material";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
-import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import SyncAltRounded from "@mui/icons-material/SyncAltRounded";
 import Sort from "@mui/icons-material/Sort";
 import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
 import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
@@ -33,8 +31,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import Footer from "@app/components/Footer";
 import Navbar from "@app/components/Navbar";
-import { ConfirmDialog, FormDialog } from "@app/components/Dialog";
-import { SelectFormField, TextFormField } from "@app/components/Form";
+import { FormAlert } from "@app/components/Form/FormAlert";
+import { TransactionEntryDialog } from "./TransactionEntryDialog";
+import { TransferEntryDialog } from "./TransferEntryDialog";
+import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
 import {
   createTransaction,
@@ -47,6 +47,11 @@ import {
   type SortOrder,
 } from "@app/services/transactionApi";
 import {
+  createTransfer,
+  deleteTransfer,
+  unlinkTransfer,
+} from "@app/services/transferApi";
+import {
   getCategories,
   type CategoryResponse,
 } from "@app/services/categoriesApi";
@@ -58,7 +63,11 @@ import {
   type TransactionFormData,
 } from "@app/validators/transactionSchemas";
 import {
-  accountTypeIcons,
+  getEmptyTransferForm,
+  transferSchema,
+  type TransferFormData,
+} from "@app/validators/transferSchemas";
+import {
   accountTypeOrder,
   compareAccountsByName,
   getAccountTypePluralLabel,
@@ -66,13 +75,18 @@ import {
 import { applyFieldErrors, getErrorMessage } from "@app/utils/formErrors";
 import { getCategoryColor } from "@app/utils/categories";
 import { CategoryFilter } from "./CategoryFilter";
-import { TransactionEditRow, TransactionRow } from "./TransactionRow";
+import { TransactionAccountSection } from "./TransactionAccountSection";
 import StatementImportDialog from "@app/components/StatementImportDialog";
 
 import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 import { ApiError } from "@app/services/apiClient";
 
+/**
+ * @brief Builds transaction query filters from URL search parameters.
+ * @param params The current transaction URL parameters.
+ * @returns The normalized transaction filters.
+ */
 function getTransactionFilters(params: URLSearchParams): TransactionFilters {
   return {
     accountId: params.get("accountId") ?? undefined,
@@ -84,6 +98,26 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
     maxAmount: params.get("maxAmount") ?? undefined,
     search: params.get("search") ?? undefined,
   };
+}
+
+/**
+ * @brief Keeps a selected option available when filtered options change.
+ * @param options The currently available options.
+ * @param selectedOption The selected option to preserve, if any.
+ * @returns Options containing the selected option when it is missing.
+ */
+function preserveSelectedOption<T extends { value: string }>(
+  options: T[],
+  selectedOption?: T,
+): T[] {
+  if (
+    !selectedOption ||
+    options.some((option) => option.value === selectedOption.value)
+  ) {
+    return options;
+  }
+
+  return [...options, selectedOption];
 }
 
 const transactionFilterKeys = [
@@ -114,6 +148,11 @@ const sortKeyMap = {
   amount: "amount",
 } as const;
 
+/**
+ * @brief Reads sorting configuration from URL search parameters.
+ * @param params The current transaction URL parameters.
+ * @returns The validated sort field and order, or an empty configuration.
+ */
 function getTransactionSort(params: URLSearchParams): {
   sortBy?: TransactionSortField;
   sortOrder?: SortOrder;
@@ -144,7 +183,8 @@ export default function Transactions() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [collapsedAccountIds, setCollapsedAccountIds] = useState<Set<string>>(
     new Set(),
@@ -153,6 +193,7 @@ export default function Transactions() {
   const [successTransactionId, setSuccessTransactionId] = useState<
     string | null
   >(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionResponse | null>(null);
@@ -169,10 +210,35 @@ export default function Transactions() {
   const [sortOpen, setSortOpen] = useState(false);
 
   const filterDebounceRef = useRef<number | null>(null);
+  const pageFeedbackRef = useRef<HTMLDivElement>(null);
   const sortAnchorRef = useRef<{
     accountId: string;
     viewportTop: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (
+      (!serverError && !successMessage) ||
+      isTransactionModalOpen ||
+      isTransferModalOpen
+    ) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      pageFeedbackRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    isTransactionModalOpen,
+    isTransferModalOpen,
+    serverError,
+    successMessage,
+  ]);
 
   // Load transactions and supporting data for the current URL filters.
   useEffect(() => {
@@ -248,28 +314,118 @@ export default function Transactions() {
     accountSection?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [accounts, loading, selectedAccountId]);
 
-  const form = useForm<TransactionFormData>({
+  const transferForm = useForm<TransferFormData>({
+    resolver: zodResolver(transferSchema),
+    defaultValues: getEmptyTransferForm(),
+    mode: "onTouched",
+  });
+  const transactionForm = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: getEmptyTransactionForm(),
     mode: "onTouched",
   });
-  const amountValue = useWatch({
-    control: form.control,
-    name: "amount",
+  const transferFromAccountId = useWatch({
+    control: transferForm.control,
+    name: "fromAccountId",
   });
-  const amountIndicator =
-    amountValue.trim() === ""
-      ? ""
-      : Number(amountValue) > 0
-        ? "ledger-amount-positive"
-        : Number(amountValue) < 0
-          ? "ledger-amount-negative"
-          : "";
+  const transferToAccountId = useWatch({
+    control: transferForm.control,
+    name: "toAccountId",
+  });
+  const transferFromTransactionId = useWatch({
+    control: transferForm.control,
+    name: "fromTransactionId",
+  });
+  const transferToTransactionId = useWatch({
+    control: transferForm.control,
+    name: "toTransactionId",
+  });
+  const selectedExistingTransaction =
+    transactions.find(
+      (transaction) => transaction.id === transferFromTransactionId,
+    ) ??
+    transactions.find(
+      (transaction) => transaction.id === transferToTransactionId,
+    );
+
+  useEffect(() => {
+    if (!selectedExistingTransaction) {
+      return;
+    }
+
+    transferForm.setValue(
+      "transferDate",
+      selectedExistingTransaction.transactionDate,
+      { shouldValidate: false },
+    );
+    transferForm.setValue(
+      "description",
+      selectedExistingTransaction.description,
+      { shouldValidate: false },
+    );
+    transferForm.setValue(
+      "amount",
+      Math.abs(selectedExistingTransaction.amount).toFixed(2),
+      { shouldValidate: false },
+    );
+    transferForm.setValue(
+      "categoryId",
+      selectedExistingTransaction.categoryId ?? "",
+      { shouldValidate: false },
+    );
+    transferForm.clearErrors(["transferDate", "description", "amount"]);
+  }, [selectedExistingTransaction, transferForm]);
 
   const accountOptions = accounts.map((account) => ({
     value: account.id,
     label: account.name,
   }));
+  const unlinkedTransactionOptions = transactions
+    .filter((transaction) => transaction.transferId === null)
+    .map((transaction) => {
+      const account = accounts.find(
+        (candidate) => candidate.id === transaction.accountId,
+      );
+      return {
+        value: transaction.id,
+        label: `${account?.name ?? "Account"} · ${transaction.transactionDate} · ${transaction.description} (${transaction.amount.toFixed(2)})`,
+      };
+    });
+  const sourceTransactionOptions = unlinkedTransactionOptions.filter(
+    (option) => {
+      const transaction = transactions.find(
+        (candidate) => candidate.id === option.value,
+      );
+      return (
+        transaction?.accountId === transferFromAccountId &&
+        transaction.amount < 0
+      );
+    },
+  );
+  const destinationTransactionOptions = unlinkedTransactionOptions.filter(
+    (option) => {
+      const transaction = transactions.find(
+        (candidate) => candidate.id === option.value,
+      );
+      return (
+        transaction?.accountId === transferToAccountId && transaction.amount > 0
+      );
+    },
+  );
+  const selectedSourceTransactionOption = unlinkedTransactionOptions.find(
+    (option) => option.value === transferFromTransactionId,
+  );
+  const selectedDestinationTransactionOption = unlinkedTransactionOptions.find(
+    (option) => option.value === transferToTransactionId,
+  );
+  const safeSourceTransactionOptions = preserveSelectedOption(
+    sourceTransactionOptions,
+    selectedSourceTransactionOption,
+  );
+  const safeDestinationTransactionOptions = preserveSelectedOption(
+    destinationTransactionOptions,
+    selectedDestinationTransactionOption,
+  );
   const categoryOptions = [
     { value: "", label: "None", color: "var(--color-mist)", isEmpty: true },
     ...categories.map((category) => ({
@@ -346,6 +502,18 @@ export default function Transactions() {
 
     return () => window.clearTimeout(timeoutId);
   }, [successTransactionId]);
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessMessage("");
+    }, 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage]);
 
   const clearFilters = () => {
     setFiltersOpen(true);
@@ -460,27 +628,47 @@ export default function Transactions() {
     });
   };
 
-  const openCreateModal = () => {
-    form.reset({
-      ...getEmptyTransactionForm(),
-      accountId: accounts[0]?.id ?? "",
-    });
+  const resetEntryState = () => {
     setServerError("");
+    setSuccessMessage("");
     setSuccessTransactionId(null);
     setEditingId(null);
     setIsDuplicate(false);
-    setIsModalOpen(true);
+  };
+
+  const openCreateTransactionModal = () => {
+    transactionForm.reset({
+      ...getEmptyTransactionForm(),
+      accountId: accounts[0]?.id ?? "",
+    });
+    resetEntryState();
+    setIsTransactionModalOpen(true);
+  };
+
+  const openCreateTransferModal = () => {
+    transferForm.reset(getEmptyTransferForm());
+    resetEntryState();
+    setIsTransferModalOpen(true);
   };
 
   // Clear the error too, so a failed add does not leave a stale page banner.
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeTransactionModal = () => {
+    setIsTransactionModalOpen(false);
     setServerError("");
     setIsDuplicate(false);
   };
 
-  const onSubmit: SubmitHandler<TransactionFormData> = async (data) => {
+  const closeTransferModal = () => {
+    setIsTransferModalOpen(false);
     setServerError("");
+    setIsDuplicate(false);
+  };
+
+  const onSubmitTransaction: SubmitHandler<TransactionFormData> = async (
+    data,
+  ) => {
+    setServerError("");
+    setSuccessMessage("");
     setSuccessTransactionId(null);
     try {
       await createTransaction({
@@ -491,35 +679,91 @@ export default function Transactions() {
         amount: Number(data.amount),
         confirmPotentialDuplicate: isDuplicate,
       });
-      closeModal();
-      // Make sure the account the new transaction belongs to is open.
       setCollapsedAccountIds((current) => {
         const next = new Set(current);
         next.delete(data.accountId);
         return next;
       });
-      await reloadTransactions();
-
-      setIsDuplicate(false);
+      closeTransactionModal();
+      if (await reloadTransactions()) {
+        setSuccessMessage("Transaction created successfully.");
+      }
     } catch (requestError) {
+      applyFieldErrors(
+        requestError,
+        transactionForm.setError,
+        Object.keys(getEmptyTransactionForm()),
+      );
       if (
         requestError instanceof ApiError &&
         requestError.errorCode === "potential_duplicate"
       ) {
         setServerError(
-          "This transaction might be a duplicate. Submit again if you still wish to add transaction.",
+          "This transaction might be a duplicate. Submit again if you still wish to add it.",
         );
         setIsDuplicate(true);
         return;
       }
-
-      applyFieldErrors(
-        requestError,
-        form.setError,
-        Object.keys(getEmptyTransactionForm()),
-      );
       setServerError(
         getErrorMessage(requestError, "Unable to save the transaction."),
+      );
+    }
+  };
+
+  const onSubmitTransfer: SubmitHandler<TransferFormData> = async (data) => {
+    setServerError("");
+    setSuccessMessage("");
+    setSuccessTransactionId(null);
+    try {
+      const sourceTransaction = transactions.find(
+        (transaction) => transaction.id === data.fromTransactionId,
+      );
+      const destinationTransaction = transactions.find(
+        (transaction) => transaction.id === data.toTransactionId,
+      );
+      if (
+        sourceTransaction &&
+        destinationTransaction &&
+        Math.abs(sourceTransaction.amount) !==
+          Math.abs(destinationTransaction.amount)
+      ) {
+        setServerError("The selected transactions must have the same amount.");
+        return;
+      }
+
+      await createTransfer({
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        transferDate: data.transferDate,
+        description: data.description,
+        amount: Number(data.amount),
+        categoryId: data.categoryId || null,
+        fromTransactionId: data.fromTransactionId || undefined,
+        toTransactionId: data.toTransactionId || undefined,
+        confirmPotentialDuplicate: isDuplicate,
+      });
+      closeTransferModal();
+      if (await reloadTransactions()) {
+        setSuccessMessage("Transfer created successfully.");
+      }
+    } catch (requestError) {
+      applyFieldErrors(
+        requestError,
+        transferForm.setError,
+        Object.keys(getEmptyTransferForm()),
+      );
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "potential_duplicate"
+      ) {
+        setServerError(
+          "This transfer might be a duplicate. Submit again if you still wish to add it.",
+        );
+        setIsDuplicate(true);
+        return;
+      }
+      setServerError(
+        getErrorMessage(requestError, "Unable to save the transfer."),
       );
     }
   };
@@ -530,12 +774,14 @@ export default function Transactions() {
     data: TransactionEditFormData,
     confirmPotentialDuplicate: boolean,
   ) => {
+    const editedTransaction = transactions.find(
+      (transaction) => transaction.id === id,
+    );
     setServerError("");
+    setSuccessMessage("");
     setSuccessTransactionId(null);
     await updateTransaction(id, {
-      categoryId:
-        transactions.find((transaction) => transaction.id === id)?.categoryId ??
-        null,
+      categoryId: editedTransaction?.categoryId ?? null,
       transactionDate: data.transactionDate,
       description: data.description,
       amount: Number(data.amount),
@@ -543,7 +789,11 @@ export default function Transactions() {
     });
     if (await reloadTransactions()) {
       setEditingId(null);
-      setSuccessTransactionId(id);
+      if (editedTransaction?.transferId) {
+        setSuccessMessage("Transfer updated successfully.");
+      } else {
+        setSuccessTransactionId(id);
+      }
     } else {
       throw new Error("Saved, but unable to refresh the transactions.");
     }
@@ -557,15 +807,48 @@ export default function Transactions() {
     const transaction = transactionToDelete;
     setDeletingId(transaction.id);
     setServerError("");
+    setSuccessMessage("");
     try {
-      await deleteTransaction(transaction.id);
-      setTransactions((current) =>
-        current.filter((item) => item.id !== transaction.id),
-      );
+      if (transaction.transferId) {
+        await deleteTransfer(transaction.transferId);
+        setTransactions((current) =>
+          current.filter((item) => item.transferId !== transaction.transferId),
+        );
+        setSuccessMessage("Transfer deleted successfully.");
+      } else {
+        await deleteTransaction(transaction.id);
+        setTransactions((current) =>
+          current.filter((item) => item.id !== transaction.id),
+        );
+        setSuccessMessage("Transaction deleted successfully.");
+      }
       setIsDeleteModalOpen(false);
     } catch (requestError) {
       setServerError(
         getErrorMessage(requestError, "Unable to delete the transaction."),
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleUnlink = async () => {
+    if (!transactionToDelete?.transferId) {
+      return;
+    }
+
+    setDeletingId(transactionToDelete.id);
+    setServerError("");
+    setSuccessMessage("");
+    try {
+      await unlinkTransfer(transactionToDelete.transferId);
+      setIsDeleteModalOpen(false);
+      if (await reloadTransactions()) {
+        setSuccessMessage("Transfer unlinked successfully.");
+      }
+    } catch (requestError) {
+      setServerError(
+        getErrorMessage(requestError, "Unable to unlink the transfer."),
       );
     } finally {
       setDeletingId(null);
@@ -620,161 +903,38 @@ export default function Transactions() {
     };
   })();
 
-  // One collapsible card per account, holding that account's transactions.
-  const renderAccountSection = (account: AccountResponse) => {
-    const accountTransactions = transactionsByAccount.get(account.id) ?? [];
-    const isCollapsed = collapsedAccountIds.has(account.id);
-    const Icon = accountTypeIcons[account.accountType];
-    const panelId = `ledger-account-${account.id}`;
-
-    return (
-      <Box
-        id={`ledger-account-${account.id}`}
-        key={account.id}
-        className="ledger-account"
-      >
-        <ButtonBase
-          className="ledger-account-header"
-          onClick={() => toggleAccount(account.id)}
-          aria-expanded={!isCollapsed}
-          aria-controls={panelId}
-        >
-          <Box className={`account-management-icon ${account.accountType}`}>
-            <Icon />
-          </Box>
-          <Box className="ledger-account-info">
-            <Typography className="ledger-account-name">
-              {account.name}
-            </Typography>
-            <Typography className="ledger-account-count">
-              {accountTransactions.length}{" "}
-              {accountTransactions.length === 1
-                ? "transaction"
-                : "transactions"}
-            </Typography>
-          </Box>
-          <ExpandMoreRounded
-            className={`ledger-chevron${isCollapsed ? " collapsed" : ""}`}
-          />
-        </ButtonBase>
-        <Collapse in={!isCollapsed} id={panelId}>
-          {accountTransactions.length === 0 ? (
-            <Typography className="ledger-account-empty">
-              No transactions in this account yet.
-            </Typography>
-          ) : (
-            <Box className="ledger-list">
-              <Box className="ledger-head">
-                <span>
-                  <TableSortLabel
-                    className="transaction-sort-label"
-                    active={sortConfig?.key === "transactionDate"}
-                    direction={
-                      sortConfig?.key === "transactionDate" &&
-                        sortConfig.ascending
-                        ? "asc"
-                        : "desc"
-                    }
-                    onClick={(event) => handleSort("transactionDate", event)}
-                  >
-                    Date
-                  </TableSortLabel>
-                </span>
-                <span>
-                  <TableSortLabel
-                    className="transaction-sort-label"
-                    active={sortConfig?.key === "description"}
-                    direction={
-                      sortConfig?.key === "description" && sortConfig.ascending
-                        ? "asc"
-                        : "desc"
-                    }
-                    onClick={(event) => handleSort("description", event)}
-                  >
-                    Description
-                  </TableSortLabel>
-                </span>
-                <span>Category</span>
-                <span className="ledger-head-amount">
-                  <TableSortLabel
-                    className="transaction-sort-label"
-                    active={sortConfig?.key === "amount"}
-                    direction={
-                      sortConfig?.key === "amount" && sortConfig.ascending
-                        ? "asc"
-                        : "desc"
-                    }
-                    onClick={(event) => handleSort("amount", event)}
-                  >
-                    Amount
-                  </TableSortLabel>
-                </span>
-                <span className="transaction-header-sort-clear">
-                  {sortConfig && (
-                    <IconButton
-                      size="small"
-                      aria-label="Clear sorting"
-                      onClick={handleClearSort}
-                    >
-                      <CloseRounded />
-                    </IconButton>
-                  )}
-                </span>
-              </Box>
-              {accountTransactions.map((transaction) =>
-                editingId === transaction.id ? (
-                  <TransactionEditRow
-                    key={transaction.id}
-                    transaction={transaction}
-                    categoryOptions={categoryOptions}
-                    onCategoryChange={(categoryId) =>
-                      handleCategoryChange(transaction, categoryId)
-                    }
-                    onCancel={() => setEditingId(null)}
-                    onSave={(data, confirmPotentialDuplicate) =>
-                      handleSaveEdit(
-                        transaction.id,
-                        data,
-                        confirmPotentialDuplicate,
-                      )
-                    }
-                  />
-                ) : (
-                  <TransactionRow
-                    key={transaction.id}
-                    transaction={transaction}
-                    account={account}
-                    categoryOptions={categoryOptions}
-                    onCategoryChange={(categoryId) =>
-                      handleCategoryChange(transaction, categoryId)
-                    }
-                    onDelete={() => {
-                      setServerError("");
-                      setSuccessTransactionId(null);
-                      setTransactionToDelete(transaction);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    deleting={deletingId === transaction.id}
-                    successMessage={
-                      successTransactionId === transaction.id
-                        ? "Transaction updated successfully."
-                        : undefined
-                    }
-                    onEdit={() => {
-                      setServerError("");
-                      setSuccessTransactionId(null);
-                      setEditingId(transaction.id);
-                    }}
-                    potentialDuplicate={transaction.potentialDuplicate}
-                  />
-                ),
-              )}
-            </Box>
-          )}
-        </Collapse>
-      </Box>
-    );
-  };
+  const renderAccountSection = (account: AccountResponse) => (
+    <TransactionAccountSection
+      key={account.id}
+      account={account}
+      transactions={transactionsByAccount.get(account.id) ?? []}
+      isCollapsed={collapsedAccountIds.has(account.id)}
+      sortConfig={sortConfig}
+      categoryOptions={categoryOptions}
+      editingId={editingId}
+      deletingId={deletingId}
+      successTransactionId={successTransactionId}
+      onToggle={toggleAccount}
+      onSort={handleSort}
+      onClearSort={handleClearSort}
+      onCategoryChange={handleCategoryChange}
+      onCancelEdit={() => setEditingId(null)}
+      onSaveEdit={handleSaveEdit}
+      onDelete={(transaction) => {
+        setServerError("");
+        setSuccessMessage("");
+        setSuccessTransactionId(null);
+        setTransactionToDelete(transaction);
+        setIsDeleteModalOpen(true);
+      }}
+      onEdit={(transaction) => {
+        setServerError("");
+        setSuccessMessage("");
+        setSuccessTransactionId(null);
+        setEditingId(transaction.id);
+      }}
+    />
+  );
 
   const renderContent = () => {
     if (loading) {
@@ -842,7 +1002,7 @@ export default function Transactions() {
               <Button
                 className="accounts-primary-button empty-action"
                 startIcon={<AddRounded />}
-                onClick={openCreateModal}
+                onClick={openCreateTransactionModal}
               >
                 Add transaction
               </Button>
@@ -900,7 +1060,11 @@ export default function Transactions() {
               </Typography>
             </Box>
             {accounts.length > 0 && (
-              <Stack direction="row" spacing={1.5}>
+              <Stack
+                className="transaction-primary-actions"
+                direction="row"
+                spacing={1.5}
+              >
                 <Button
                   className="accounts-add-button"
                   startIcon={<UploadFileRounded />}
@@ -911,23 +1075,38 @@ export default function Transactions() {
                 <Button
                   className="accounts-add-button"
                   startIcon={<AddRounded />}
-                  onClick={openCreateModal}
+                  onClick={openCreateTransactionModal}
                 >
                   Add transaction
+                </Button>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<SyncAltRounded />}
+                  onClick={openCreateTransferModal}
+                >
+                  Transfer funds
                 </Button>
               </Stack>
             )}
           </Box>
 
-          {serverError && !isModalOpen && (
-            <Alert
-              className="accounts-error"
-              severity="error"
-              variant="outlined"
-            >
-              {serverError}
-            </Alert>
-          )}
+          {!isTransactionModalOpen &&
+            !isTransferModalOpen &&
+            (serverError || successMessage) && (
+              <Box ref={pageFeedbackRef}>
+                {serverError ? (
+                  <Alert
+                    className="page-error"
+                    severity="error"
+                    variant="outlined"
+                  >
+                    {serverError}
+                  </Alert>
+                ) : (
+                  <FormAlert severity="success">{successMessage}</FormAlert>
+                )}
+              </Box>
+            )}
 
           <Box component="section" className="accounts-list-section">
             <Box className="section-heading transaction-section-heading">
@@ -1174,63 +1353,29 @@ export default function Transactions() {
         <Footer />
       </Container>
 
-      <FormDialog
-        open={isModalOpen}
-        title="Add a transaction"
-        form={form}
-        onSubmit={onSubmit}
-        onClose={closeModal}
-        onEntered={() => {
-          form.setFocus("description");
-          form.clearErrors("description");
-        }}
-        submitLabel="Add transaction"
+      <TransactionEntryDialog
+        open={isTransactionModalOpen}
+        form={transactionForm}
+        accountOptions={accountOptions}
+        categoryOptions={categoryOptions}
         error={serverError}
-        errorSeverity={isDuplicate ? "warning" : "error"}
-      >
-        <Box className="ledger-transaction-form-grid">
-          <SelectFormField<TransactionFormData>
-            name="accountId"
-            label="Account"
-            options={accountOptions}
-          />
-          <Box className="ledger-transaction-form-row ledger-date-description-row">
-            <TextFormField<TransactionFormData>
-              name="transactionDate"
-              label="Date"
-              type="date"
-              required
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-            <TextFormField<TransactionFormData>
-              name="description"
-              label="Description"
-              required
-              fullWidth
-              slotProps={{ htmlInput: { maxLength: 500 } }}
-            />
-          </Box>
-          <Box className="ledger-transaction-form-row ledger-category-amount-row">
-            <SelectFormField<TransactionFormData>
-              name="categoryId"
-              label="Category"
-              options={categoryOptions}
-              selectClassName="ledger-category-form-select"
-              displayEmpty
-            />
-            <TextFormField<TransactionFormData>
-              name="amount"
-              label="Amount"
-              required
-              fullWidth
-              helperText="Use a negative amount for money out"
-              className={amountIndicator}
-              slotProps={{ htmlInput: { inputMode: "decimal" } }}
-            />
-          </Box>
-        </Box>
-      </FormDialog>
+        isDuplicate={isDuplicate}
+        onSubmit={onSubmitTransaction}
+        onClose={closeTransactionModal}
+      />
+      <TransferEntryDialog
+        open={isTransferModalOpen}
+        form={transferForm}
+        accountOptions={accountOptions}
+        categoryOptions={categoryOptions}
+        sourceTransactionOptions={safeSourceTransactionOptions}
+        destinationTransactionOptions={safeDestinationTransactionOptions}
+        selectedExistingTransaction={selectedExistingTransaction}
+        error={serverError}
+        isDuplicate={isDuplicate}
+        onSubmit={onSubmitTransfer}
+        onClose={closeTransferModal}
+      />
       <StatementImportDialog
         open={isImportOpen}
         accounts={accounts}
@@ -1248,18 +1393,23 @@ export default function Transactions() {
         }}
       />
 
-      <ConfirmDialog
+      <TransactionDeleteDialog
         open={isDeleteModalOpen}
-        title="Delete transaction"
-        message={
-          <>
-            Are you sure you want to delete{" "}
-            <strong>{transactionToDelete?.description}</strong>?
-          </>
+        transaction={transactionToDelete}
+        linkedTransactions={
+          transactionToDelete?.transferId
+            ? transactions
+                .filter(
+                  (transaction) =>
+                    transaction.transferId === transactionToDelete.transferId,
+                )
+                .sort((left, right) => left.amount - right.amount)
+            : []
         }
-        confirmLabel="Delete transaction"
+        accounts={accounts}
         loading={deletingId !== null}
         onConfirm={handleDelete}
+        onUnlink={handleUnlink}
         onCancel={() => setIsDeleteModalOpen(false)}
         onExited={() => setTransactionToDelete(null)}
       />

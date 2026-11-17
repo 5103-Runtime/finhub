@@ -6,8 +6,24 @@
   background: var(--surface-input);
 }
 
-.app-form .MuiOutlinedInput-root {
+.app-form .MuiOutlinedInput-root:not(.MuiInputBase-multiline) {
   border-radius: 12px;
+  height: 48px;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.app-form
+  .MuiOutlinedInput-root:not(.MuiInputBase-multiline):not(
+    .ledger-category-form-select
+  )
+  .MuiOutlinedInput-input {
+  box-sizing: border-box;
+  padding: 8px 14px !important;
+}
+
+.app-form .MuiInputLabel-root:not(.MuiInputLabel-shrink) {
+  transform: translate(14px, 12px) scale(1);
 }
 
 .app-form .MuiInputLabel-root {
@@ -36,6 +52,16 @@
 }
 
 .app-form .MuiFormHelperText-root.Mui-error {
+  color: var(--color-danger) !important;
+}
+
+.app-form .MuiFormControl-root.Mui-error .MuiSelect-select,
+.app-form .MuiFormControl-root.Mui-error .MuiSelect-icon {
+  color: var(--color-danger) !important;
+}
+
+.app-select-error .MuiSelect-select,
+.app-select-error .MuiSelect-icon {
   color: var(--color-danger) !important;
 }
 
@@ -100,7 +126,7 @@
 
 .auth-success {
   align-items: flex-start;
-  margin-top: 2px;
+  margin: 2px 0 15px;
   border-color: var(--color-success) !important;
   background: var(--surface-success) !important;
   color: var(--color-success) !important;

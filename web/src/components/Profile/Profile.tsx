@@ -61,6 +61,30 @@ export default function Profile() {
     mode: "onTouched",
   });
 
+  useEffect(() => {
+    if (!profileMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setProfileMessage("");
+    }, 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [profileMessage]);
+
+  useEffect(() => {
+    if (!passwordMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPasswordMessage("");
+    }, 4_000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [passwordMessage]);
+
   const { reset: resetProfile } = profileForm;
 
   useEffect(() => {

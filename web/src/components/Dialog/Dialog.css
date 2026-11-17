@@ -4,6 +4,26 @@
   background: var(--color-paper);
   color: var(--color-ink);
   box-shadow: 0 28px 80px var(--shadow-soft);
+  scrollbar-color: var(--color-slate) var(--color-paper);
+  scrollbar-width: thin;
+}
+
+.app-dialog .MuiDialog-paper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-dialog .MuiDialog-paper::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+
+.app-dialog .MuiDialog-paper::-webkit-scrollbar-thumb {
+  border: 2px solid var(--color-paper);
+  border-radius: 999px;
+  background: var(--color-slate);
+}
+
+.app-dialog .MuiDialog-paper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bronze);
 }
 
 .app-dialog .MuiDialogTitle-root,
@@ -42,6 +62,14 @@
   background: color-mix(in srgb, var(--color-ink) 9%, transparent) !important;
 }
 
+.transaction-delete-note {
+  display: block !important;
+  margin-top: 12px !important;
+  color: var(--color-ink) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
 .dialog-primary-button {
   min-height: 42px !important;
   border-radius: 10px !important;
@@ -63,4 +91,32 @@
   color: var(--color-cream) !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  padding: 0 15px !important;
+}
+
+.dialog-danger-button:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 80%,
+    var(--color-ink)
+  ) !important;
+}
+
+.dialog-transfer-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .dialog-transfer-actions .dialog-cancel-button,
+  .dialog-transfer-actions .dialog-danger-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px !important;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
 }

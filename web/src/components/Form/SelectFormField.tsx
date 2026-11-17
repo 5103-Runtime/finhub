@@ -33,6 +33,7 @@ export type SelectFormFieldProps<T extends FieldValues> = {
   helperText?: ReactNode;
   selectClassName?: string;
   displayEmpty?: boolean;
+  placeholder?: string;
 } & Omit<FormControlProps, "error" | "children">;
 
 export function SelectFormField<T extends FieldValues>({
@@ -42,6 +43,8 @@ export function SelectFormField<T extends FieldValues>({
   helperText,
   selectClassName,
   displayEmpty = false,
+  placeholder,
+  required = false,
   ...props
 }: SelectFormFieldProps<T>) {
   const { control } = useFormContext<T>();
@@ -54,10 +57,18 @@ export function SelectFormField<T extends FieldValues>({
       name={name}
       control={control}
       render={({ field: { ref, ...field }, fieldState }) => (
-        <FormControl fullWidth error={Boolean(fieldState.error)} {...props}>
+        <FormControl
+          fullWidth
+          error={Boolean(fieldState.error)}
+          required={required}
+          {...props}
+        >
           <InputLabel
             id={labelId}
             shrink={displayEmpty || Boolean(field.value)}
+            sx={
+              placeholder && !field.value ? { visibility: "hidden" } : undefined
+            }
           >
             {label}
           </InputLabel>
@@ -65,9 +76,14 @@ export function SelectFormField<T extends FieldValues>({
             {...field}
             inputRef={ref}
             labelId={labelId}
-            label={label}
-            className={selectClassName}
-            displayEmpty={displayEmpty}
+            label={placeholder && !field.value ? undefined : label}
+            className={[
+              selectClassName,
+              fieldState.error ? "app-select-error" : undefined,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            displayEmpty={displayEmpty || Boolean(placeholder)}
             onChange={(event) => {
               if (
                 isCategoryField &&
@@ -79,7 +95,12 @@ export function SelectFormField<T extends FieldValues>({
               field.onChange(event);
             }}
             renderValue={(value) =>
-              options.find((option) => option.value === value)?.label ?? ""
+              options.find((option) => option.value === value)?.label ??
+              (value
+                ? ""
+                : placeholder
+                  ? `${placeholder}${required ? " *" : ""}`
+                  : "")
             }
             MenuProps={{
               slots: isCategoryField ? { list: CategoryMenuList } : undefined,
