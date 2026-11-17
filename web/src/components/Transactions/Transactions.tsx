@@ -23,6 +23,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import FilterListRounded from "@mui/icons-material/FilterListRounded";
 import ReceiptLongRounded from "@mui/icons-material/ReceiptLongRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
+import SyncAltRounded from "@mui/icons-material/SyncAltRounded";
 import Sort from "@mui/icons-material/Sort";
 import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
 import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
@@ -81,6 +82,11 @@ import "@app/components/Accounts/Accounts.css";
 import "./Transactions.css";
 import { ApiError } from "@app/services/apiClient";
 
+/**
+ * @brief Builds transaction query filters from URL search parameters.
+ * @param params The current transaction URL parameters.
+ * @returns The normalized transaction filters.
+ */
 function getTransactionFilters(params: URLSearchParams): TransactionFilters {
   return {
     accountId: params.get("accountId") ?? undefined,
@@ -92,6 +98,26 @@ function getTransactionFilters(params: URLSearchParams): TransactionFilters {
     maxAmount: params.get("maxAmount") ?? undefined,
     search: params.get("search") ?? undefined,
   };
+}
+
+/**
+ * @brief Keeps a selected option available when filtered options change.
+ * @param options The currently available options.
+ * @param selectedOption The selected option to preserve, if any.
+ * @returns Options containing the selected option when it is missing.
+ */
+function preserveSelectedOption<T extends { value: string }>(
+  options: T[],
+  selectedOption?: T,
+): T[] {
+  if (
+    !selectedOption ||
+    options.some((option) => option.value === selectedOption.value)
+  ) {
+    return options;
+  }
+
+  return [...options, selectedOption];
 }
 
 const transactionFilterKeys = [
@@ -122,6 +148,11 @@ const sortKeyMap = {
   amount: "amount",
 } as const;
 
+/**
+ * @brief Reads sorting configuration from URL search parameters.
+ * @param params The current transaction URL parameters.
+ * @returns The validated sort field and order, or an empty configuration.
+ */
 function getTransactionSort(params: URLSearchParams): {
   sortBy?: TransactionSortField;
   sortOrder?: SortOrder;
@@ -380,6 +411,20 @@ export default function Transactions() {
         transaction?.accountId === transferToAccountId && transaction.amount > 0
       );
     },
+  );
+  const selectedSourceTransactionOption = unlinkedTransactionOptions.find(
+    (option) => option.value === transferFromTransactionId,
+  );
+  const selectedDestinationTransactionOption = unlinkedTransactionOptions.find(
+    (option) => option.value === transferToTransactionId,
+  );
+  const safeSourceTransactionOptions = preserveSelectedOption(
+    sourceTransactionOptions,
+    selectedSourceTransactionOption,
+  );
+  const safeDestinationTransactionOptions = preserveSelectedOption(
+    destinationTransactionOptions,
+    selectedDestinationTransactionOption,
   );
   const categoryOptions = [
     { value: "", label: "None", color: "var(--color-mist)", isEmpty: true },
@@ -1036,10 +1081,10 @@ export default function Transactions() {
                 </Button>
                 <Button
                   className="accounts-add-button"
-                  startIcon={<AddRounded />}
+                  startIcon={<SyncAltRounded />}
                   onClick={openCreateTransferModal}
                 >
-                  Add transfer
+                  Transfer funds
                 </Button>
               </Stack>
             )}
@@ -1323,8 +1368,8 @@ export default function Transactions() {
         form={transferForm}
         accountOptions={accountOptions}
         categoryOptions={categoryOptions}
-        sourceTransactionOptions={sourceTransactionOptions}
-        destinationTransactionOptions={destinationTransactionOptions}
+        sourceTransactionOptions={safeSourceTransactionOptions}
+        destinationTransactionOptions={safeDestinationTransactionOptions}
         selectedExistingTransaction={selectedExistingTransaction}
         error={serverError}
         isDuplicate={isDuplicate}

@@ -145,7 +145,7 @@ export function TransferEntryDialog({
   return (
     <FormDialog
       open={open}
-      title="Add a transfer"
+      title="Create a transfer"
       form={form}
       onSubmit={onSubmit}
       onClose={onClose}
@@ -153,7 +153,7 @@ export function TransferEntryDialog({
         form.setFocus("fromAccountId");
         form.clearErrors("fromAccountId");
       }}
-      submitLabel="Add transfer"
+      submitLabel="Create transfer"
       error={error}
       errorSeverity={isDuplicate ? "warning" : "error"}
     >
