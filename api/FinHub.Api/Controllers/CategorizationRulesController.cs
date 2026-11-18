@@ -2,6 +2,7 @@ using FinHub.Api.Data;
 using FinHub.Api.DTOs.CategorizationRule;
 using FinHub.Api.Models;
 using FinHub.Api.Services;
+using System.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -43,6 +44,89 @@ public sealed class CategorizationRulesController(
             .ToListAsync(cancellationToken);
 
         return Ok(rules);
+    }
+
+    /// <summary>
+    /// Reorders all categorization rules owned by the authenticated user.
+    /// </summary>
+    /// <param name="request">The complete rule order, from highest to lowest priority.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The rules in their new priority order.</returns>
+    [HttpPut("reorder")]
+    public async Task<ActionResult<IReadOnlyList<CategorizationRuleResponse>>> Reorder(
+        [FromBody] ReorderCategorizationRulesRequest request,
+        CancellationToken cancellationToken)
+    {
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        if (request.RuleIds is null)
+        {
+            return InvalidRuleOrder();
+        }
+
+        Guid currentUserId = userId!.Value;
+        HashSet<Guid> requestedIds = request.RuleIds.ToHashSet();
+        if (requestedIds.Count != request.RuleIds.Count)
+        {
+            return InvalidRuleOrder();
+        }
+
+        await using var transaction =
+            await dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+        List<CategorizationRule> rules = await dbContext.CategorizationRules
+            .Where(rule => rule.UserId == currentUserId)
+            .ToListAsync(cancellationToken);
+        if (rules.Count != requestedIds.Count
+            || rules.Any(rule => !requestedIds.Contains(rule.Id)))
+        {
+            return InvalidRuleOrder();
+        }
+
+        Dictionary<Guid, CategorizationRule> rulesById =
+            rules.ToDictionary(rule => rule.Id);
+        try
+        {
+            for (int index = 0; index < request.RuleIds.Count; index++)
+            {
+                rulesById[request.RuleIds[index]].Priority = index + 1;
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return PriorityConflict();
+        }
+        catch (DbUpdateException exception) when (IsSerializationFailure(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ReorderConflict();
+        }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return PriorityConflict();
+        }
+        catch (PostgresException exception) when (exception.SqlState == "40001")
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ReorderConflict();
+        }
+
+        List<CategorizationRuleResponse> reordered = request.RuleIds
+            .Select(id => rulesById[id])
+            .Select(ToResponse)
+            .ToList();
+        return Ok(reordered);
     }
 
     /// <summary>
@@ -378,11 +462,38 @@ public sealed class CategorizationRulesController(
     });
 
     /// <summary>
+    /// Creates the response returned when a reorder does not contain the complete valid rule set.
+    /// </summary>
+    private BadRequestObjectResult InvalidRuleOrder() => BadRequest(new
+    {
+        error = "The rule order must contain each of the authenticated user's rules exactly once.",
+        errorCode = "invalid_categorization_rule_order"
+    });
+
+    /// <summary>
+    /// Creates the response returned when concurrent rule changes prevent a reorder.
+    /// </summary>
+    private ConflictObjectResult ReorderConflict() => Conflict(new
+    {
+        error = "The rules changed while the reorder was being saved. Reload the rules and try again.",
+        errorCode = "categorization_rule_reorder_conflict"
+    });
+
+    /// <summary>
     /// Determines whether the exception is a unique constraint violation.
     /// </summary>
     private static bool IsUniqueViolation(DbUpdateException exception) =>
         exception.InnerException is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation
+        };
+
+    /// <summary>
+    /// Determines whether the exception is a PostgreSQL serialization failure.
+    /// </summary>
+    private static bool IsSerializationFailure(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: "40001"
         };
 }

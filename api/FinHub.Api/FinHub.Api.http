@@ -4,6 +4,8 @@
 @transactionId =
 @transferId =
 @destinationAccountId =
+@firstRuleId =
+@secondRuleId =
 
 # Authenticated requests rely on the HttpOnly cookie set by login, so run the login request first in the same client session.
 
@@ -92,6 +94,23 @@ Content-Type: application/json
 ###
 
 DELETE {{FinHub.Api_HostAddress}}/api/categories/{{categoryId}}
+
+###
+
+GET {{FinHub.Api_HostAddress}}/api/categorization-rules
+Accept: application/json
+
+###
+
+PUT {{FinHub.Api_HostAddress}}/api/categorization-rules/reorder
+Content-Type: application/json
+
+{
+  "ruleIds": [
+    "{{secondRuleId}}",
+    "{{firstRuleId}}"
+  ]
+}
 
 ###
 

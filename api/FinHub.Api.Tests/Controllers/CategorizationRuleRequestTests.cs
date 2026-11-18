@@ -102,6 +102,35 @@ public sealed class CategorizationRuleRequestTests
     }
 
     [TestMethod]
+    public void ValidRuleOrder_PassesValidation()
+    {
+        ReorderCategorizationRulesRequest request = new(
+            [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
+
+        Assert.AreEqual(0, Validate(request).Count);
+    }
+
+    [TestMethod]
+    public void DuplicateRuleIds_FailValidation()
+    {
+        Guid ruleId = Guid.NewGuid();
+        ReorderCategorizationRulesRequest request = new(
+            [ruleId, ruleId]);
+
+        Assert.IsTrue(Validate(request).Any(error =>
+            error.MemberNames.Contains(nameof(ReorderCategorizationRulesRequest.RuleIds))));
+    }
+
+    [TestMethod]
+    public void EmptyRuleOrder_FailsValidation()
+    {
+        ReorderCategorizationRulesRequest request = new([]);
+
+        Assert.IsTrue(Validate(request).Any(error =>
+            error.MemberNames.Contains(nameof(ReorderCategorizationRulesRequest.RuleIds))));
+    }
+
+    [TestMethod]
     public void MissingCategoryAndPriority_FailsValidation()
     {
         UpdateCategorizationRuleRequest request = new()
