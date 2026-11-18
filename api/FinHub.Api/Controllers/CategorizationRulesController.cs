@@ -317,6 +317,12 @@ public sealed class CategorizationRulesController(
             await transaction.RollbackAsync(cancellationToken);
             return ReorderConflict();
         }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return PriorityConflict();
+        }
         catch (PostgresException exception) when (exception.SqlState == "40001")
         {
             await transaction.RollbackAsync(cancellationToken);
