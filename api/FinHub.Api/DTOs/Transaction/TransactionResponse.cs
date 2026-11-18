@@ -17,7 +17,7 @@ namespace FinHub.Api.DTOs.Transaction;
 /// <param name="CreatedAt">The date and time when the transaction was created.</param>
 /// <param name="UpdatedAt">The date and time when the transaction was last updated.</param>
 /// <param name="PotentialDuplicate">Whether the transaction may duplicate an existing transaction.</param>
-
+/// <param name="AutomaticCategoryApplied">Whether an enabled rule automatically applied the category.</param>
 public sealed record TransactionResponse(
     Guid Id,
     Guid AccountId,
@@ -31,5 +31,7 @@ public sealed record TransactionResponse(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    bool? PotentialDuplicate = null
+    bool? PotentialDuplicate = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? AutomaticCategoryApplied = null
 );

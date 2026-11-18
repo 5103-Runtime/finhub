@@ -9,10 +9,12 @@ namespace FinHub.Api.DTOs.Statement;
 /// <param name="Amount">The signed amount: positive for money in, negative for money out.</param>
 /// <param name="BalanceAfter">The balance the statement reports after this line, if any.</param>
 /// <param name="PotentialDuplicate">Whether the account already holds a transaction with the same date, description, and amount.</param>
+/// <param name="CategoryId">The category suggested by the first matching enabled rule, if any.</param>
 public sealed record ParsedTransactionResponse(
     int StatementLine,
     DateOnly TransactionDate,
     string Description,
     decimal Amount,
     decimal? BalanceAfter,
-    bool PotentialDuplicate);
+    bool PotentialDuplicate,
+    Guid? CategoryId = null);

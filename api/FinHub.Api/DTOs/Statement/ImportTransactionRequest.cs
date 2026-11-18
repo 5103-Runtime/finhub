@@ -12,6 +12,7 @@ namespace FinHub.Api.DTOs.Statement;
 /// <param name="BalanceAfter">The balance the statement reports after this line, if any.</param>
 /// <param name="CategoryId">The optional category ID.</param>
 /// <param name="ConfirmPotentialDuplicate">Whether to save the line although the account already holds a matching transaction.</param>
+/// <param name="CategoryWasExplicitlySet">Whether the category value, including null, was chosen explicitly by the user.</param>
 public sealed record ImportTransactionRequest(
     [Required, Range(1, int.MaxValue)] int? StatementLine,
     [Required] DateOnly? TransactionDate,
@@ -19,4 +20,5 @@ public sealed record ImportTransactionRequest(
     [Required, Range(typeof(decimal), "-999999999999.99", "999999999999.99")] decimal? Amount,
     [Range(typeof(decimal), "-999999999999.99", "999999999999.99")] decimal? BalanceAfter,
     Guid? CategoryId,
-    bool ConfirmPotentialDuplicate = false);
+    bool ConfirmPotentialDuplicate = false,
+    bool CategoryWasExplicitlySet = false);

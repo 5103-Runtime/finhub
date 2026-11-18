@@ -12,11 +12,13 @@ namespace FinHub.Api.Controllers;
 /// </summary>
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
+/// <param name="categorizationRuleService">The automatic categorization rule service.</param>
 [ApiController]
 [Route("api/transfers")]
 public sealed class TransfersController(
     FinHubDbContext dbContext,
-    SupabaseAuthClient authClient) : AuthenticatedControllerBase(authClient)
+    SupabaseAuthClient authClient,
+    ICategorizationRuleService categorizationRuleService) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// Gets one transfer owned by the authenticated user.
@@ -43,6 +45,102 @@ public sealed class TransfersController(
 
         return await CreateResponseAsync(transfer, cancellationToken);
     }
+
+    /// <summary>
+    /// Previews automatic categorization for a transfer that will create two new ledger lines.
+    /// </summary>
+    /// <param name="request">The transfer details to evaluate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The outgoing and incoming category suggestions.</returns>
+    [HttpPost("preview-categorization")]
+    public async Task<ActionResult<TransferCategorizationPreviewResponse>> PreviewCategorization(
+        [FromBody] CreateTransferRequest request,
+        CancellationToken cancellationToken)
+    {
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        Guid currentUserId = userId!.Value;
+        Guid fromAccountId = request.FromAccountId!.Value;
+        Guid toAccountId = request.ToAccountId!.Value;
+        if (fromAccountId == toAccountId)
+        {
+            return BadRequest(new
+            {
+                error = "The source and destination accounts must be different.",
+                errorCode = "same_transfer_account"
+            });
+        }
+
+        List<FinancialAccount> accounts = await dbContext.FinancialAccounts
+            .Where(account => account.UserId == currentUserId
+                && (account.Id == fromAccountId || account.Id == toAccountId))
+            .ToListAsync(cancellationToken);
+        if (!accounts.Any(account => account.Id == fromAccountId)
+            || !accounts.Any(account => account.Id == toAccountId))
+        {
+            return NotFound(new
+            {
+                error = "Both transfer accounts must belong to the authenticated user.",
+                errorCode = "transfer_account_not_found"
+            });
+        }
+
+        if (request.CategoryId is not null)
+        {
+            bool categoryExists = await dbContext.Categories.AnyAsync(
+                category => category.Id == request.CategoryId
+                    && (category.IsSystem || category.UserId == currentUserId),
+                cancellationToken);
+            if (!categoryExists)
+            {
+                return NotFound(new
+                {
+                    error = "The selected category could not be found.",
+                    errorCode = "category_not_found"
+                });
+            }
+
+            return Ok(new TransferCategorizationPreviewResponse(
+                request.CategoryId,
+                request.CategoryId,
+                request.CategoryId,
+                false));
+        }
+
+        decimal amount = Math.Round(
+            request.Amount!.Value,
+            2,
+            MidpointRounding.AwayFromZero);
+        string description = request.Description.Trim();
+        CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
+            currentUserId,
+            fromAccountId,
+            description,
+            -amount,
+            cancellationToken);
+        CategorizationMatch? incomingMatch = await categorizationRuleService.EvaluateMatchAsync(
+            currentUserId,
+            toAccountId,
+            description,
+            amount,
+            cancellationToken);
+        CategorizationMatch? selectedMatch =
+            CategorizationRuleService.SelectHighestPriorityMatch(
+                outgoingMatch,
+                incomingMatch);
+        Guid? sharedCategoryId = selectedMatch?.CategoryId;
+
+        return Ok(new TransferCategorizationPreviewResponse(
+            outgoingMatch?.CategoryId,
+            incomingMatch?.CategoryId,
+            sharedCategoryId,
+            sharedCategoryId is not null));
+    }
+
     /// <summary>
     /// Creates an atomic transfer represented by one outgoing and one incoming ledger line.
     /// Existing unlinked ledger lines may be reused when they match the requested transfer.
@@ -202,6 +300,32 @@ public sealed class TransfersController(
             return existingTransactionError;
         }
 
+        Guid? sharedCategoryId = categoryId;
+        if (sharedCategoryId is null
+            && (existingOutgoing is null || existingIncoming is null))
+        {
+            CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
+                currentUserId,
+                fromAccountId,
+                description,
+                -amount,
+                cancellationToken);
+            CategorizationMatch? incomingMatch = await categorizationRuleService.EvaluateMatchAsync(
+                currentUserId,
+                toAccountId,
+                description,
+                amount,
+                cancellationToken);
+            CategorizationMatch? selectedMatch =
+                CategorizationRuleService.SelectHighestPriorityMatch(
+                    outgoingMatch,
+                    incomingMatch);
+            sharedCategoryId = selectedMatch?.CategoryId;
+        }
+
+        Guid? outgoingCategoryId = existingOutgoing is null ? sharedCategoryId : null;
+        Guid? incomingCategoryId = existingIncoming is null ? sharedCategoryId : null;
+
         Transfer transfer = new()
         {
             Id = transferId,
@@ -221,7 +345,7 @@ public sealed class TransfersController(
             transferDate,
             description,
             -amount,
-            categoryId,
+            outgoingCategoryId,
             now);
         Transaction incoming = existingIncoming ?? CreateTransaction(
             toTransactionId,
@@ -230,7 +354,7 @@ public sealed class TransfersController(
             transferDate,
             description,
             amount,
-            categoryId,
+            incomingCategoryId,
             now);
 
         outgoing.TransferId = transferId;
