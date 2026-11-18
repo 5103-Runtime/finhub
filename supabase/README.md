@@ -10,3 +10,4 @@ Database migrations for the shared Supabase PostgreSQL project.
 - [Categories](docs/categories.md) — `public.categories`, created by `_create_categories`.
 - [Transfers](docs/transfers.md) — `public.transfers`, created by `_create_transfers`.
 - [Categorization rules](docs/categorization-rules.md) — `public.categorization_rules`, created by `_create_categorization_rules`.
+- [Insights](docs/insights.md) — `public.insight_preferences`, `public.insight_states`, and `public.insight_mutes`, created by `_create_insights`.
