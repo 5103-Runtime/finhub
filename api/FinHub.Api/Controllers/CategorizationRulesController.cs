@@ -92,10 +92,9 @@ public sealed class CategorizationRulesController(
             rules.ToDictionary(rule => rule.Id);
         try
         {
-            for (int index = 0; index < request.RuleIds.Count; index++)
-            {
-                rulesById[request.RuleIds[index]].Priority = index + 1;
-            }
+            RenumberRules(request.RuleIds
+                .Select(id => rulesById[id])
+                .ToList());
 
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -288,8 +287,42 @@ public sealed class CategorizationRulesController(
             return RuleNotFound();
         }
 
-        dbContext.CategorizationRules.Remove(rule);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await using var transaction =
+            await dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+        try
+        {
+            dbContext.CategorizationRules.Remove(rule);
+
+            List<CategorizationRule> remainingRules = await dbContext.CategorizationRules
+                .Where(remainingRule => remainingRule.UserId == userId.Value
+                    && remainingRule.Id != rule.Id)
+                .OrderBy(remainingRule => remainingRule.Priority)
+                .ThenBy(remainingRule => remainingRule.CreatedAt)
+                .ThenBy(remainingRule => remainingRule.Id)
+                .ToListAsync(cancellationToken);
+            RenumberRules(remainingRules);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return PriorityConflict();
+        }
+        catch (DbUpdateException exception) when (IsSerializationFailure(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ReorderConflict();
+        }
+        catch (PostgresException exception) when (exception.SqlState == "40001")
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ReorderConflict();
+        }
+
         return NoContent();
     }
 
@@ -410,6 +443,18 @@ public sealed class CategorizationRulesController(
     /// </summary>
     private static string? NormalizeDescription(string? description) =>
         string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+    /// <summary>
+    /// Assigns consecutive priorities in the supplied order.
+    /// </summary>
+    /// <param name="rules">Rules ordered from highest to lowest priority.</param>
+    internal static void RenumberRules(IReadOnlyList<CategorizationRule> rules)
+    {
+        for (int index = 0; index < rules.Count; index++)
+        {
+            rules[index].Priority = index + 1;
+        }
+    }
 
     /// <summary>
     /// Converts a rule to its response representation.

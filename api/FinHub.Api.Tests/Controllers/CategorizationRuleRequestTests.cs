@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using FinHub.Api.Controllers;
 using FinHub.Api.DTOs.CategorizationRule;
+using FinHub.Api.Models;
 
 namespace FinHub.Api.Tests.Controllers;
 
@@ -128,6 +130,23 @@ public sealed class CategorizationRuleRequestTests
 
         Assert.IsTrue(Validate(request).Any(error =>
             error.MemberNames.Contains(nameof(ReorderCategorizationRulesRequest.RuleIds))));
+    }
+
+    [TestMethod]
+    public void RenumberRules_AssignsConsecutivePriorities()
+    {
+        List<CategorizationRule> rules =
+        [
+            new() { Id = Guid.NewGuid(), Priority = 1 },
+            new() { Id = Guid.NewGuid(), Priority = 4 },
+            new() { Id = Guid.NewGuid(), Priority = 9 }
+        ];
+
+        CategorizationRulesController.RenumberRules(rules);
+
+        CollectionAssert.AreEqual(
+            new[] { 1, 2, 3 },
+            rules.Select(rule => rule.Priority).ToArray());
     }
 
     [TestMethod]
