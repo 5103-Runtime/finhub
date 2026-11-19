@@ -65,7 +65,5 @@ public sealed record CategorizationCandidate(
 /// Represents a matched categorization rule.
 /// </summary>
 /// <param name="CategoryId">The category assigned by the matching rule.</param>
-/// <param name="Priority">The rule priority, where lower values rank higher.</param>
 public sealed record CategorizationMatch(
-    Guid CategoryId,
-    int Priority);
+    Guid CategoryId);

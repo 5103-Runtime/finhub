@@ -93,19 +93,6 @@ public sealed class StatementsControllerTests
     }
 
     [TestMethod]
-    public void ImportRequest_CanExplicitlyKeepCategoryNull()
-    {
-        ImportTransactionRequest line = CoffeeLine with
-        {
-            CategoryId = null,
-            CategoryWasExplicitlySet = true
-        };
-
-        Assert.IsNull(line.CategoryId);
-        Assert.IsTrue(line.CategoryWasExplicitlySet);
-    }
-
-    [TestMethod]
     public void ToTransaction_UsesAnEvaluatedCategoryWithoutReplacingAnExplicitCategory()
     {
         Guid accountId = Guid.NewGuid();

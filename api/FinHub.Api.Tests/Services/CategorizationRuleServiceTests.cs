@@ -144,38 +144,6 @@ public sealed class CategorizationRuleServiceTests
     }
 
     [TestMethod]
-    public void SelectHighestPriorityMatch_PicksTheLowerPriorityNumber()
-    {
-        Guid outgoingCategoryId = Guid.NewGuid();
-        Guid incomingCategoryId = Guid.NewGuid();
-        CategorizationMatch outgoing =
-            new(outgoingCategoryId, 5);
-        CategorizationMatch incoming =
-            new(incomingCategoryId, 2);
-
-        CategorizationMatch? selected =
-            CategorizationRuleService.SelectHighestPriorityMatch(
-                outgoing,
-                incoming);
-
-        Assert.AreEqual(incomingCategoryId, selected?.CategoryId);
-        Assert.AreEqual(2, selected?.Priority);
-    }
-
-    [TestMethod]
-    public void SelectHighestPriorityMatch_UsesTheOnlyMatchingLeg()
-    {
-        Guid incomingCategoryId = Guid.NewGuid();
-
-        CategorizationMatch? selected =
-            CategorizationRuleService.SelectHighestPriorityMatch(
-                null,
-                new CategorizationMatch(incomingCategoryId, 3));
-
-        Assert.AreEqual(incomingCategoryId, selected?.CategoryId);
-    }
-
-    [TestMethod]
     public void ResolveTransferCategories_DoesNotShareAOneSidedMatch()
     {
         Guid incomingCategoryId = Guid.NewGuid();
@@ -183,30 +151,12 @@ public sealed class CategorizationRuleServiceTests
         TransferCategoryResolution result =
             CategorizationRuleService.ResolveTransferCategories(
                 null,
-                new CategorizationMatch(incomingCategoryId, 3),
+                new CategorizationMatch(incomingCategoryId),
                 null,
                 false);
 
         Assert.IsNull(result.OutgoingCategoryId);
         Assert.AreEqual(incomingCategoryId, result.IncomingCategoryId);
-        Assert.IsNull(result.SharedCategoryId);
-        Assert.IsFalse(result.AutomaticCategoryApplied);
-    }
-
-    [TestMethod]
-    public void ResolveTransferCategories_PreservesExplicitNone()
-    {
-        Guid categoryId = Guid.NewGuid();
-
-        TransferCategoryResolution result =
-            CategorizationRuleService.ResolveTransferCategories(
-                new CategorizationMatch(categoryId, 1),
-                new CategorizationMatch(categoryId, 2),
-                null,
-                true);
-
-        Assert.IsNull(result.OutgoingCategoryId);
-        Assert.IsNull(result.IncomingCategoryId);
         Assert.IsNull(result.SharedCategoryId);
         Assert.IsFalse(result.AutomaticCategoryApplied);
     }

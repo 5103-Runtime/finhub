@@ -29,7 +29,7 @@ public sealed class CategorizationRuleService(FinHubDbContext dbContext)
             amount);
         return rule is null
             ? null
-            : new CategorizationMatch(rule.CategoryId, rule.Priority);
+            : new CategorizationMatch(rule.CategoryId);
     }
 
     /// <inheritdoc />
@@ -108,28 +108,6 @@ public sealed class CategorizationRuleService(FinHubDbContext dbContext)
         decimal amount)
     {
         return MatchRule(rules, accountId, description, amount)?.CategoryId;
-    }
-
-    /// <summary>
-    /// Selects the highest-priority match, where a lower priority number ranks higher.
-    /// </summary>
-    /// <param name="outgoing">The source-leg match.</param>
-    /// <param name="incoming">The destination-leg match.</param>
-    /// <returns>The highest-priority match, or null when neither leg matches.</returns>
-    internal static CategorizationMatch? SelectHighestPriorityMatch(
-        CategorizationMatch? outgoing,
-        CategorizationMatch? incoming)
-    {
-        if (outgoing is null)
-        {
-            return incoming;
-        }
-        if (incoming is null)
-        {
-            return outgoing;
-        }
-
-        return outgoing.Priority <= incoming.Priority ? outgoing : incoming;
     }
 
     /// <summary>

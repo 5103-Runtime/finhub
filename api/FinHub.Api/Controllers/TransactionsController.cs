@@ -118,6 +118,14 @@ public sealed class TransactionsController(
 
         if (request.CategoryId is not null)
         {
+            if (!await IsCategoryAvailableAsync(
+                request.CategoryId.Value,
+                userId.Value,
+                cancellationToken))
+            {
+                return CategoryNotFound();
+            }
+
             return Ok(new TransactionCategorizationPreviewResponse(request.CategoryId, false));
         }
         if (request.CategoryWasExplicitlySet)
