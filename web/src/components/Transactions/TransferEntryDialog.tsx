@@ -306,18 +306,16 @@ export function TransferEntryDialog({
           transferDate: form.getValues("transferDate"),
           description: description.trim(),
           amount: Number(amount),
-          sourceCategoryId:
-            sourceExistingTransaction?.categoryId ??
-            (form.getValues("sourceCategoryWasExplicitlySet")
+          sourceCategoryId: sourceExistingTransaction
+            ? null
+            : form.getValues("sourceCategoryWasExplicitlySet")
               ? sourceCategoryId
-              : null) ??
-            null,
-          destinationCategoryId:
-            destinationExistingTransaction?.categoryId ??
-            (form.getValues("destinationCategoryWasExplicitlySet")
+              : null,
+          destinationCategoryId: destinationExistingTransaction
+            ? null
+            : form.getValues("destinationCategoryWasExplicitlySet")
               ? destinationCategoryId
-              : null) ??
-            null,
+              : null,
           sourceCategoryWasExplicitlySet: form.getValues(
             "sourceCategoryWasExplicitlySet",
           ),

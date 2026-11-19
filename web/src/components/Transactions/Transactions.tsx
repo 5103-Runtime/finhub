@@ -383,12 +383,22 @@ export default function Transactions() {
       sourceExistingTransaction?.categoryId ?? "",
       { shouldValidate: false },
     );
+    transferForm.setValue(
+      "sourceCategoryWasExplicitlySet",
+      false,
+      { shouldValidate: false },
+    );
   }, [sourceExistingTransaction, transferForm]);
 
   useEffect(() => {
     transferForm.setValue(
       "destinationCategoryId",
       destinationExistingTransaction?.categoryId ?? "",
+      { shouldValidate: false },
+    );
+    transferForm.setValue(
+      "destinationCategoryWasExplicitlySet",
+      false,
       { shouldValidate: false },
     );
   }, [destinationExistingTransaction, transferForm]);
@@ -765,11 +775,18 @@ export default function Transactions() {
         transferDate: data.transferDate,
         description: data.description,
         amount: Number(data.amount),
-        sourceCategoryId: data.sourceCategoryId || null,
-        destinationCategoryId: data.destinationCategoryId || null,
-        sourceCategoryWasExplicitlySet: data.sourceCategoryWasExplicitlySet,
-        destinationCategoryWasExplicitlySet:
-          data.destinationCategoryWasExplicitlySet,
+        sourceCategoryId: data.fromTransactionId
+          ? null
+          : data.sourceCategoryId || null,
+        destinationCategoryId: data.toTransactionId
+          ? null
+          : data.destinationCategoryId || null,
+        sourceCategoryWasExplicitlySet: data.fromTransactionId
+          ? false
+          : data.sourceCategoryWasExplicitlySet,
+        destinationCategoryWasExplicitlySet: data.toTransactionId
+          ? false
+          : data.destinationCategoryWasExplicitlySet,
         fromTransactionId: data.fromTransactionId || undefined,
         toTransactionId: data.toTransactionId || undefined,
         confirmPotentialDuplicate: isDuplicate,
