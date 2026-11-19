@@ -1,4 +1,5 @@
 using FinHub.Api.Constants;
+using FinHub.Api.Models;
 
 namespace FinHub.Api.Services;
 
@@ -42,6 +43,11 @@ internal static class InsightRules
     /// The multiple of the threshold at which an insight becomes critical.
     /// </summary>
     internal const decimal CriticalThresholdMultiplier = 2m;
+
+    /// <summary>
+    /// The multiple of the dismissed amount at which a dismissed insight is shown again.
+    /// </summary>
+    internal const decimal DismissedResurfaceMultiplier = 1.25m;
 
     /// <summary>
     /// Finds categories whose spending in one month is above the average of their
@@ -215,6 +221,122 @@ internal static class InsightRules
                 2,
                 MidpointRounding.AwayFromZero);
     }
+
+    /// <summary>
+    /// Removes transactions on muted accounts or in muted categories,
+    /// so they neither raise an insight nor count toward a baseline.
+    /// </summary>
+    /// <param name="transactions">The user's transactions.</param>
+    /// <param name="mutes">The user's mutes.</param>
+    /// <returns>The transactions that are not muted.</returns>
+    internal static List<InsightTransaction> ExcludeMuted(
+        IEnumerable<InsightTransaction> transactions,
+        IEnumerable<InsightMute> mutes)
+    {
+        HashSet<Guid> mutedAccountIds = [];
+        HashSet<Guid> mutedCategoryIds = [];
+
+        foreach (InsightMute mute in mutes)
+        {
+            if (mute.AccountId is Guid accountId)
+            {
+                mutedAccountIds.Add(accountId);
+            }
+
+            if (mute.CategoryId is Guid categoryId)
+            {
+                mutedCategoryIds.Add(categoryId);
+            }
+        }
+
+        return transactions
+            .Where(transaction =>
+                !mutedAccountIds.Contains(transaction.AccountId)
+                && (transaction.CategoryId is not Guid categoryId
+                    || !mutedCategoryIds.Contains(categoryId)))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Resolves the threshold to use for an insight type from the user's preferences.
+    /// </summary>
+    /// <param name="preferences">The user's preferences.</param>
+    /// <param name="insightType">The insight type.</param>
+    /// <param name="defaultThreshold">The threshold used when the user has not set one.</param>
+    /// <returns>The threshold, or null when the user has turned the insight type off.</returns>
+    internal static decimal? ResolveThreshold(
+        IEnumerable<InsightPreference> preferences,
+        string insightType,
+        decimal defaultThreshold)
+    {
+        InsightPreference? preference = preferences
+            .FirstOrDefault(candidate => candidate.InsightType == insightType);
+
+        if (preference is null)
+        {
+            return defaultThreshold;
+        }
+
+        return preference.IsEnabled
+            ? preference.Threshold ?? defaultThreshold
+            : null;
+    }
+
+    /// <summary>
+    /// Applies the user's read and dismissed markers to computed insights.
+    /// A dismissed insight is left out unless its amount has reached
+    /// <see cref="DismissedResurfaceMultiplier"/> times the amount it was dismissed at;
+    /// it then comes back unread until it is read again.
+    /// </summary>
+    /// <param name="insights">The computed insights.</param>
+    /// <param name="states">The user's insight states.</param>
+    /// <returns>The insights to show, in their original order, with their read flag set.</returns>
+    internal static List<Insight> ApplyStates(
+        IEnumerable<Insight> insights,
+        IEnumerable<InsightState> states)
+    {
+        List<InsightState> stateList = states.ToList();
+        List<Insight> visible = [];
+
+        foreach (Insight insight in insights)
+        {
+            InsightState? state = stateList
+                .FirstOrDefault(candidate => IsStateOf(candidate, insight));
+
+            if (state is null)
+            {
+                visible.Add(insight with { IsRead = false });
+                continue;
+            }
+
+            if (state.DismissedAt is not null
+                && insight.Amount < state.DismissedValue * DismissedResurfaceMultiplier)
+            {
+                continue;
+            }
+
+            visible.Add(insight with
+            {
+                IsRead = state.ReadAt is not null
+                    && (state.DismissedAt is null || state.ReadAt > state.DismissedAt)
+            });
+        }
+
+        return visible;
+    }
+
+    /// <summary>
+    /// Determines whether a state belongs to an insight by comparing the subject fields.
+    /// </summary>
+    /// <param name="state">The stored state.</param>
+    /// <param name="insight">The computed insight.</param>
+    /// <returns>True when the state and the insight have the same type and subject.</returns>
+    internal static bool IsStateOf(InsightState state, Insight insight) =>
+        state.InsightType == insight.InsightType
+        && state.CategoryId == insight.CategoryId
+        && state.TransactionId == insight.TransactionId
+        && state.Currency == insight.Currency
+        && state.PeriodStart == insight.PeriodStart;
 
     /// <summary>
     /// Determines whether a transaction counts as spending in a category.

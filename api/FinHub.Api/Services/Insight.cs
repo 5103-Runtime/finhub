@@ -12,6 +12,7 @@ namespace FinHub.Api.Services;
 /// <param name="PeriodStart">The first day of the month a category spike covers; null for other types.</param>
 /// <param name="Amount">The positive amount the insight is about.</param>
 /// <param name="Baseline">The positive amount the insight was compared against.</param>
+/// <param name="IsRead">Whether the user has read the insight since it last appeared.</param>
 public sealed record Insight(
     string InsightType,
     string Severity,
@@ -20,7 +21,8 @@ public sealed record Insight(
     string? Currency,
     DateOnly? PeriodStart,
     decimal Amount,
-    decimal Baseline);
+    decimal Baseline,
+    bool IsRead = false);
 
 /// <summary>
 /// Represents the transaction fields required by the insight rules.

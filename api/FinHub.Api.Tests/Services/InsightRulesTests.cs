@@ -1,4 +1,5 @@
 using FinHub.Api.Constants;
+using FinHub.Api.Models;
 using FinHub.Api.Services;
 
 namespace FinHub.Api.Tests.Services;
@@ -13,6 +14,7 @@ public sealed class InsightRulesTests
     private static readonly DateOnly October = new(2026, 10, 10);
     private static readonly DateOnly November = new(2026, 11, 10);
     private static readonly Guid ChequingId = Guid.NewGuid();
+    private static readonly Guid VisaId = Guid.NewGuid();
     private static readonly Guid FoodCategoryId = Guid.NewGuid();
     private static readonly Guid RentCategoryId = Guid.NewGuid();
 
@@ -496,6 +498,261 @@ public sealed class InsightRulesTests
         Spend(-amount, new DateOnly(2026, 10, 15)),
         Spend(-amount, new DateOnly(2026, 10, 25))
     ];
+
+    [TestMethod]
+    public void ExcludeMuted_RemovesMutedAccountsAndCategories()
+    {
+        InsightTransaction kept = Spend(-10m, November);
+        InsightTransaction uncategorized = Spend(-10m, November, uncategorized: true);
+        List<InsightTransaction> transactions =
+        [
+            kept,
+            uncategorized,
+            Spend(-10m, November, categoryId: RentCategoryId),
+            Spend(-10m, November) with { AccountId = VisaId }
+        ];
+        List<InsightMute> mutes =
+        [
+            new() { CategoryId = RentCategoryId },
+            new() { AccountId = VisaId }
+        ];
+
+        List<InsightTransaction> result = InsightRules.ExcludeMuted(transactions, mutes);
+
+        CollectionAssert.AreEqual(new[] { kept, uncategorized }, result);
+    }
+
+    [TestMethod]
+    public void ExcludeMuted_KeepsEverythingWithoutMutes()
+    {
+        List<InsightTransaction> transactions = [Spend(-10m, November), Spend(-20m, October)];
+
+        Assert.AreEqual(2, InsightRules.ExcludeMuted(transactions, []).Count);
+    }
+
+    [TestMethod]
+    public void ResolveThreshold_UsesTheDefaultWithoutAPreferenceOrThreshold()
+    {
+        List<InsightPreference> preferences =
+        [
+            Preference(InsightTypes.CategorySpike, threshold: null),
+            Preference(InsightTypes.UnusualPurchase, threshold: 5m)
+        ];
+
+        Assert.AreEqual(50m, InsightRules.ResolveThreshold([], InsightTypes.CategorySpike, 50m));
+        Assert.AreEqual(50m, InsightRules.ResolveThreshold(preferences, InsightTypes.CategorySpike, 50m));
+    }
+
+    [TestMethod]
+    public void ResolveThreshold_UsesTheThresholdOfTheMatchingType()
+    {
+        List<InsightPreference> preferences =
+        [
+            Preference(InsightTypes.CategorySpike, threshold: 80m),
+            Preference(InsightTypes.UnusualPurchase, threshold: 5m)
+        ];
+
+        Assert.AreEqual(5m, InsightRules.ResolveThreshold(preferences, InsightTypes.UnusualPurchase, 3m));
+    }
+
+    [TestMethod]
+    public void ResolveThreshold_ReturnsNullWhenTheTypeIsTurnedOff()
+    {
+        List<InsightPreference> preferences =
+        [
+            Preference(InsightTypes.CategorySpike, threshold: 80m, isEnabled: false)
+        ];
+
+        Assert.IsNull(InsightRules.ResolveThreshold(preferences, InsightTypes.CategorySpike, 50m));
+        Assert.AreEqual(3m, InsightRules.ResolveThreshold(preferences, InsightTypes.UnusualPurchase, 3m));
+    }
+
+    [TestMethod]
+    public void ApplyStates_ShowsAnInsightWithoutAStateAsUnread()
+    {
+        Insight insight = Spike(150m);
+
+        List<Insight> result = InsightRules.ApplyStates([insight], []);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsFalse(result[0].IsRead);
+    }
+
+    [TestMethod]
+    public void ApplyStates_MarksAReadInsightAsRead()
+    {
+        Insight insight = Spike(150m);
+
+        List<Insight> result = InsightRules.ApplyStates(
+            [insight],
+            [StateOf(insight, readAt: Moment(1))]);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue(result[0].IsRead);
+    }
+
+    [TestMethod]
+    public void ApplyStates_LeavesOutADismissedInsight()
+    {
+        Insight unchanged = Spike(150m);
+        Insight slightlyHigher = Spike(187.49m);
+
+        Assert.AreEqual(
+            0,
+            InsightRules.ApplyStates(
+                [unchanged],
+                [StateOf(unchanged, dismissedAt: Moment(1), dismissedValue: 150m)]).Count);
+        Assert.AreEqual(
+            0,
+            InsightRules.ApplyStates(
+                [slightlyHigher],
+                [StateOf(slightlyHigher, dismissedAt: Moment(1), dismissedValue: 150m)]).Count);
+    }
+
+    [TestMethod]
+    public void ApplyStates_ShowsADismissedInsightAgainAsUnreadWhenMateriallyHigher()
+    {
+        Insight insight = Spike(187.50m);
+
+        List<Insight> result = InsightRules.ApplyStates(
+            [insight],
+            [StateOf(insight, readAt: Moment(1), dismissedAt: Moment(2), dismissedValue: 150m)]);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsFalse(result[0].IsRead);
+    }
+
+    [TestMethod]
+    public void ApplyStates_MarksAnInsightReadAfterItCameBackAsRead()
+    {
+        Insight insight = Spike(187.50m);
+
+        List<Insight> result = InsightRules.ApplyStates(
+            [insight],
+            [StateOf(insight, readAt: Moment(3), dismissedAt: Moment(2), dismissedValue: 150m)]);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue(result[0].IsRead);
+    }
+
+    [TestMethod]
+    public void ApplyStates_MatchesAStateOnlyToItsOwnSubject()
+    {
+        Insight insight = Spike(150m);
+        Insight purchase = new(
+            InsightTypes.UnusualPurchase,
+            InsightSeverities.Warning,
+            null,
+            Guid.NewGuid(),
+            null,
+            null,
+            60m,
+            20m);
+        List<InsightState> states =
+        [
+            StateOf(insight with { CategoryId = RentCategoryId }, readAt: Moment(1)),
+            StateOf(insight with { Currency = "USD" }, readAt: Moment(1)),
+            StateOf(insight with { PeriodStart = new DateOnly(2026, 10, 1) }, readAt: Moment(1)),
+            StateOf(purchase with { TransactionId = Guid.NewGuid() }, readAt: Moment(1))
+        ];
+
+        List<Insight> result = InsightRules.ApplyStates([insight, purchase], states);
+
+        Assert.AreEqual(2, result.Count);
+        Assert.IsFalse(result[0].IsRead);
+        Assert.IsFalse(result[1].IsRead);
+    }
+
+    [TestMethod]
+    public void ApplyStates_AppliesAStateToAnUnusualPurchase()
+    {
+        Insight purchase = new(
+            InsightTypes.UnusualPurchase,
+            InsightSeverities.Warning,
+            null,
+            Guid.NewGuid(),
+            null,
+            null,
+            60m,
+            20m);
+
+        Assert.AreEqual(
+            0,
+            InsightRules.ApplyStates(
+                [purchase],
+                [StateOf(purchase, dismissedAt: Moment(1), dismissedValue: 60m)]).Count);
+        Assert.IsTrue(
+            InsightRules.ApplyStates(
+                [purchase],
+                [StateOf(purchase, readAt: Moment(1))])[0].IsRead);
+    }
+
+    /// <summary>
+    /// Creates a food category spike in CAD for November 2026 against a baseline of 100.
+    /// </summary>
+    /// <param name="amount">The amount the spike shows.</param>
+    /// <returns>A new category spike insight.</returns>
+    private static Insight Spike(decimal amount) =>
+        new(
+            InsightTypes.CategorySpike,
+            InsightSeverities.Warning,
+            FoodCategoryId,
+            null,
+            "CAD",
+            CurrentMonth,
+            amount,
+            100m);
+
+    /// <summary>
+    /// Creates the stored state of an insight, copying its type and subject.
+    /// </summary>
+    /// <param name="insight">The insight the state belongs to.</param>
+    /// <param name="readAt">When the insight was read, if it was.</param>
+    /// <param name="dismissedAt">When the insight was dismissed, if it was.</param>
+    /// <param name="dismissedValue">The amount the insight showed when it was dismissed.</param>
+    /// <returns>A new insight state.</returns>
+    private static InsightState StateOf(
+        Insight insight,
+        DateTime? readAt = null,
+        DateTime? dismissedAt = null,
+        decimal? dismissedValue = null) =>
+        new()
+        {
+            InsightType = insight.InsightType,
+            CategoryId = insight.CategoryId,
+            TransactionId = insight.TransactionId,
+            Currency = insight.Currency,
+            PeriodStart = insight.PeriodStart,
+            ReadAt = readAt,
+            DismissedAt = dismissedAt,
+            DismissedValue = dismissedValue
+        };
+
+    /// <summary>
+    /// Creates a preference for an insight type.
+    /// </summary>
+    /// <param name="insightType">The insight type.</param>
+    /// <param name="threshold">The user's threshold, if set.</param>
+    /// <param name="isEnabled">Whether the insight type is turned on.</param>
+    /// <returns>A new insight preference.</returns>
+    private static InsightPreference Preference(
+        string insightType,
+        decimal? threshold,
+        bool isEnabled = true) =>
+        new()
+        {
+            InsightType = insightType,
+            IsEnabled = isEnabled,
+            Threshold = threshold
+        };
+
+    /// <summary>
+    /// Creates a point in time on November 1, 2026; a higher hour is later.
+    /// </summary>
+    /// <param name="hour">The hour of the day.</param>
+    /// <returns>The date and time in UTC.</returns>
+    private static DateTime Moment(int hour) =>
+        new(2026, 11, 1, hour, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
     /// Creates one transaction in each of the three months before November 2026,
