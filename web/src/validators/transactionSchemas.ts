@@ -50,6 +50,7 @@ export type TransactionFormData = z.infer<typeof transactionSchema>;
 export const transactionEditSchema = transactionSchema.omit({
   accountId: true,
   categoryId: true,
+  categoryWasExplicitlySet: true,
 });
 
 /**
