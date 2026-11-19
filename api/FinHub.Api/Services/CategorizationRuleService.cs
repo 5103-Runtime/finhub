@@ -31,7 +31,7 @@ public sealed class CategorizationRuleService(FinHubDbContext dbContext)
             ? null
             : new CategorizationMatch(rule.CategoryId);
     }
-
+    
     /// <inheritdoc />
     public async Task<Guid?> EvaluateAsync(
         Guid userId,
@@ -111,41 +111,6 @@ public sealed class CategorizationRuleService(FinHubDbContext dbContext)
     }
 
     /// <summary>
-    /// Resolves transfer categories independently unless both automatic matches agree.
-    /// </summary>
-    internal static TransferCategoryResolution ResolveTransferCategories(
-        CategorizationMatch? outgoing,
-        CategorizationMatch? incoming,
-        Guid? explicitCategoryId,
-        bool categoryWasExplicitlySet)
-    {
-        if (categoryWasExplicitlySet || explicitCategoryId is not null)
-        {
-            return new TransferCategoryResolution(
-                explicitCategoryId,
-                explicitCategoryId,
-                explicitCategoryId,
-                false);
-        }
-
-        if (outgoing?.CategoryId is not null
-            && outgoing.CategoryId == incoming?.CategoryId)
-        {
-            return new TransferCategoryResolution(
-                outgoing.CategoryId,
-                incoming.CategoryId,
-                outgoing.CategoryId,
-                true);
-        }
-
-        return new TransferCategoryResolution(
-            outgoing?.CategoryId,
-            incoming?.CategoryId,
-            null,
-            false);
-    }
-
-    /// <summary>
     /// Finds the first rule that matches all configured criteria.
     /// </summary>
     private static CategorizationRule? MatchRule(
@@ -203,9 +168,3 @@ public sealed class CategorizationRuleService(FinHubDbContext dbContext)
             StringComparison.OrdinalIgnoreCase);
     }
 }
-
-internal sealed record TransferCategoryResolution(
-    Guid? OutgoingCategoryId,
-    Guid? IncomingCategoryId,
-    Guid? SharedCategoryId,
-    bool AutomaticCategoryApplied);

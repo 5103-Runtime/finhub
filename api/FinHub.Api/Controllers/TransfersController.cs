@@ -89,11 +89,16 @@ public sealed class TransfersController(
             });
         }
 
-        if (request.CategoryId is not null
-            && !await dbContext.Categories.AnyAsync(
-                category => category.Id == request.CategoryId
+        Guid[] requestedCategoryIds = new[] { request.SourceCategoryId, request.DestinationCategoryId }
+            .Where(categoryId => categoryId is not null)
+            .Select(categoryId => categoryId!.Value)
+            .Distinct()
+            .ToArray();
+        if (requestedCategoryIds.Length > 0
+            && await dbContext.Categories.CountAsync(
+                category => requestedCategoryIds.Contains(category.Id)
                     && (category.IsSystem || category.UserId == currentUserId),
-                cancellationToken))
+                cancellationToken) != requestedCategoryIds.Length)
         {
             return NotFound(new
             {
@@ -102,44 +107,40 @@ public sealed class TransfersController(
             });
         }
 
-        if (request.CategoryWasExplicitlySet || request.CategoryId is not null)
-        {
-            return Ok(new TransferCategorizationPreviewResponse(
-                request.CategoryId,
-                request.CategoryId,
-                request.CategoryId,
-                false));
-        }
-
         decimal amount = Math.Round(
             request.Amount!.Value,
             2,
             MidpointRounding.AwayFromZero);
         string description = request.Description.Trim();
-        CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
-            currentUserId,
-            fromAccountId,
-            description,
-            -amount,
-            cancellationToken);
-        CategorizationMatch? incomingMatch = await categorizationRuleService.EvaluateMatchAsync(
-            currentUserId,
-            toAccountId,
-            description,
-            amount,
-            cancellationToken);
-        TransferCategoryResolution resolution =
-            CategorizationRuleService.ResolveTransferCategories(
-                outgoingMatch,
-                incomingMatch,
-                request.CategoryId,
-                request.CategoryWasExplicitlySet);
+        Guid? outgoingCategoryId = request.SourceCategoryId;
+        Guid? incomingCategoryId = request.DestinationCategoryId;
+
+        if (!request.SourceCategoryWasExplicitlySet)
+        {
+            CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
+                currentUserId,
+                fromAccountId,
+                description,
+                -amount,
+                cancellationToken);
+            outgoingCategoryId = outgoingMatch?.CategoryId;
+        }
+        if (!request.DestinationCategoryWasExplicitlySet)
+        {
+            CategorizationMatch? incomingMatch = await categorizationRuleService.EvaluateMatchAsync(
+                currentUserId,
+                toAccountId,
+                description,
+                amount,
+                cancellationToken);
+            incomingCategoryId = incomingMatch?.CategoryId;
+        }
 
         return Ok(new TransferCategorizationPreviewResponse(
-            resolution.OutgoingCategoryId,
-            resolution.IncomingCategoryId,
-            resolution.SharedCategoryId,
-            resolution.AutomaticCategoryApplied));
+            outgoingCategoryId,
+            incomingCategoryId,
+            outgoingCategoryId is not null
+                && outgoingCategoryId == incomingCategoryId));
     }
 
     /// <summary>
@@ -195,12 +196,16 @@ public sealed class TransfersController(
             });
         }
 
-        Guid? categoryId = request.CategoryId;
-        if (categoryId is not null
-            && !await dbContext.Categories.AnyAsync(
-                category => category.Id == categoryId
+        Guid[] requestedCategoryIds = new[] { request.SourceCategoryId, request.DestinationCategoryId }
+            .Where(categoryId => categoryId is not null)
+            .Select(categoryId => categoryId!.Value)
+            .Distinct()
+            .ToArray();
+        if (requestedCategoryIds.Length > 0
+            && await dbContext.Categories.CountAsync(
+                category => requestedCategoryIds.Contains(category.Id)
                     && (category.IsSystem || category.UserId == currentUserId),
-                cancellationToken))
+                cancellationToken) != requestedCategoryIds.Length)
         {
             return NotFound(new
             {
@@ -301,11 +306,10 @@ public sealed class TransfersController(
             return existingTransactionError;
         }
 
-        bool categoryWasExplicitlySet = request.CategoryWasExplicitlySet || categoryId is not null;
         Guid? outgoingCategoryId = null;
         Guid? incomingCategoryId = null;
-        if (!categoryWasExplicitlySet
-            && (existingOutgoing is null || existingIncoming is null))
+        if (existingOutgoing is null
+            && !request.SourceCategoryWasExplicitlySet)
         {
             CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
                 currentUserId,
@@ -313,26 +317,29 @@ public sealed class TransfersController(
                 description,
                 -amount,
                 cancellationToken);
+            outgoingCategoryId = outgoingMatch?.CategoryId;
+        }
+        if (existingIncoming is null
+            && !request.DestinationCategoryWasExplicitlySet)
+        {
             CategorizationMatch? incomingMatch = await categorizationRuleService.EvaluateMatchAsync(
                 currentUserId,
                 toAccountId,
                 description,
                 amount,
                 cancellationToken);
-            TransferCategoryResolution resolution =
-                CategorizationRuleService.ResolveTransferCategories(
-                    outgoingMatch,
-                    incomingMatch,
-                    categoryId,
-                    categoryWasExplicitlySet);
-            outgoingCategoryId = resolution.OutgoingCategoryId;
-            incomingCategoryId = resolution.IncomingCategoryId;
+            incomingCategoryId = incomingMatch?.CategoryId;
         }
 
-        if (categoryWasExplicitlySet)
+        if (existingOutgoing is null
+            && request.SourceCategoryWasExplicitlySet)
         {
-            outgoingCategoryId = categoryId;
-            incomingCategoryId = categoryId;
+            outgoingCategoryId = request.SourceCategoryId;
+        }
+        if (existingIncoming is null
+            && request.DestinationCategoryWasExplicitlySet)
+        {
+            incomingCategoryId = request.DestinationCategoryId;
         }
         outgoingCategoryId = existingOutgoing is null ? outgoingCategoryId : null;
         incomingCategoryId = existingIncoming is null ? incomingCategoryId : null;

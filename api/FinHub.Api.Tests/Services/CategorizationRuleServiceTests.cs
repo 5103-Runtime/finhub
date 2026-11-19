@@ -143,23 +143,6 @@ public sealed class CategorizationRuleServiceTests
         Assert.AreEqual(categoryId, result);
     }
 
-    [TestMethod]
-    public void ResolveTransferCategories_DoesNotShareAOneSidedMatch()
-    {
-        Guid incomingCategoryId = Guid.NewGuid();
-
-        TransferCategoryResolution result =
-            CategorizationRuleService.ResolveTransferCategories(
-                null,
-                new CategorizationMatch(incomingCategoryId),
-                null,
-                false);
-
-        Assert.IsNull(result.OutgoingCategoryId);
-        Assert.AreEqual(incomingCategoryId, result.IncomingCategoryId);
-        Assert.IsNull(result.SharedCategoryId);
-        Assert.IsFalse(result.AutomaticCategoryApplied);
-    }
 
     private static CategorizationRule Rule(
         Guid categoryId,
