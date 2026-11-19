@@ -16,12 +16,14 @@ namespace FinHub.Api.Controllers;
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
 /// <param name="parsers">The statement parsers, one per file type.</param>
+/// <param name="categorizationRuleService">The automatic categorization rule service.</param>
 [ApiController]
 [Route("api/statements")]
 public sealed class StatementsController(
     FinHubDbContext dbContext,
     SupabaseAuthClient authClient,
-    IEnumerable<IStatementParser> parsers) : AuthenticatedControllerBase(authClient)
+    IEnumerable<IStatementParser> parsers,
+    ICategorizationRuleService categorizationRuleService) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The largest request body accepted. A statement export is a few kilobytes; the parser's row and cell caps assume a bounded file.
@@ -86,7 +88,15 @@ public sealed class StatementsController(
             statement.Transactions.Select(transaction => transaction.TransactionDate).ToList(),
             cancellationToken);
 
-        return Ok(ToResponse(statement, existing));
+        IReadOnlyList<Guid?> categoryIds = await categorizationRuleService.EvaluateAsync(
+            userId!.Value,
+            accountId,
+            statement.Transactions
+                .Select(transaction => new CategorizationCandidate(transaction.Description, transaction.Amount))
+                .ToList(),
+            cancellationToken);
+
+        return Ok(ToResponse(statement, existing, categoryIds));
     }
 
     /// <summary>
@@ -114,7 +124,10 @@ public sealed class StatementsController(
             return AccountNotFound();
         }
 
-        HashSet<Guid> missingCategoryIds = await FindMissingCategoriesAsync(request.Transactions, currentUserId, cancellationToken);
+        HashSet<Guid> missingCategoryIds = await FindMissingCategoriesAsync(
+            request.Transactions,
+            currentUserId,
+            cancellationToken);
         if (missingCategoryIds.Count > 0)
         {
             return CategoryNotFound(request.Transactions
@@ -133,7 +146,42 @@ public sealed class StatementsController(
             return PotentialDuplicatesConflict(unconfirmed);
         }
 
-        List<Transaction> transactions = request.Transactions.Select(line => ToTransaction(line, accountId)).ToList();
+        List<int> uncategorizedIndexes = request.Transactions
+            .Select((line, index) => (line, index))
+            .Where(item => item.line.CategoryId is null
+                && !item.line.CategoryWasExplicitlySet)
+            .Select(item => item.index)
+            .ToList();
+        IReadOnlyList<Guid?> suggestedCategoryIds = uncategorizedIndexes.Count == 0
+            ? []
+            : await categorizationRuleService.EvaluateAsync(
+                currentUserId,
+                accountId,
+                uncategorizedIndexes
+                    .Select(index =>
+                    {
+                        ImportTransactionRequest line = request.Transactions[index];
+                        return new CategorizationCandidate(line.Description, line.Amount!.Value);
+                    })
+                    .ToList(),
+                cancellationToken);
+
+        List<Transaction> transactions = request.Transactions
+            .Select((line, index) =>
+            {
+                Guid? categoryId = line.CategoryId;
+                if (categoryId is null)
+                {
+                    int suggestedIndex = uncategorizedIndexes.IndexOf(index);
+                    if (suggestedIndex >= 0)
+                    {
+                        categoryId = suggestedCategoryIds[suggestedIndex];
+                    }
+                }
+
+                return ToTransaction(line, accountId, categoryId);
+            })
+            .ToList();
         dbContext.Transactions.AddRange(transactions);
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -145,19 +193,26 @@ public sealed class StatementsController(
     /// </summary>
     /// <param name="statement">The parsed statement.</param>
     /// <param name="existing">The keys of the account's transactions dated within the statement.</param>
+    /// <param name="categoryIds">The category suggested for each parsed transaction, if any.</param>
     /// <returns>The statement response.</returns>
-    internal static ParsedStatementResponse ToResponse(ParsedStatement statement, IReadOnlySet<TransactionKey> existing) => new(
+    internal static ParsedStatementResponse ToResponse(
+        ParsedStatement statement,
+        IReadOnlySet<TransactionKey> existing,
+        IReadOnlyList<Guid?>? categoryIds = null) => new(
         statement.Bank,
         statement.AccountType,
         statement.SkippedRows,
         statement.Transactions
-            .Select(transaction => new ParsedTransactionResponse(
+            .Select((transaction, index) => new ParsedTransactionResponse(
                 transaction.StatementLine,
                 transaction.TransactionDate,
                 transaction.Description,
                 transaction.Amount,
                 transaction.BalanceAfter,
-                existing.Contains(KeyOf(transaction))))
+                existing.Contains(KeyOf(transaction)),
+                categoryIds is not null && index < categoryIds.Count
+                    ? categoryIds[index]
+                    : null))
             .ToList());
 
     /// <summary>
@@ -198,15 +253,19 @@ public sealed class StatementsController(
     /// </summary>
     /// <param name="line">The line to save.</param>
     /// <param name="accountId">The ID of the account the statement belongs to.</param>
+    /// <param name="categoryId">An explicit or evaluated category, if one is available.</param>
     /// <returns>The transaction, not yet tracked.</returns>
-    internal static Transaction ToTransaction(ImportTransactionRequest line, Guid accountId)
+    internal static Transaction ToTransaction(
+        ImportTransactionRequest line,
+        Guid accountId,
+        Guid? categoryId = null)
     {
         TransactionKey key = KeyOf(line);
         return new Transaction
         {
             Id = Guid.NewGuid(),
             AccountId = accountId,
-            CategoryId = line.CategoryId,
+            CategoryId = line.CategoryId ?? categoryId,
             TransactionDate = key.TransactionDate,
             Description = key.Description,
             Amount = key.Amount,

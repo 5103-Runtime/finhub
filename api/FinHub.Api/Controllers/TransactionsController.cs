@@ -12,11 +12,13 @@ namespace FinHub.Api.Controllers;
 /// </summary>
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
+/// <param name="categorizationRuleService">The automatic categorization rule service.</param>
 [ApiController]
 [Route("api/transactions")]
 public sealed class TransactionsController(
     FinHubDbContext dbContext,
-    SupabaseAuthClient authClient) : AuthenticatedControllerBase(authClient)
+    SupabaseAuthClient authClient,
+    ICategorizationRuleService categorizationRuleService) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// Lists the authenticated user's transactions, newest first.
@@ -91,6 +93,63 @@ public sealed class TransactionsController(
     }
 
     /// <summary>
+    /// Previews automatic categorization for a manual transaction without saving it.
+    /// </summary>
+    /// <param name="request">The transaction details to evaluate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The category selected by the first matching enabled rule, if any.</returns>
+    [HttpPost("preview-categorization")]
+    public async Task<ActionResult<TransactionCategorizationPreviewResponse>> PreviewCategorization(
+        [FromBody] CreateTransactionRequest request,
+        CancellationToken cancellationToken)
+    {
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        Guid accountId = request.AccountId!.Value;
+        if (!await OwnedAccountIds(userId!.Value)
+            .AnyAsync(id => id == accountId, cancellationToken))
+        {
+            return AccountNotFound();
+        }
+
+        if (request.CategoryId is not null)
+        {
+            if (!await IsCategoryAvailableAsync(
+                request.CategoryId.Value,
+                userId.Value,
+                cancellationToken))
+            {
+                return CategoryNotFound();
+            }
+
+            return Ok(new TransactionCategorizationPreviewResponse(request.CategoryId, false));
+        }
+        if (request.CategoryWasExplicitlySet)
+        {
+            return Ok(new TransactionCategorizationPreviewResponse(null, false));
+        }
+
+        decimal amount = Math.Round(
+            request.Amount!.Value,
+            2,
+            MidpointRounding.AwayFromZero);
+        Guid? categoryId = await categorizationRuleService.EvaluateAsync(
+            userId.Value,
+            accountId,
+            request.Description.Trim(),
+            amount,
+            cancellationToken);
+
+        return Ok(new TransactionCategorizationPreviewResponse(
+            categoryId,
+            categoryId is not null));
+    }
+
+    /// <summary>
     /// Manually creates a transaction in one of the authenticated user's accounts.
     /// </summary>
     /// <param name="request">The transaction request.</param>
@@ -115,18 +174,30 @@ public sealed class TransactionsController(
             return AccountNotFound();
         }
 
-        Guid? categoryId = request.CategoryId;
-        if (categoryId is not null
-            && !await IsCategoryAvailableAsync(categoryId.Value, userId.Value, cancellationToken))
-        {
-            return CategoryNotFound();
-        }
-
         DateOnly transactionDate = request.TransactionDate!.Value;
         string description = request.Description.Trim();
         decimal amount = Math.Round(
             request.Amount!.Value, 2, MidpointRounding.AwayFromZero
         );
+
+        Guid? categoryId = request.CategoryId;
+        bool automaticCategoryApplied = false;
+        if (categoryId is null && !request.CategoryWasExplicitlySet)
+        {
+            categoryId = await categorizationRuleService.EvaluateAsync(
+                userId!.Value,
+                accountId,
+                description,
+                amount,
+                cancellationToken);
+            automaticCategoryApplied = categoryId is not null;
+        }
+
+        if (categoryId is not null
+            && !await IsCategoryAvailableAsync(categoryId.Value, userId.Value, cancellationToken))
+        {
+            return CategoryNotFound();
+        }
 
         Transaction? duplicate = await FindDuplicateTransactionAsync(
             accountId,
@@ -159,7 +230,7 @@ public sealed class TransactionsController(
         return CreatedAtAction(
             nameof(Get),
             new { id = transaction.Id },
-            ToResponse(transaction, duplicate is not null));
+            ToResponse(transaction, duplicate is not null, automaticCategoryApplied));
     }
 
     /// <summary>
@@ -692,7 +763,10 @@ public sealed class TransactionsController(
     /// <param name="transaction">The transaction.</param>
     /// <param name="potentialDuplicate">Whether the transaction may duplicate an existing transaction.</param>
     /// <returns>The transaction response.</returns>
-    private static TransactionResponse ToResponse(Transaction transaction, bool? potentialDuplicate = null) => new(
+    private static TransactionResponse ToResponse(
+        Transaction transaction,
+        bool? potentialDuplicate = null,
+        bool? automaticCategoryApplied = null) => new(
         transaction.Id,
         transaction.AccountId,
         transaction.TransferId,
@@ -704,7 +778,8 @@ public sealed class TransactionsController(
         transaction.StatementLine,
         transaction.CreatedAt,
         transaction.UpdatedAt,
-        potentialDuplicate);
+        potentialDuplicate,
+        automaticCategoryApplied);
 
     /// <summary>
     /// Creates the response returned when no transaction matches the ID for the authenticated user.

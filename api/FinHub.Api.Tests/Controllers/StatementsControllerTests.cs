@@ -91,4 +91,24 @@ public sealed class StatementsControllerTests
     {
         Assert.IsNull(StatementsController.ToTransaction(CoffeeLine, Guid.NewGuid()).BalanceAfter);
     }
+
+    [TestMethod]
+    public void ToTransaction_UsesAnEvaluatedCategoryWithoutReplacingAnExplicitCategory()
+    {
+        Guid accountId = Guid.NewGuid();
+        Guid explicitCategoryId = Guid.NewGuid();
+        Guid evaluatedCategoryId = Guid.NewGuid();
+
+        Transaction explicitTransaction = StatementsController.ToTransaction(
+            CoffeeLine with { CategoryId = explicitCategoryId },
+            accountId,
+            evaluatedCategoryId);
+        Transaction uncategorized = StatementsController.ToTransaction(
+            CoffeeLine,
+            accountId,
+            evaluatedCategoryId);
+
+        Assert.AreEqual(explicitCategoryId, explicitTransaction.CategoryId);
+        Assert.AreEqual(evaluatedCategoryId, uncategorized.CategoryId);
+    }
 }
