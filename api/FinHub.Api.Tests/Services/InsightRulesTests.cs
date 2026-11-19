@@ -281,6 +281,222 @@ public sealed class InsightRulesTests
         Assert.AreEqual(FoodCategoryId, insights[1].CategoryId);
     }
 
+    [TestMethod]
+    public void FindUnusualPurchases_ReportsAWarningAtTheThreshold()
+    {
+        InsightTransaction purchase = Spend(-60m, November);
+        List<InsightTransaction> transactions = [.. UsualPurchases(20m), purchase];
+
+        List<Insight> insights = InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m);
+
+        Assert.AreEqual(1, insights.Count);
+        Assert.AreEqual(
+            new Insight(
+                InsightTypes.UnusualPurchase,
+                InsightSeverities.Warning,
+                null,
+                purchase.Id,
+                null,
+                null,
+                60m,
+                20m),
+            insights[0]);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_ReportsNothingBelowTheThreshold()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-59.99m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_ReportsCriticalAtDoubleTheThreshold()
+    {
+        List<InsightTransaction> justBelow =
+        [
+            .. UsualPurchases(20m),
+            Spend(-119.99m, November)
+        ];
+        List<InsightTransaction> reached =
+        [
+            .. UsualPurchases(20m),
+            Spend(-120m, November)
+        ];
+
+        Assert.AreEqual(
+            InsightSeverities.Warning,
+            InsightRules.FindUnusualPurchases(justBelow, CurrentMonth, Today, 3m)[0].Severity);
+        Assert.AreEqual(
+            InsightSeverities.Critical,
+            InsightRules.FindUnusualPurchases(reached, CurrentMonth, Today, 3m)[0].Severity);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_UsesTheGivenThreshold()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-60m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 4m).Count);
+        Assert.AreEqual(
+            InsightSeverities.Critical,
+            InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 1.5m)[0].Severity);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_NeedsThreeEarlierPurchases()
+    {
+        List<InsightTransaction> transactions =
+        [
+            Spend(-20m, September),
+            Spend(-20m, October),
+            Spend(-500m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_ComparesWithTheNinetyDaysBeforeThePurchase()
+    {
+        List<InsightTransaction> oldestJustOutside =
+        [
+            Spend(-20m, new DateOnly(2026, 8, 11)),
+            Spend(-20m, September),
+            Spend(-20m, October),
+            Spend(-500m, November)
+        ];
+        List<InsightTransaction> oldestJustInside =
+        [
+            Spend(-20m, new DateOnly(2026, 8, 12)),
+            Spend(-20m, September),
+            Spend(-20m, October),
+            Spend(-500m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(oldestJustOutside, CurrentMonth, Today, 3m).Count);
+        Assert.AreEqual(1, InsightRules.FindUnusualPurchases(oldestJustInside, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_ComparesOnlyWithEarlierDays()
+    {
+        List<InsightTransaction> transactions =
+        [
+            Spend(-20m, September),
+            Spend(-20m, October),
+            Spend(-20m, November),
+            Spend(-500m, November),
+            Spend(-20m, new DateOnly(2026, 11, 11))
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_UsesTheMedianNotTheAverage()
+    {
+        List<InsightTransaction> transactions =
+        [
+            Spend(-10m, new DateOnly(2026, 10, 5)),
+            Spend(-20m, new DateOnly(2026, 10, 15)),
+            Spend(-500m, new DateOnly(2026, 10, 25)),
+            Spend(-60m, November)
+        ];
+
+        List<Insight> insights = InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m);
+
+        Assert.AreEqual(1, insights.Count);
+        Assert.AreEqual(20m, insights[0].Baseline);
+    }
+
+    [TestMethod]
+    public void GetMedian_AveragesTheTwoMiddleAmountsOfAnEvenCount()
+    {
+        Assert.AreEqual(20m, InsightRules.GetMedian([10m, 20m, 500m]));
+        Assert.AreEqual(25m, InsightRules.GetMedian([10m, 20m, 30m, 40m]));
+        Assert.AreEqual(10.01m, InsightRules.GetMedian([10m, 10.01m]));
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_IgnoresTransferLegsUncategorizedAndMoneyIn()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, November, transferId: Guid.NewGuid()),
+            Spend(-500m, November, uncategorized: true),
+            Spend(500m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_KeepsCurrenciesAndCategoriesApart()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, November, currency: "USD"),
+            Spend(-500m, November, categoryId: RentCategoryId)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_EvaluatesOnlyPurchasesFromTheGivenDateToToday()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, new DateOnly(2026, 10, 31)),
+            Spend(-500m, Today.AddDays(1))
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m).Count);
+        Assert.AreEqual(
+            1,
+            InsightRules.FindUnusualPurchases(transactions, new DateOnly(2026, 10, 1), Today, 3m).Count);
+    }
+
+    [TestMethod]
+    public void FindUnusualPurchases_OrdersFromHighestToLowestAmount()
+    {
+        InsightTransaction smaller = Spend(-70m, new DateOnly(2026, 11, 2));
+        InsightTransaction larger = Spend(-90m, new DateOnly(2026, 11, 3));
+        List<InsightTransaction> transactions = [.. UsualPurchases(20m), smaller, larger];
+
+        List<Insight> insights = InsightRules.FindUnusualPurchases(transactions, CurrentMonth, Today, 3m);
+
+        Assert.AreEqual(2, insights.Count);
+        Assert.AreEqual(larger.Id, insights[0].TransactionId);
+        Assert.AreEqual(smaller.Id, insights[1].TransactionId);
+    }
+
+    /// <summary>
+    /// Creates three food purchases of the same amount in October 2026,
+    /// so the median before a November purchase equals the given amount.
+    /// </summary>
+    /// <param name="amount">The positive amount of each purchase.</param>
+    /// <returns>The three earlier purchases.</returns>
+    private static InsightTransaction[] UsualPurchases(decimal amount) =>
+    [
+        Spend(-amount, new DateOnly(2026, 10, 5)),
+        Spend(-amount, new DateOnly(2026, 10, 15)),
+        Spend(-amount, new DateOnly(2026, 10, 25))
+    ];
+
     /// <summary>
     /// Creates one transaction in each of the three months before November 2026,
     /// so the category's baseline equals the given amount.

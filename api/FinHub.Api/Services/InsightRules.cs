@@ -24,6 +24,21 @@ internal static class InsightRules
     internal const int CategorySpikeLookbackMonths = 12;
 
     /// <summary>
+    /// The default multiple of the category median at which an unusual purchase is reported.
+    /// </summary>
+    internal const decimal DefaultUnusualPurchaseThreshold = 3m;
+
+    /// <summary>
+    /// The number of days before a purchase whose purchases make up its median.
+    /// </summary>
+    internal const int UnusualPurchaseWindowDays = 90;
+
+    /// <summary>
+    /// The number of earlier purchases a median needs before a purchase can be reported.
+    /// </summary>
+    internal const int UnusualPurchaseMinimumPurchases = 3;
+
+    /// <summary>
     /// The multiple of the threshold at which an insight becomes critical.
     /// </summary>
     internal const decimal CriticalThresholdMultiplier = 2m;
@@ -110,6 +125,95 @@ internal static class InsightRules
             .ThenBy(insight => insight.CategoryId)
             .ThenBy(insight => insight.Currency, StringComparer.Ordinal)
             .ToList();
+    }
+
+    /// <summary>
+    /// Finds purchases that are well above the median of the earlier purchases
+    /// in the same category and currency.
+    /// </summary>
+    /// <param name="transactions">The user's transactions.</param>
+    /// <param name="from">The first date whose purchases are evaluated.</param>
+    /// <param name="today">The current date; later transactions are ignored.</param>
+    /// <param name="threshold">The multiple of the median at which a purchase is reported.</param>
+    /// <returns>One insight per purchase, ordered from highest to lowest amount.</returns>
+    internal static List<Insight> FindUnusualPurchases(
+        IEnumerable<InsightTransaction> transactions,
+        DateOnly from,
+        DateOnly today,
+        decimal threshold)
+    {
+        List<Insight> insights = [];
+
+        var groups = transactions
+            .Where(transaction =>
+                IsSpending(transaction)
+                && transaction.TransactionDate <= today)
+            .GroupBy(transaction => new
+            {
+                CategoryId = transaction.CategoryId!.Value,
+                transaction.Currency
+            });
+
+        foreach (var group in groups)
+        {
+            foreach (InsightTransaction purchase in group
+                .Where(transaction => transaction.TransactionDate >= from))
+            {
+                DateOnly windowStart = purchase.TransactionDate.AddDays(-UnusualPurchaseWindowDays);
+                decimal[] earlierAmounts = group
+                    .Where(transaction =>
+                        transaction.TransactionDate >= windowStart
+                        && transaction.TransactionDate < purchase.TransactionDate)
+                    .Select(transaction => -transaction.Amount)
+                    .Order()
+                    .ToArray();
+
+                if (earlierAmounts.Length < UnusualPurchaseMinimumPurchases)
+                {
+                    continue;
+                }
+
+                decimal amount = -purchase.Amount;
+                decimal median = GetMedian(earlierAmounts);
+
+                if (amount < median * threshold)
+                {
+                    continue;
+                }
+
+                insights.Add(new Insight(
+                    InsightTypes.UnusualPurchase,
+                    GetSeverity(amount, median * threshold * CriticalThresholdMultiplier),
+                    null,
+                    purchase.Id,
+                    null,
+                    null,
+                    amount,
+                    median));
+            }
+        }
+
+        return insights
+            .OrderByDescending(insight => insight.Amount)
+            .ThenBy(insight => insight.TransactionId)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates the median of amounts that are already sorted.
+    /// </summary>
+    /// <param name="sortedAmounts">The amounts in ascending order; at least one.</param>
+    /// <returns>The middle amount, or the average of the two middle amounts, to two decimal places.</returns>
+    internal static decimal GetMedian(IReadOnlyList<decimal> sortedAmounts)
+    {
+        int middle = sortedAmounts.Count / 2;
+
+        return sortedAmounts.Count % 2 == 1
+            ? sortedAmounts[middle]
+            : Math.Round(
+                (sortedAmounts[middle - 1] + sortedAmounts[middle]) / 2m,
+                2,
+                MidpointRounding.AwayFromZero);
     }
 
     /// <summary>
