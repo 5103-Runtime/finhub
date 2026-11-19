@@ -687,6 +687,167 @@ public sealed class InsightRulesTests
                 [StateOf(purchase, readAt: Moment(1))])[0].IsRead);
     }
 
+    [TestMethod]
+    public void GetHistoryStart_CountsTheCurrentMonth()
+    {
+        Assert.AreEqual(new DateOnly(2026, 11, 1), InsightRules.GetHistoryStart(1, Today));
+        Assert.AreEqual(new DateOnly(2026, 9, 1), InsightRules.GetHistoryStart(3, Today));
+        Assert.AreEqual(new DateOnly(2025, 12, 1), InsightRules.GetHistoryStart(12, Today));
+    }
+
+    [TestMethod]
+    public void FindInsights_ReturnsSpikesNewestMonthFirstThenPurchases()
+    {
+        InsightTransaction purchase = Spend(-500m, November, categoryId: RentCategoryId);
+        List<InsightTransaction> transactions =
+        [
+            Spend(-100m, new DateOnly(2026, 7, 10)),
+            Spend(-100m, August),
+            Spend(-200m, September),
+            Spend(-100m, October),
+            Spend(-300m, November),
+            .. UsualPurchases(100m).Select(usual => usual with { CategoryId = RentCategoryId }),
+            purchase
+        ];
+
+        List<Insight> insights = InsightRules.FindInsights(transactions, [], [], [], 3, Today);
+
+        Assert.AreEqual(4, insights.Count);
+        Assert.AreEqual(InsightTypes.CategorySpike, insights[0].InsightType);
+        Assert.AreEqual(RentCategoryId, insights[0].CategoryId);
+        Assert.AreEqual(CurrentMonth, insights[0].PeriodStart);
+        Assert.AreEqual(InsightTypes.CategorySpike, insights[1].InsightType);
+        Assert.AreEqual(FoodCategoryId, insights[1].CategoryId);
+        Assert.AreEqual(CurrentMonth, insights[1].PeriodStart);
+        Assert.AreEqual(InsightTypes.CategorySpike, insights[2].InsightType);
+        Assert.AreEqual(new DateOnly(2026, 9, 1), insights[2].PeriodStart);
+        Assert.AreEqual(InsightTypes.UnusualPurchase, insights[3].InsightType);
+        Assert.AreEqual(purchase.Id, insights[3].TransactionId);
+    }
+
+    [TestMethod]
+    public void FindInsights_EvaluatesOnlyTheGivenNumberOfMonths()
+    {
+        List<InsightTransaction> transactions =
+        [
+            Spend(-100m, new DateOnly(2026, 6, 10)),
+            Spend(-100m, new DateOnly(2026, 7, 10)),
+            Spend(-500m, August),
+            Spend(-100m, September),
+            Spend(-100m, October),
+            Spend(-100m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindInsights(transactions, [], [], [], 3, Today).Count);
+        Assert.AreEqual(1, InsightRules.FindInsights(transactions, [], [], [], 4, Today).Count);
+    }
+
+    [TestMethod]
+    public void FindInsights_SkipsAnInsightTypeThatIsTurnedOff()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, November)
+        ];
+
+        List<Insight> all = InsightRules.FindInsights(transactions, [], [], [], 3, Today);
+        List<Insight> withoutSpikes = InsightRules.FindInsights(
+            transactions,
+            [Preference(InsightTypes.CategorySpike, threshold: null, isEnabled: false)],
+            [],
+            [],
+            3,
+            Today);
+
+        Assert.AreEqual(2, all.Count);
+        Assert.AreEqual(1, withoutSpikes.Count);
+        Assert.AreEqual(InsightTypes.UnusualPurchase, withoutSpikes[0].InsightType);
+    }
+
+    [TestMethod]
+    public void FindInsights_UsesTheUsersThresholds()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, November)
+        ];
+
+        List<Insight> insights = InsightRules.FindInsights(
+            transactions,
+            [
+                Preference(InsightTypes.CategorySpike, threshold: 900m),
+                Preference(InsightTypes.UnusualPurchase, threshold: 30m)
+            ],
+            [],
+            [],
+            3,
+            Today);
+
+        Assert.AreEqual(0, insights.Count);
+    }
+
+    [TestMethod]
+    public void FindInsights_LeavesOutMutedCategoriesAndAccounts()
+    {
+        List<InsightTransaction> transactions =
+        [
+            .. UsualPurchases(20m),
+            Spend(-500m, November)
+        ];
+
+        Assert.AreEqual(
+            0,
+            InsightRules.FindInsights(
+                transactions,
+                [],
+                [new InsightMute { CategoryId = FoodCategoryId }],
+                [],
+                3,
+                Today).Count);
+        Assert.AreEqual(
+            0,
+            InsightRules.FindInsights(
+                transactions,
+                [],
+                [new InsightMute { AccountId = ChequingId }],
+                [],
+                3,
+                Today).Count);
+    }
+
+    [TestMethod]
+    public void FindInsights_AppliesReadAndDismissedStates()
+    {
+        InsightTransaction purchase = Spend(-500m, November);
+        List<InsightTransaction> transactions = [.. UsualPurchases(20m), purchase];
+        List<InsightState> states =
+        [
+            new()
+            {
+                InsightType = InsightTypes.UnusualPurchase,
+                TransactionId = purchase.Id,
+                DismissedAt = Moment(1),
+                DismissedValue = 500m
+            },
+            new()
+            {
+                InsightType = InsightTypes.CategorySpike,
+                CategoryId = FoodCategoryId,
+                Currency = "CAD",
+                PeriodStart = CurrentMonth,
+                ReadAt = Moment(1)
+            }
+        ];
+
+        List<Insight> insights = InsightRules.FindInsights(transactions, [], [], states, 3, Today);
+
+        Assert.AreEqual(1, insights.Count);
+        Assert.AreEqual(InsightTypes.CategorySpike, insights[0].InsightType);
+        Assert.IsTrue(insights[0].IsRead);
+    }
+
     /// <summary>
     /// Creates a food category spike in CAD for November 2026 against a baseline of 100.
     /// </summary>

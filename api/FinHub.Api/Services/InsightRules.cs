@@ -50,6 +50,73 @@ internal static class InsightRules
     internal const decimal DismissedResurfaceMultiplier = 1.25m;
 
     /// <summary>
+    /// Computes the insights to show for the given number of months, ending with the current month.
+    /// Muted transactions are left out, turned-off insight types are skipped,
+    /// and the user's read and dismissed markers are applied.
+    /// </summary>
+    /// <param name="transactions">The user's transactions, reaching back far enough for every baseline.</param>
+    /// <param name="preferences">The user's preferences.</param>
+    /// <param name="mutes">The user's mutes.</param>
+    /// <param name="states">The user's insight states.</param>
+    /// <param name="months">The number of calendar months to evaluate.</param>
+    /// <param name="today">The current date; later transactions are ignored.</param>
+    /// <returns>
+    /// Category spikes from the newest month to the oldest, then unusual purchases,
+    /// each from highest to lowest amount.
+    /// </returns>
+    internal static List<Insight> FindInsights(
+        IEnumerable<InsightTransaction> transactions,
+        IEnumerable<InsightPreference> preferences,
+        IEnumerable<InsightMute> mutes,
+        IEnumerable<InsightState> states,
+        int months,
+        DateOnly today)
+    {
+        List<InsightTransaction> included = ExcludeMuted(transactions, mutes);
+        List<InsightPreference> preferenceList = preferences.ToList();
+        DateOnly historyStart = GetHistoryStart(months, today);
+        List<Insight> insights = [];
+
+        if (ResolveThreshold(
+            preferenceList,
+            InsightTypes.CategorySpike,
+            DefaultCategorySpikeThreshold) is decimal spikeThreshold)
+        {
+            for (int offset = months - 1; offset >= 0; offset--)
+            {
+                insights.AddRange(FindCategorySpikes(
+                    included,
+                    historyStart.AddMonths(offset),
+                    today,
+                    spikeThreshold));
+            }
+        }
+
+        if (ResolveThreshold(
+            preferenceList,
+            InsightTypes.UnusualPurchase,
+            DefaultUnusualPurchaseThreshold) is decimal purchaseThreshold)
+        {
+            insights.AddRange(FindUnusualPurchases(
+                included,
+                historyStart,
+                today,
+                purchaseThreshold));
+        }
+
+        return ApplyStates(insights, states);
+    }
+
+    /// <summary>
+    /// Gets the first day of the oldest month evaluated.
+    /// </summary>
+    /// <param name="months">The number of calendar months to evaluate, ending with the current month.</param>
+    /// <param name="today">The current date.</param>
+    /// <returns>The first day of the oldest evaluated month.</returns>
+    internal static DateOnly GetHistoryStart(int months, DateOnly today) =>
+        new DateOnly(today.Year, today.Month, 1).AddMonths(-(months - 1));
+
+    /// <summary>
     /// Finds categories whose spending in one month is above the average of their
     /// most recent earlier months with spending.
     /// </summary>
