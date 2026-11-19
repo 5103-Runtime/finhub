@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using FinHub.Api.Data;
 using FinHub.Api.Statements;
 using FinHub.Api.Statements.Csv;
+using FinHub.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,7 @@ catch (InvalidTimeZoneException exception)
 builder.Services.AddSingleton(dashboardTimeZone);
 builder.Services.AddDbContext<FinHubDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")));
+builder.Services.AddScoped<ICategorizationRuleService, CategorizationRuleService>();
 
 builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a bad mapping file fails startup.
 builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
