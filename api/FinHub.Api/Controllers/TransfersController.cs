@@ -89,21 +89,21 @@ public sealed class TransfersController(
             });
         }
 
-        if (request.CategoryId is not null)
-        {
-            bool categoryExists = await dbContext.Categories.AnyAsync(
+        if (request.CategoryId is not null
+            && !await dbContext.Categories.AnyAsync(
                 category => category.Id == request.CategoryId
                     && (category.IsSystem || category.UserId == currentUserId),
-                cancellationToken);
-            if (!categoryExists)
+                cancellationToken))
+        {
+            return NotFound(new
             {
-                return NotFound(new
-                {
-                    error = "The selected category could not be found.",
-                    errorCode = "category_not_found"
-                });
-            }
+                error = "The selected category could not be found.",
+                errorCode = "category_not_found"
+            });
+        }
 
+        if (request.CategoryWasExplicitlySet || request.CategoryId is not null)
+        {
             return Ok(new TransferCategorizationPreviewResponse(
                 request.CategoryId,
                 request.CategoryId,
@@ -128,17 +128,18 @@ public sealed class TransfersController(
             description,
             amount,
             cancellationToken);
-        CategorizationMatch? selectedMatch =
-            CategorizationRuleService.SelectHighestPriorityMatch(
+        TransferCategoryResolution resolution =
+            CategorizationRuleService.ResolveTransferCategories(
                 outgoingMatch,
-                incomingMatch);
-        Guid? sharedCategoryId = selectedMatch?.CategoryId;
+                incomingMatch,
+                request.CategoryId,
+                request.CategoryWasExplicitlySet);
 
         return Ok(new TransferCategorizationPreviewResponse(
-            outgoingMatch?.CategoryId,
-            incomingMatch?.CategoryId,
-            sharedCategoryId,
-            sharedCategoryId is not null));
+            resolution.OutgoingCategoryId,
+            resolution.IncomingCategoryId,
+            resolution.SharedCategoryId,
+            resolution.AutomaticCategoryApplied));
     }
 
     /// <summary>
@@ -300,8 +301,10 @@ public sealed class TransfersController(
             return existingTransactionError;
         }
 
-        Guid? sharedCategoryId = categoryId;
-        if (sharedCategoryId is null
+        bool categoryWasExplicitlySet = request.CategoryWasExplicitlySet || categoryId is not null;
+        Guid? outgoingCategoryId = null;
+        Guid? incomingCategoryId = null;
+        if (!categoryWasExplicitlySet
             && (existingOutgoing is null || existingIncoming is null))
         {
             CategorizationMatch? outgoingMatch = await categorizationRuleService.EvaluateMatchAsync(
@@ -316,15 +319,23 @@ public sealed class TransfersController(
                 description,
                 amount,
                 cancellationToken);
-            CategorizationMatch? selectedMatch =
-                CategorizationRuleService.SelectHighestPriorityMatch(
+            TransferCategoryResolution resolution =
+                CategorizationRuleService.ResolveTransferCategories(
                     outgoingMatch,
-                    incomingMatch);
-            sharedCategoryId = selectedMatch?.CategoryId;
+                    incomingMatch,
+                    categoryId,
+                    categoryWasExplicitlySet);
+            outgoingCategoryId = resolution.OutgoingCategoryId;
+            incomingCategoryId = resolution.IncomingCategoryId;
         }
 
-        Guid? outgoingCategoryId = existingOutgoing is null ? sharedCategoryId : null;
-        Guid? incomingCategoryId = existingIncoming is null ? sharedCategoryId : null;
+        if (categoryWasExplicitlySet)
+        {
+            outgoingCategoryId = categoryId;
+            incomingCategoryId = categoryId;
+        }
+        outgoingCategoryId = existingOutgoing is null ? outgoingCategoryId : null;
+        incomingCategoryId = existingIncoming is null ? incomingCategoryId : null;
 
         Transfer transfer = new()
         {

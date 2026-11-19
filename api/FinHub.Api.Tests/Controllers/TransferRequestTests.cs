@@ -52,6 +52,19 @@ public sealed class TransferRequestTests
         Assert.IsNull(request.ToTransactionId);
     }
 
+    [TestMethod]
+    public void CategoryCanBeExplicitlySetToNone()
+    {
+        CreateTransferRequest request = ValidRequest() with
+        {
+            CategoryId = null,
+            CategoryWasExplicitlySet = true
+        };
+
+        Assert.IsNull(request.CategoryId);
+        Assert.IsTrue(request.CategoryWasExplicitlySet);
+    }
+
     private static CreateTransferRequest ValidRequest() =>
         new(
             Guid.NewGuid(),
