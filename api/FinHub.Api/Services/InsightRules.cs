@@ -20,6 +20,11 @@ internal static class InsightRules
     internal const int CategorySpikeBaselineMonths = 3;
 
     /// <summary>
+    /// The number of earlier months with spending a category needs before a spike can be reported.
+    /// </summary>
+    internal const int CategorySpikeMinimumBaselineMonths = 2;
+
+    /// <summary>
     /// The number of full calendar months before the evaluated one searched for baseline months.
     /// </summary>
     internal const int CategorySpikeLookbackMonths = 12;
@@ -164,7 +169,7 @@ internal static class InsightRules
                 .Select(monthGroup => monthGroup.Sum(transaction => -transaction.Amount))
                 .ToArray();
 
-            if (baselineMonths.Length == 0)
+            if (baselineMonths.Length < CategorySpikeMinimumBaselineMonths)
             {
                 continue;
             }

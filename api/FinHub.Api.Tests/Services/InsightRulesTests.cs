@@ -114,7 +114,8 @@ public sealed class InsightRulesTests
     {
         List<InsightTransaction> transactions =
         [
-            Spend(-300m, September),
+            Spend(-300m, new DateOnly(2026, 5, 10)),
+            Spend(-300m, August),
             Spend(-300m, November)
         ];
 
@@ -127,6 +128,25 @@ public sealed class InsightRulesTests
         List<InsightTransaction> transactions = [Spend(-500m, November)];
 
         Assert.AreEqual(0, InsightRules.FindCategorySpikes(transactions, CurrentMonth, Today, 50m).Count);
+    }
+
+    [TestMethod]
+    public void FindCategorySpikes_NeedsTwoEarlierMonthsWithSpending()
+    {
+        List<InsightTransaction> oneEarlierMonth =
+        [
+            Spend(-15m, new DateOnly(2026, 3, 10)),
+            Spend(-40m, November)
+        ];
+        List<InsightTransaction> twoEarlierMonths =
+        [
+            Spend(-15m, new DateOnly(2026, 3, 10)),
+            Spend(-15m, new DateOnly(2026, 6, 10)),
+            Spend(-40m, November)
+        ];
+
+        Assert.AreEqual(0, InsightRules.FindCategorySpikes(oneEarlierMonth, CurrentMonth, Today, 50m).Count);
+        Assert.AreEqual(1, InsightRules.FindCategorySpikes(twoEarlierMonths, CurrentMonth, Today, 50m).Count);
     }
 
     [TestMethod]
@@ -182,6 +202,7 @@ public sealed class InsightRulesTests
         List<InsightTransaction> transactions =
         [
             Spend(-150m, new DateOnly(2025, 11, 1)),
+            Spend(-150m, new DateOnly(2026, 2, 10)),
             Spend(-1000m, November)
         ];
 
@@ -706,6 +727,7 @@ public sealed class InsightRulesTests
             Spend(-200m, September),
             Spend(-100m, October),
             Spend(-300m, November),
+            Spend(-300m, September, categoryId: RentCategoryId),
             .. UsualPurchases(100m).Select(usual => usual with { CategoryId = RentCategoryId }),
             purchase
         ];
@@ -747,6 +769,7 @@ public sealed class InsightRulesTests
     {
         List<InsightTransaction> transactions =
         [
+            Spend(-60m, September),
             .. UsualPurchases(20m),
             Spend(-500m, November)
         ];
@@ -770,6 +793,7 @@ public sealed class InsightRulesTests
     {
         List<InsightTransaction> transactions =
         [
+            Spend(-60m, September),
             .. UsualPurchases(20m),
             Spend(-500m, November)
         ];
@@ -793,6 +817,7 @@ public sealed class InsightRulesTests
     {
         List<InsightTransaction> transactions =
         [
+            Spend(-60m, September),
             .. UsualPurchases(20m),
             Spend(-500m, November)
         ];
@@ -821,7 +846,7 @@ public sealed class InsightRulesTests
     public void FindInsights_AppliesReadAndDismissedStates()
     {
         InsightTransaction purchase = Spend(-500m, November);
-        List<InsightTransaction> transactions = [.. UsualPurchases(20m), purchase];
+        List<InsightTransaction> transactions = [Spend(-60m, September), .. UsualPurchases(20m), purchase];
         List<InsightState> states =
         [
             new()
