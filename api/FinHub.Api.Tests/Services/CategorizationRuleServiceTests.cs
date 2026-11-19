@@ -175,6 +175,42 @@ public sealed class CategorizationRuleServiceTests
         Assert.AreEqual(incomingCategoryId, selected?.CategoryId);
     }
 
+    [TestMethod]
+    public void ResolveTransferCategories_DoesNotShareAOneSidedMatch()
+    {
+        Guid incomingCategoryId = Guid.NewGuid();
+
+        TransferCategoryResolution result =
+            CategorizationRuleService.ResolveTransferCategories(
+                null,
+                new CategorizationMatch(incomingCategoryId, 3),
+                null,
+                false);
+
+        Assert.IsNull(result.OutgoingCategoryId);
+        Assert.AreEqual(incomingCategoryId, result.IncomingCategoryId);
+        Assert.IsNull(result.SharedCategoryId);
+        Assert.IsFalse(result.AutomaticCategoryApplied);
+    }
+
+    [TestMethod]
+    public void ResolveTransferCategories_PreservesExplicitNone()
+    {
+        Guid categoryId = Guid.NewGuid();
+
+        TransferCategoryResolution result =
+            CategorizationRuleService.ResolveTransferCategories(
+                new CategorizationMatch(categoryId, 1),
+                new CategorizationMatch(categoryId, 2),
+                null,
+                true);
+
+        Assert.IsNull(result.OutgoingCategoryId);
+        Assert.IsNull(result.IncomingCategoryId);
+        Assert.IsNull(result.SharedCategoryId);
+        Assert.IsFalse(result.AutomaticCategoryApplied);
+    }
+
     private static CategorizationRule Rule(
         Guid categoryId,
         int priority,
