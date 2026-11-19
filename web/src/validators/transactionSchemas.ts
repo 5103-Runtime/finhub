@@ -29,6 +29,7 @@ export const transactionSchema = z.object({
       (value) => Math.abs(Number(value)) <= MAX_AMOUNT,
       "Amount is too large.",
     ),
+  categoryWasExplicitlySet: z.boolean(),
 });
 
 /**
@@ -64,6 +65,7 @@ export function getEmptyTransactionForm(): TransactionFormData {
   return {
     accountId: "",
     categoryId: "",
+    categoryWasExplicitlySet: false,
     transactionDate: getTodayDate(),
     description: "",
     amount: "",

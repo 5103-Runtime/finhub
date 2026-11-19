@@ -18,6 +18,15 @@ export interface TransactionResponse {
   createdAt: string;
   updatedAt: string;
   potentialDuplicate: boolean;
+  automaticCategoryApplied?: boolean;
+}
+
+/**
+ * @brief Response returned when previewing automatic transaction categorization.
+ */
+export interface TransactionCategorizationPreviewResponse {
+  categoryId: string | null;
+  automaticCategoryApplied: boolean;
 }
 
 /**
@@ -30,6 +39,7 @@ export interface CreateTransactionRequest {
   description: string;
   amount: number;
   confirmPotentialDuplicate?: boolean;
+  categoryWasExplicitlySet?: boolean;
 }
 
 /**
@@ -114,6 +124,20 @@ export function createTransaction(
     "/api/transactions",
     request,
   );
+}
+
+/**
+ * @brief Previews automatic categorization without saving a transaction.
+ * @param request The transaction details to evaluate.
+ * @returns The category selected by the first matching enabled rule, if any.
+ */
+export function previewTransactionCategorization(
+  request: CreateTransactionRequest,
+): Promise<TransactionCategorizationPreviewResponse> {
+  return apiPost<
+    CreateTransactionRequest,
+    TransactionCategorizationPreviewResponse
+  >("/api/transactions/preview-categorization", request);
 }
 
 /**

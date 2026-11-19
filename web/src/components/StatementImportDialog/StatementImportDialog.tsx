@@ -47,6 +47,7 @@ type StatementImportDialogProps = {
 type PreviewRow = ParsedTransactionResponse & {
   include: boolean;
   categoryId: string;
+  categoryWasExplicitlySet: boolean;
 };
 
 function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
@@ -110,7 +111,8 @@ export default function StatementImportDialog({
         result.transactions.map((transaction) => ({
           ...transaction,
           include: !transaction.potentialDuplicate,
-          categoryId: "",
+          categoryId: transaction.categoryId ?? "",
+          categoryWasExplicitlySet: false,
         })),
       );
       setStep("preview");
@@ -138,6 +140,7 @@ export default function StatementImportDialog({
           amount: row.amount,
           balanceAfter: row.balanceAfter,
           categoryId: row.categoryId || null,
+          categoryWasExplicitlySet: row.categoryWasExplicitlySet,
           confirmPotentialDuplicate: row.potentialDuplicate,
         })),
       });
@@ -370,6 +373,7 @@ export default function StatementImportDialog({
                         }
                         updateRow(row.statementLine, {
                           categoryId: event.target.value,
+                          categoryWasExplicitlySet: true,
                         });
                       }}
                       renderValue={() => selectedCategory.label}

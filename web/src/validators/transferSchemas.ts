@@ -27,11 +27,31 @@ export const transferSchema = z
         (value) => Math.abs(Number(value)) <= 999_999_999_999.99,
         "Amount is too large.",
       ),
-    categoryId: z.string(),
+    sourceCategoryId: z.string(),
+    destinationCategoryId: z.string(),
+    sourceCategoryWasExplicitlySet: z.boolean(),
+    destinationCategoryWasExplicitlySet: z.boolean(),
     fromTransactionId: z.string(),
     toTransactionId: z.string(),
   })
   .superRefine((data, context) => {
+    if (
+      data.fromAccountId &&
+      data.toAccountId &&
+      data.fromAccountId === data.toAccountId
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["fromAccountId"],
+        message: "Accounts must be different.",
+      });
+      context.addIssue({
+        code: "custom",
+        path: ["toAccountId"],
+        message: "Accounts must be different.",
+      });
+    }
+
     if (
       data.transferMode === "existing" &&
       !data.fromTransactionId &&
@@ -71,7 +91,10 @@ export function getEmptyTransferForm(
     transferDate: getTodayDate(),
     description: "",
     amount: "",
-    categoryId: "",
+    sourceCategoryId: "",
+    destinationCategoryId: "",
+    sourceCategoryWasExplicitlySet: false,
+    destinationCategoryWasExplicitlySet: false,
     fromTransactionId: "",
     toTransactionId: "",
   };

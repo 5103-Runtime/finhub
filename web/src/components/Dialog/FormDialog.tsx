@@ -77,7 +77,7 @@ export function FormDialog<T extends FieldValues>({
       }
     >
       <Form id={formId} form={form} onSubmit={onSubmit}>
-        <Stack spacing={2.25}>
+        <Stack spacing={1.25}>
           {children}
           <div ref={errorRef}>
             <FormAlert severity={errorSeverity}>{error}</FormAlert>

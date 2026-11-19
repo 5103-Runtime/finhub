@@ -13,6 +13,8 @@ export interface ParsedTransactionResponse {
   amount: number;
   balanceAfter: number | null;
   potentialDuplicate: boolean;
+  categoryId: string | null;
+  categoryWasExplicitlySet: boolean;
 }
 
 /**

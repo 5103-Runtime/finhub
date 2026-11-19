@@ -347,6 +347,12 @@ export default function Transactions() {
     transactions.find(
       (transaction) => transaction.id === transferToTransactionId,
     );
+  const sourceExistingTransaction = transactions.find(
+    (transaction) => transaction.id === transferFromTransactionId,
+  );
+  const destinationExistingTransaction = transactions.find(
+    (transaction) => transaction.id === transferToTransactionId,
+  );
 
   useEffect(() => {
     if (!selectedExistingTransaction) {
@@ -368,13 +374,24 @@ export default function Transactions() {
       Math.abs(selectedExistingTransaction.amount).toFixed(2),
       { shouldValidate: false },
     );
-    transferForm.setValue(
-      "categoryId",
-      selectedExistingTransaction.categoryId ?? "",
-      { shouldValidate: false },
-    );
     transferForm.clearErrors(["transferDate", "description", "amount"]);
   }, [selectedExistingTransaction, transferForm]);
+
+  useEffect(() => {
+    transferForm.setValue(
+      "sourceCategoryId",
+      sourceExistingTransaction?.categoryId ?? "",
+      { shouldValidate: false },
+    );
+  }, [sourceExistingTransaction, transferForm]);
+
+  useEffect(() => {
+    transferForm.setValue(
+      "destinationCategoryId",
+      destinationExistingTransaction?.categoryId ?? "",
+      { shouldValidate: false },
+    );
+  }, [destinationExistingTransaction, transferForm]);
 
   const accountOptions = accounts.map((account) => ({
     value: account.id,
@@ -671,13 +688,14 @@ export default function Transactions() {
     setSuccessMessage("");
     setSuccessTransactionId(null);
     try {
-      await createTransaction({
+      const created = await createTransaction({
         accountId: data.accountId,
         categoryId: data.categoryId || null,
         transactionDate: data.transactionDate,
         description: data.description,
         amount: Number(data.amount),
         confirmPotentialDuplicate: isDuplicate,
+        categoryWasExplicitlySet: data.categoryWasExplicitlySet,
       });
       setCollapsedAccountIds((current) => {
         const next = new Set(current);
@@ -686,7 +704,17 @@ export default function Transactions() {
       });
       closeTransactionModal();
       if (await reloadTransactions()) {
-        setSuccessMessage("Transaction created successfully.");
+        if (created.automaticCategoryApplied) {
+          const categoryName =
+            categoryOptions.find(
+              (option) => option.value === created.categoryId,
+            )?.label ?? "a category";
+          setSuccessMessage(
+            `Transaction created and automatically categorized as ${categoryName}.`,
+          );
+        } else {
+          setSuccessMessage("Transaction created successfully.");
+        }
       }
     } catch (requestError) {
       applyFieldErrors(
@@ -737,7 +765,11 @@ export default function Transactions() {
         transferDate: data.transferDate,
         description: data.description,
         amount: Number(data.amount),
-        categoryId: data.categoryId || null,
+        sourceCategoryId: data.sourceCategoryId || null,
+        destinationCategoryId: data.destinationCategoryId || null,
+        sourceCategoryWasExplicitlySet: data.sourceCategoryWasExplicitlySet,
+        destinationCategoryWasExplicitlySet:
+          data.destinationCategoryWasExplicitlySet,
         fromTransactionId: data.fromTransactionId || undefined,
         toTransactionId: data.toTransactionId || undefined,
         confirmPotentialDuplicate: isDuplicate,
@@ -1371,6 +1403,8 @@ export default function Transactions() {
         sourceTransactionOptions={safeSourceTransactionOptions}
         destinationTransactionOptions={safeDestinationTransactionOptions}
         selectedExistingTransaction={selectedExistingTransaction}
+        sourceExistingTransaction={sourceExistingTransaction}
+        destinationExistingTransaction={destinationExistingTransaction}
         error={serverError}
         isDuplicate={isDuplicate}
         onSubmit={onSubmitTransfer}

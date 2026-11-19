@@ -34,6 +34,7 @@ export type SelectFormFieldProps<T extends FieldValues> = {
   selectClassName?: string;
   displayEmpty?: boolean;
   placeholder?: string;
+  onValueChange?: (value: string) => void;
 } & Omit<FormControlProps, "error" | "children">;
 
 export function SelectFormField<T extends FieldValues>({
@@ -44,6 +45,7 @@ export function SelectFormField<T extends FieldValues>({
   selectClassName,
   displayEmpty = false,
   placeholder,
+  onValueChange,
   required = false,
   ...props
 }: SelectFormFieldProps<T>) {
@@ -93,6 +95,7 @@ export function SelectFormField<T extends FieldValues>({
                 return;
               }
               field.onChange(event);
+              onValueChange?.(String(event.target.value));
             }}
             renderValue={(value) =>
               options.find((option) => option.value === value)?.label ??

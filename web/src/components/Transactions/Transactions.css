@@ -479,7 +479,7 @@
 .ledger-transaction-form-grid {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .app-dialog .ledger-transaction-form-grid .MuiFormControl-root {
@@ -502,6 +502,16 @@
 .ledger-category-amount-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: center;
+}
+
+.ledger-category-description-row {
+  align-items: start;
+}
+
+.ledger-category-description-row > .MuiFormControl-root:first-child {
+  align-self: start;
+  margin-top: 8px;
+  height: 56px;
 }
 
 .ledger-amount-positive .MuiInputBase-input {
