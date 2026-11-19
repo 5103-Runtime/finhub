@@ -39,7 +39,7 @@ builder.Services.AddScoped<ICategorizationRuleService, CategorizationRuleService
 
 builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a bad mapping file fails startup.
 builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
-builder.Services.AddScoped<FinHub.Api.Services.IInsightService, FinHub.Api.Services.InsightService>();
+builder.Services.AddScoped<IInsightService, InsightService>();
 
 // The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit and RateLimiting__Auth__WindowSeconds.
 IConfigurationSection authRateLimit = builder.Configuration.GetSection("RateLimiting:Auth");
