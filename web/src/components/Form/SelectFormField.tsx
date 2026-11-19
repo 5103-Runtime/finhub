@@ -76,6 +76,12 @@ export function SelectFormField<T extends FieldValues>({
           </InputLabel>
           <Select
             {...field}
+            value={
+              field.value &&
+              options.some((option) => option.value === field.value)
+                ? field.value
+                : ""
+            }
             inputRef={ref}
             labelId={labelId}
             label={placeholder && !field.value ? undefined : label}
@@ -87,15 +93,16 @@ export function SelectFormField<T extends FieldValues>({
               .join(" ")}
             displayEmpty={displayEmpty || Boolean(placeholder)}
             onChange={(event) => {
+              const selectedValue = String(event.target.value);
               if (
                 isCategoryField &&
-                event.target.value === MANAGE_CATEGORIES_VALUE
+                selectedValue === MANAGE_CATEGORIES_VALUE
               ) {
                 navigate("/categories");
                 return;
               }
-              field.onChange(event);
-              onValueChange?.(String(event.target.value));
+              field.onChange(selectedValue);
+              onValueChange?.(selectedValue);
             }}
             renderValue={(value) =>
               options.find((option) => option.value === value)?.label ??

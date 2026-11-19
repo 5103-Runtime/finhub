@@ -383,11 +383,9 @@ export default function Transactions() {
       sourceExistingTransaction?.categoryId ?? "",
       { shouldValidate: false },
     );
-    transferForm.setValue(
-      "sourceCategoryWasExplicitlySet",
-      false,
-      { shouldValidate: false },
-    );
+    transferForm.setValue("sourceCategoryWasExplicitlySet", false, {
+      shouldValidate: false,
+    });
   }, [sourceExistingTransaction, transferForm]);
 
   useEffect(() => {
@@ -396,11 +394,9 @@ export default function Transactions() {
       destinationExistingTransaction?.categoryId ?? "",
       { shouldValidate: false },
     );
-    transferForm.setValue(
-      "destinationCategoryWasExplicitlySet",
-      false,
-      { shouldValidate: false },
-    );
+    transferForm.setValue("destinationCategoryWasExplicitlySet", false, {
+      shouldValidate: false,
+    });
   }, [destinationExistingTransaction, transferForm]);
 
   const accountOptions = accounts.map((account) => ({
@@ -680,12 +676,18 @@ export default function Transactions() {
 
   // Clear the error too, so a failed add does not leave a stale page banner.
   const closeTransactionModal = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setIsTransactionModalOpen(false);
     setServerError("");
     setIsDuplicate(false);
   };
 
   const closeTransferModal = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setIsTransferModalOpen(false);
     setServerError("");
     setIsDuplicate(false);
