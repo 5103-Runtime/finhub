@@ -11,6 +11,7 @@ export function CategoryMenuFooter() {
     <MenuItem
       value={MANAGE_CATEGORIES_VALUE}
       className="ledger-category-manage-option"
+      onMouseDown={(event) => event.preventDefault()}
       onClick={() => navigate("/categories")}
     >
       <SettingsRounded fontSize="small" />

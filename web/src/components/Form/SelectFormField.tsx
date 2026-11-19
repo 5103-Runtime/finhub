@@ -1,4 +1,10 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import {
+  useId,
+  useRef,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Controller,
@@ -52,7 +58,15 @@ export function SelectFormField<T extends FieldValues>({
   const { control } = useFormContext<T>();
   const labelId = useId();
   const navigate = useNavigate();
+  const selectRootRef = useRef<HTMLDivElement>(null);
   const isCategoryField = options.some((option) => option.color);
+
+  const focusSelectTrigger = () => {
+    const trigger =
+      selectRootRef.current?.querySelector<HTMLElement>('[role="combobox"]') ??
+      null;
+    trigger?.focus();
+  };
 
   return (
     <Controller
@@ -76,6 +90,7 @@ export function SelectFormField<T extends FieldValues>({
           </InputLabel>
           <Select
             {...field}
+            ref={selectRootRef}
             value={
               field.value &&
               options.some((option) => option.value === field.value)
@@ -92,8 +107,15 @@ export function SelectFormField<T extends FieldValues>({
               .filter(Boolean)
               .join(" ")}
             displayEmpty={displayEmpty || Boolean(placeholder)}
+            onClose={() => {
+              requestAnimationFrame(() => {
+                focusSelectTrigger();
+              });
+            }}
+            autoFocus={false}
             onChange={(event) => {
               const selectedValue = String(event.target.value);
+              focusSelectTrigger();
               if (
                 isCategoryField &&
                 selectedValue === MANAGE_CATEGORIES_VALUE
@@ -116,6 +138,9 @@ export function SelectFormField<T extends FieldValues>({
               slots: isCategoryField ? { list: CategoryMenuList } : undefined,
               slotProps: {
                 paper: {
+                  onMouseDownCapture: (event: MouseEvent) => {
+                    event.preventDefault();
+                  },
                   className: [
                     "app-form-menu",
                     options.some((option) => option.color)
@@ -139,6 +164,7 @@ export function SelectFormField<T extends FieldValues>({
               <MenuItem
                 key={option.value}
                 value={option.value}
+                onMouseDown={(event) => event.preventDefault()}
                 className={option.color ? "ledger-category-option" : undefined}
                 style={
                   option.color
