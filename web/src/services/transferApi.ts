@@ -9,7 +9,10 @@ export interface CreateTransferRequest {
   transferDate: string;
   description: string;
   amount: number;
-  categoryId?: string | null;
+  sourceCategoryId?: string | null;
+  destinationCategoryId?: string | null;
+  sourceCategoryWasExplicitlySet?: boolean;
+  destinationCategoryWasExplicitlySet?: boolean;
   fromTransactionId?: string;
   toTransactionId?: string;
   confirmPotentialDuplicate?: boolean;
@@ -30,6 +33,15 @@ export interface TransferResponse {
 }
 
 /**
+ * Response returned when previewing categorization for transfer ledger lines.
+ */
+export interface TransferCategorizationPreviewResponse {
+  outgoingCategoryId: string | null;
+  incomingCategoryId: string | null;
+  automaticCategoryApplied: boolean;
+}
+
+/**
  * Creates an internal transfer, optionally reusing two existing unlinked transactions.
  */
 export function createTransfer(
@@ -37,6 +49,18 @@ export function createTransfer(
 ): Promise<TransferResponse> {
   return apiPost<CreateTransferRequest, TransferResponse>(
     "/api/transfers",
+    request,
+  );
+}
+
+/**
+ * Previews categorization for a transfer that will create two ledger lines.
+ */
+export function previewTransferCategorization(
+  request: CreateTransferRequest,
+): Promise<TransferCategorizationPreviewResponse> {
+  return apiPost<CreateTransferRequest, TransferCategorizationPreviewResponse>(
+    "/api/transfers/preview-categorization",
     request,
   );
 }

@@ -143,8 +143,8 @@ public sealed class CategorizationExplicitNoneControllerTests
             new DateOnly(2026, 11, 18),
             "Payment",
             25m,
-            null,
-            true);
+            SourceCategoryWasExplicitlySet: true,
+            DestinationCategoryWasExplicitlySet: true);
 
         ActionResult<TransferCategorizationPreviewResponse> result =
             await controller.PreviewCategorization(request, CancellationToken.None);
@@ -155,7 +155,6 @@ public sealed class CategorizationExplicitNoneControllerTests
             (result.Result as OkObjectResult)?.Value as TransferCategorizationPreviewResponse;
         Assert.IsNull(response?.OutgoingCategoryId);
         Assert.IsNull(response?.IncomingCategoryId);
-        Assert.IsNull(response?.SharedCategoryId);
         Assert.IsFalse(response?.AutomaticCategoryApplied);
     }
 
@@ -175,8 +174,8 @@ public sealed class CategorizationExplicitNoneControllerTests
             new DateOnly(2026, 11, 18),
             "Payment",
             25m,
-            null,
-            true);
+            SourceCategoryWasExplicitlySet: true,
+            DestinationCategoryWasExplicitlySet: true);
 
         await controller.Create(request, CancellationToken.None);
 

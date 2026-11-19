@@ -1,4 +1,10 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import {
+  useId,
+  useRef,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Controller,
@@ -34,6 +40,7 @@ export type SelectFormFieldProps<T extends FieldValues> = {
   selectClassName?: string;
   displayEmpty?: boolean;
   placeholder?: string;
+  onValueChange?: (value: string) => void;
 } & Omit<FormControlProps, "error" | "children">;
 
 export function SelectFormField<T extends FieldValues>({
@@ -44,13 +51,22 @@ export function SelectFormField<T extends FieldValues>({
   selectClassName,
   displayEmpty = false,
   placeholder,
+  onValueChange,
   required = false,
   ...props
 }: SelectFormFieldProps<T>) {
   const { control } = useFormContext<T>();
   const labelId = useId();
   const navigate = useNavigate();
+  const selectRootRef = useRef<HTMLDivElement>(null);
   const isCategoryField = options.some((option) => option.color);
+
+  const focusSelectTrigger = () => {
+    const trigger =
+      selectRootRef.current?.querySelector<HTMLElement>('[role="combobox"]') ??
+      null;
+    trigger?.focus();
+  };
 
   return (
     <Controller
@@ -74,6 +90,13 @@ export function SelectFormField<T extends FieldValues>({
           </InputLabel>
           <Select
             {...field}
+            ref={selectRootRef}
+            value={
+              field.value &&
+              options.some((option) => option.value === field.value)
+                ? field.value
+                : ""
+            }
             inputRef={ref}
             labelId={labelId}
             label={placeholder && !field.value ? undefined : label}
@@ -84,15 +107,24 @@ export function SelectFormField<T extends FieldValues>({
               .filter(Boolean)
               .join(" ")}
             displayEmpty={displayEmpty || Boolean(placeholder)}
+            onClose={() => {
+              requestAnimationFrame(() => {
+                focusSelectTrigger();
+              });
+            }}
+            autoFocus={false}
             onChange={(event) => {
+              const selectedValue = String(event.target.value);
+              focusSelectTrigger();
               if (
                 isCategoryField &&
-                event.target.value === MANAGE_CATEGORIES_VALUE
+                selectedValue === MANAGE_CATEGORIES_VALUE
               ) {
                 navigate("/categories");
                 return;
               }
-              field.onChange(event);
+              field.onChange(selectedValue);
+              onValueChange?.(selectedValue);
             }}
             renderValue={(value) =>
               options.find((option) => option.value === value)?.label ??
@@ -106,6 +138,9 @@ export function SelectFormField<T extends FieldValues>({
               slots: isCategoryField ? { list: CategoryMenuList } : undefined,
               slotProps: {
                 paper: {
+                  onMouseDownCapture: (event: MouseEvent) => {
+                    event.preventDefault();
+                  },
                   className: [
                     "app-form-menu",
                     options.some((option) => option.color)
@@ -129,6 +164,7 @@ export function SelectFormField<T extends FieldValues>({
               <MenuItem
                 key={option.value}
                 value={option.value}
+                onMouseDown={(event) => event.preventDefault()}
                 className={option.color ? "ledger-category-option" : undefined}
                 style={
                   option.color

@@ -31,15 +31,24 @@ export function DialogBase({
   actions,
   children,
 }: DialogBaseProps) {
+  const closeDialog = () => {
+    if (busy) {
+      return;
+    }
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    onClose();
+  };
+
   return (
     <Dialog
       open={open}
       fullWidth
       maxWidth={maxWidth}
       className="app-dialog"
-      onClose={() => {
-        if (!busy) onClose();
-      }}
+      disableRestoreFocus
+      onClose={closeDialog}
       slotProps={{ transition: { onEntered, onExited } }}
     >
       <DialogTitle>{title}</DialogTitle>

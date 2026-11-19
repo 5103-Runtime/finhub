@@ -5,10 +5,8 @@ namespace FinHub.Api.DTOs.Transfer;
 /// </summary>
 /// <param name="OutgoingCategoryId">The category suggested for the source ledger line.</param>
 /// <param name="IncomingCategoryId">The category suggested for the destination ledger line.</param>
-/// <param name="SharedCategoryId">The shared category when both ledger lines resolve to the same category.</param>
-/// <param name="AutomaticCategoryApplied">Whether a shared category can be applied to the transfer.</param>
+/// <param name="AutomaticCategoryApplied">Whether both ledger suggestions are identical and were categorized automatically.</param>
 public sealed record TransferCategorizationPreviewResponse(
     Guid? OutgoingCategoryId,
     Guid? IncomingCategoryId,
-    Guid? SharedCategoryId,
     bool AutomaticCategoryApplied);

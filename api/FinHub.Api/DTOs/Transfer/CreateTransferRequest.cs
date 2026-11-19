@@ -10,8 +10,10 @@ namespace FinHub.Api.DTOs.Transfer;
 /// <param name="TransferDate">The date the transfer occurred.</param>
 /// <param name="Description">The description stored on both ledger lines, up to 500 characters.</param>
 /// <param name="Amount">The positive amount to move.</param>
-/// <param name="CategoryId">The optional category applied to newly created ledger lines.</param>
-/// <param name="CategoryWasExplicitlySet">Whether the category value, including null, was chosen explicitly by the user.</param>
+/// <param name="SourceCategoryId">The optional category applied to a newly created source ledger line.</param>
+/// <param name="DestinationCategoryId">The optional category applied to a newly created destination ledger line.</param>
+/// <param name="SourceCategoryWasExplicitlySet">Whether the source category was explicitly chosen, including None.</param>
+/// <param name="DestinationCategoryWasExplicitlySet">Whether the destination category was explicitly chosen, including None.</param>
 /// <param name="FromTransactionId">An optional existing unlinked outgoing transaction to reuse.</param>
 /// <param name="ToTransactionId">An optional existing unlinked incoming transaction to reuse.</param>
 /// <param name="ConfirmPotentialDuplicate">Whether to create the transfer after the API reports a potential duplicate.</param>
@@ -21,8 +23,10 @@ public sealed record CreateTransferRequest(
     [Required] DateOnly? TransferDate,
     [Required, StringLength(500)] string Description,
     [Required, Range(typeof(decimal), "0.01", "999999999999.99")] decimal? Amount,
-    Guid? CategoryId = null,
-    bool CategoryWasExplicitlySet = false,
+    Guid? SourceCategoryId = null,
+    Guid? DestinationCategoryId = null,
+    bool SourceCategoryWasExplicitlySet = false,
+    bool DestinationCategoryWasExplicitlySet = false,
     Guid? FromTransactionId = null,
     Guid? ToTransactionId = null,
     bool ConfirmPotentialDuplicate = false);
