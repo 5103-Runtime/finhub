@@ -60,12 +60,10 @@ export default function InsightAlertList({
 
     window.addEventListener(INSIGHTS_CHANGED_EVENT, handleInsightChange);
     window.addEventListener("focus", handleWindowFocus);
-    const pollingTimer = window.setInterval(handleWindowFocus, 10_000);
 
     return () => {
       window.removeEventListener(INSIGHTS_CHANGED_EVENT, handleInsightChange);
       window.removeEventListener("focus", handleWindowFocus);
-      window.clearInterval(pollingTimer);
     };
   }, []);
 

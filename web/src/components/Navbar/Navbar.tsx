@@ -158,13 +158,11 @@ export default function Navbar() {
     const handleWindowFocus = () => refreshUnreadInsights(true);
     window.addEventListener(INSIGHTS_CHANGED_EVENT, handleInsightChange);
     window.addEventListener("focus", handleWindowFocus);
-    const pollingTimer = window.setInterval(handleWindowFocus, 30000);
 
     return () => {
       isCurrentRequest = false;
       window.removeEventListener(INSIGHTS_CHANGED_EVENT, handleInsightChange);
       window.removeEventListener("focus", handleWindowFocus);
-      window.clearInterval(pollingTimer);
     };
   }, []);
 
