@@ -212,7 +212,7 @@ export default function Accounts() {
         component={Link}
         to={`/transactions?accountId=${account.id}`}
         key={account.id}
-        className="account-management-card"
+        className="account-management-card loaded-list-item"
       >
         <CardContent>
           <Box className={`account-management-icon ${account.accountType}`}>
