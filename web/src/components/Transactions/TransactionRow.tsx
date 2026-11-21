@@ -233,7 +233,7 @@ export function TransactionRow({
 
   return (
     <>
-      <Box className="ledger-row">
+      <Box className="ledger-row loaded-list-item">
         <Typography className="ledger-date">
           {formatTransactionDate(transaction.transactionDate)}
         </Typography>
