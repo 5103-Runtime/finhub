@@ -55,6 +55,7 @@ import {
   getCategories,
   type CategoryResponse,
 } from "@app/services/categoriesApi";
+import { notifyInsightsChanged } from "@app/services/insightsApi";
 import {
   getEmptyTransactionForm,
   transactionFilterSchema,
@@ -628,6 +629,7 @@ export default function Transactions() {
         description: transaction.description,
         amount: transaction.amount,
       });
+      notifyInsightsChanged();
       await reloadTransactions();
     } catch (requestError) {
       setServerError(
@@ -715,6 +717,7 @@ export default function Transactions() {
         return next;
       });
       closeTransactionModal();
+      notifyInsightsChanged();
       if (await reloadTransactions()) {
         if (created.automaticCategoryApplied) {
           const categoryName =
@@ -794,6 +797,7 @@ export default function Transactions() {
         confirmPotentialDuplicate: isDuplicate,
       });
       closeTransferModal();
+      notifyInsightsChanged();
       if (await reloadTransactions()) {
         setSuccessMessage("Transfer created successfully.");
       }
@@ -838,6 +842,7 @@ export default function Transactions() {
       amount: Number(data.amount),
       confirmPotentialDuplicate,
     });
+    notifyInsightsChanged();
     if (await reloadTransactions()) {
       setEditingId(null);
       if (editedTransaction?.transferId) {
@@ -873,6 +878,7 @@ export default function Transactions() {
         );
         setSuccessMessage("Transaction deleted successfully.");
       }
+      notifyInsightsChanged();
       setIsDeleteModalOpen(false);
     } catch (requestError) {
       setServerError(
@@ -893,6 +899,7 @@ export default function Transactions() {
     setSuccessMessage("");
     try {
       await unlinkTransfer(transactionToDelete.transferId);
+      notifyInsightsChanged();
       setIsDeleteModalOpen(false);
       if (await reloadTransactions()) {
         setSuccessMessage("Transfer unlinked successfully.");
