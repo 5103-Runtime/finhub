@@ -319,7 +319,7 @@ public sealed class InsightRulesTests
                 InsightSeverities.Warning,
                 null,
                 purchase.Id,
-                null,
+                "CAD",
                 null,
                 60m,
                 20m),

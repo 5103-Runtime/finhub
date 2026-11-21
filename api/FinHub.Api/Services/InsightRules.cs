@@ -264,7 +264,7 @@ internal static class InsightRules
                     GetSeverity(amount, median * threshold * CriticalThresholdMultiplier),
                     null,
                     purchase.Id,
-                    null,
+                    group.Key.Currency,
                     null,
                     amount,
                     median));
@@ -407,8 +407,10 @@ internal static class InsightRules
         state.InsightType == insight.InsightType
         && state.CategoryId == insight.CategoryId
         && state.TransactionId == insight.TransactionId
-        && state.Currency == insight.Currency
-        && state.PeriodStart == insight.PeriodStart;
+        && (insight.InsightType == InsightTypes.UnusualPurchase
+            || state.Currency == insight.Currency)
+        && (insight.InsightType == InsightTypes.UnusualPurchase
+            || state.PeriodStart == insight.PeriodStart);
 
     /// <summary>
     /// Determines whether a transaction counts as spending in a category.
