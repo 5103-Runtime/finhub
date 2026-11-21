@@ -33,6 +33,7 @@ import {
   formatTransactionDate,
 } from "@app/utils/transactions";
 import type { CategoryOption } from "@app/components/Transactions/categoryTypes";
+import { notifyInsightsChanged } from "@app/services/insightsApi";
 import "./StatementImportDialog.css";
 
 type StatementImportDialogProps = {
@@ -144,6 +145,7 @@ export default function StatementImportDialog({
           confirmPotentialDuplicate: row.potentialDuplicate,
         })),
       });
+      notifyInsightsChanged();
       await onImported(selectedAccountId, selectedRows.length);
       onClose();
     } catch (requestError) {
