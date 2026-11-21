@@ -83,6 +83,7 @@ export default function Overview() {
   );
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState("");
+  const [unreadInsightCount, setUnreadInsightCount] = useState(0);
 
   // Load the authenticated user's profile.
   useEffect(() => {
@@ -439,12 +440,23 @@ export default function Overview() {
                     Spending pulse
                   </Typography>
                 </Box>
+                {unreadInsightCount > 0 ? (
+                  <Button
+                    component={Link}
+                    to="/insights"
+                    className="text-action"
+                    endIcon={<ArrowForwardRounded />}
+                  >
+                    View all insights
+                  </Button>
+                ) : null}
               </Box>
 
               <InsightAlertList
                 view="unread"
                 maxItems={2}
                 compact
+                onCountChange={setUnreadInsightCount}
               />
             </Box>
           </Box>
