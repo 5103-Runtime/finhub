@@ -358,11 +358,12 @@ export default function Navbar() {
                         alert.amount,
                         alert.currency ?? "CAD",
                       )}
-                      {" compared with "}
+                      {" compared to "}
                       {formatDashboardCurrency(
                         alert.baseline,
                         alert.currency ?? "CAD",
                       )}
+                      {" baseline"}
                     </Typography>
                   </Box>
                   <Stack
