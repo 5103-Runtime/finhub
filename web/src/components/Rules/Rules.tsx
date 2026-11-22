@@ -21,7 +21,10 @@ import { ConfirmDialog } from "@app/components/Dialog";
 import { CategoryChip } from "@app/components/Category/CategoryChip";
 import type { SelectOption } from "@app/components/Form/SelectFormField";
 import { getAccounts, type AccountResponse } from "@app/services/accountsApi";
-import { getCategories, type CategoryResponse } from "@app/services/categoriesApi";
+import {
+  getCategories,
+  type CategoryResponse,
+} from "@app/services/categoriesApi";
 import {
   deleteCategorizationRule,
   disableCategorizationRule,
@@ -50,9 +53,7 @@ function describeConditions(
     conditions.push(`Description contains “${rule.descriptionContains}”`);
   }
   if (rule.amountDirection) {
-    conditions.push(
-      rule.amountDirection === "in" ? "Money in" : "Money out",
-    );
+    conditions.push(rule.amountDirection === "in" ? "Money in" : "Money out");
   }
   return conditions;
 }
@@ -75,11 +76,7 @@ export default function Rules() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getCategorizationRules(),
-      getCategories(),
-      getAccounts(),
-    ])
+    Promise.all([getCategorizationRules(), getCategories(), getAccounts()])
       .then(([loadedRules, loadedCategories, loadedAccounts]) => {
         setRules(loadedRules);
         setCategories(loadedCategories);
@@ -111,7 +108,10 @@ export default function Rules() {
   const accountOptions: SelectOption[] = useMemo(
     () => [
       { value: "", label: "Any account" },
-      ...accounts.map((account) => ({ value: account.id, label: account.name })),
+      ...accounts.map((account) => ({
+        value: account.id,
+        label: account.name,
+      })),
     ],
     [accounts],
   );
@@ -157,7 +157,10 @@ export default function Rules() {
     }
 
     const reordered = [...rules];
-    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    [reordered[index], reordered[target]] = [
+      reordered[target],
+      reordered[index],
+    ];
 
     setBusyRuleId(rules[index].id);
     setActionError("");
@@ -205,6 +208,13 @@ export default function Rules() {
               <Typography component="h1" className="accounts-title">
                 Rules
               </Typography>
+              {!loading && rules.length > 0 && (
+                <Typography className="rules-summary">
+                  {rules.filter((rule) => rule.isEnabled).length} active
+                  {" \u00b7 "}
+                  {rules.length} {rules.length === 1 ? "rule" : "rules"}
+                </Typography>
+              )}
             </Box>
             <Button
               className="accounts-add-button"
@@ -230,10 +240,24 @@ export default function Rules() {
           {loading ? (
             <Typography className="accounts-empty">Loading rules...</Typography>
           ) : rules.length === 0 ? (
-            <Typography className="accounts-empty">
-              No rules yet. Add one to categorize matching transactions
-              automatically.
-            </Typography>
+            <Card className="rule-empty-card">
+              <CardContent>
+                <Typography component="h2" className="rule-empty-title">
+                  No rules yet
+                </Typography>
+                <Typography className="rule-empty-copy">
+                  Add a rule to categorize matching transactions automatically.
+                </Typography>
+                <Button
+                  className="accounts-add-button"
+                  startIcon={<AddRounded />}
+                  onClick={openCreate}
+                  disabled={categories.length === 0}
+                >
+                  Add your first rule
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <Stack spacing={1.5} component="ol" className="rules-list">
               {rules.map((rule, index) => {
@@ -247,10 +271,16 @@ export default function Rules() {
                     className={`rule-card${rule.isEnabled ? "" : " disabled"}`}
                   >
                     <CardContent>
-                      <Typography className="rule-priority" aria-hidden>
-                        {index + 1}
-                      </Typography>
+                      <Box
+                        className="rule-priority"
+                        aria-label={`Priority ${index + 1}`}
+                      >
+                        <Typography component="span">{index + 1}</Typography>
+                      </Box>
                       <Box className="rule-body">
+                        <Typography className="rule-section-label">
+                          IF
+                        </Typography>
                         <Box className="rule-conditions">
                           {conditions.map((condition) => (
                             <span className="rule-condition" key={condition}>
@@ -259,7 +289,9 @@ export default function Rules() {
                           ))}
                         </Box>
                         <Box className="rule-result">
-                          <span className="rule-arrow">Category:</span>
+                          <Typography className="rule-section-label">
+                            THEN
+                          </Typography>
                           {category ? (
                             <CategoryChip name={category.name} />
                           ) : (
@@ -267,23 +299,25 @@ export default function Rules() {
                               Deleted category
                             </span>
                           )}
-                          {!rule.isEnabled && (
-                            <span className="rule-status">Disabled</span>
-                          )}
                         </Box>
                       </Box>
                       <Box className="rule-actions">
-                        <Switch
-                          size="small"
-                          checked={rule.isEnabled}
-                          disabled={busy}
-                          onChange={() => handleToggle(rule)}
-                          slotProps={{
-                            input: {
-                              "aria-label": `${rule.isEnabled ? "Disable" : "Enable"} rule ${index + 1}`,
-                            },
-                          }}
-                        />
+                        <Box className="rule-toggle">
+                          <Typography className="rule-toggle-label">
+                            {rule.isEnabled ? "Enabled" : "Disabled"}
+                          </Typography>
+                          <Switch
+                            size="small"
+                            checked={rule.isEnabled}
+                            disabled={busy}
+                            onChange={() => handleToggle(rule)}
+                            slotProps={{
+                              input: {
+                                "aria-label": `${rule.isEnabled ? "Disable" : "Enable"} rule ${index + 1}`,
+                              },
+                            }}
+                          />
+                        </Box>
                         <Button
                           className="account-icon-button"
                           aria-label={`Move rule ${index + 1} up`}
