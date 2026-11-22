@@ -35,6 +35,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import "@app/components/Accounts/Accounts.css";
 import "./Categories.css";
 import { useNavigate } from "react-router-dom";
+import { RuleRounded } from "@mui/icons-material";
 
 
 
@@ -158,10 +159,10 @@ export default function Categories() {
               {/* This can be changed if a different way to navigate to rule creation is wanted */}
               <Button
                 className="accounts-add-button"
-                startIcon={<EditRounded />}
+                startIcon={<RuleRounded />}
                 onClick={() => navigate("/rules")}
               >
-                Edit rules
+                Manage rules
               </Button>
             </Stack>
           </Box>
