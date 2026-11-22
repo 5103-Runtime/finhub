@@ -717,6 +717,12 @@
   background: var(--border-accent) !important;
 }
 
+.ledger-category-rules-option {
+  margin-top: 0 !important;
+  border-top: 0 !important;
+  border-radius: 0 0 8px 8px;
+}
+
 .ledger-actions {
   display: flex;
   justify-content: flex-end;
