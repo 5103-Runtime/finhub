@@ -22,7 +22,7 @@
 }
 
 .insights-currency-control {
-  min-width: 140px;
+  width: 100px;
 }
 
 .insights-currency-control .MuiInputLabel-root,
@@ -55,8 +55,7 @@
 }
 
 .insights-currency-control .MuiInputLabel-root {
-  background: var(--color-ink);
-  padding: 0 4px;
+  background: transparent;
 }
 
 .insights-currency-control .MuiSvgIcon-root {
