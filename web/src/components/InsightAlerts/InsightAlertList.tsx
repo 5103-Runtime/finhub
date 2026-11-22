@@ -117,7 +117,6 @@ export default function InsightAlertList({
       currency:
         alert.insightType === "category_spike" ? alert.currency : undefined,
       periodStart: alert.periodStart,
-      amount: alert.amount,
     };
 
     try {

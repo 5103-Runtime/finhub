@@ -214,7 +214,6 @@ export default function Insights() {
                 ? alert.currency
                 : undefined,
             periodStart: alert.periodStart,
-            amount: alert.amount,
           }),
         ),
       );
