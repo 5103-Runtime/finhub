@@ -64,7 +64,7 @@ export default function RuleFormDialog({
     useEffect(() => {
         if (open) {
             form.reset(rule ? toFormValues(rule) : emptyRuleForm);
-            setServerError("");
+            
         }
     }, [open, rule, form]);
 
@@ -89,6 +89,10 @@ export default function RuleFormDialog({
             setServerError(getErrorMessage(error, "Unable to save the rule."));
         }
     };
+    const handleClose = () => {
+        setServerError("");
+        onClose();
+    };
 
     return (
         <FormDialog
@@ -96,7 +100,7 @@ export default function RuleFormDialog({
             title={rule ? "Edit rule" : "Add a rule"}
             form={form}
             onSubmit={onSubmit}
-            onClose={onClose}
+            onClose={handleClose}
             submitLabel={rule ? "Save rule" : "Add rule"}
             error={serverError}
         >
