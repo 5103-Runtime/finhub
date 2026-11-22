@@ -16,6 +16,8 @@ import MenuRounded from "@mui/icons-material/MenuRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
 import NotificationsNoneRounded from "@mui/icons-material/NotificationsNoneRounded";
+import ErrorOutlineRounded from "@mui/icons-material/ErrorOutlineRounded";
+import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogout } from "@app/hooks/useLogout";
 import { getProfile, type ProfileResponse } from "@app/services/profileApi";
@@ -32,6 +34,10 @@ import {
   getCategories,
   type CategoryResponse,
 } from "@app/services/categoriesApi";
+import {
+  getTransactions,
+  type TransactionResponse,
+} from "@app/services/transactionApi";
 import { formatDashboardCurrency } from "@app/utils/finance";
 import "./Navbar.css";
 
@@ -54,6 +60,7 @@ export default function Navbar() {
   const [categoriesById, setCategoriesById] = useState<
     Map<string, CategoryResponse>
   >(new Map());
+  const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [notificationAnchor, setNotificationAnchor] =
     useState<null | HTMLElement>(null);
   const profileTriggerRef = useRef<HTMLButtonElement>(null);
@@ -117,11 +124,12 @@ export default function Navbar() {
     let isCurrentRequest = true;
 
     const refreshUnreadInsights = (showPopup = false) => {
-      Promise.all([getUnreadAlerts(6), getCategories()])
-        .then(([alerts, categories]) => {
+      Promise.all([getUnreadAlerts(6), getCategories(), getTransactions()])
+        .then(([alerts, categories, loadedTransactions]) => {
           if (isCurrentRequest) {
             setUnreadInsightCount(alerts.length);
             setUnreadInsights(alerts);
+            setTransactions(loadedTransactions);
             setCategoriesById(
               new Map(categories.map((category) => [category.id, category])),
             );
@@ -180,7 +188,11 @@ export default function Navbar() {
             ? (categoriesById.get(alert.categoryId)?.name ?? "Category")
             : "Category"
         } spending spike`
-      : "Unusual purchase";
+      : `${
+          alert.categoryId
+            ? (categoriesById.get(alert.categoryId)?.name ?? "Category")
+            : "Category"
+        } unusual purchase`;
   const getAlertRequest = (
     alert: InsightAlertResponse,
   ): UpdateInsightStateRequest => ({
@@ -191,6 +203,54 @@ export default function Navbar() {
       alert.insightType === "category_spike" ? alert.currency : undefined,
     periodStart: alert.periodStart,
   });
+
+  const getAlertTransactionUrl = (alert: InsightAlertResponse): string => {
+    const params = new URLSearchParams();
+
+    if (alert.categoryId) {
+      params.set("categoryId", alert.categoryId);
+    }
+
+    if (alert.periodStart) {
+      const periodStart = new Date(`${alert.periodStart}T00:00:00`);
+      const periodEnd = new Date(
+        periodStart.getFullYear(),
+        periodStart.getMonth() + 1,
+        0,
+      );
+      params.set("fromDate", alert.periodStart);
+      params.set(
+        "toDate",
+        `${periodEnd.getFullYear()}-${String(periodEnd.getMonth() + 1).padStart(2, "0")}-${String(periodEnd.getDate()).padStart(2, "0")}`,
+      );
+    }
+
+    if (alert.insightType === "category_spike") {
+      params.set("maxAmount", "0");
+    }
+
+    if (alert.transactionId) {
+      const transaction = transactions.find(
+        (candidate) => candidate.id === alert.transactionId,
+      );
+      if (!transaction) {
+        return `/transactions?${params.toString()}`;
+      }
+      params.set("accountId", transaction.accountId);
+      params.set("fromDate", transaction.transactionDate);
+      params.set("toDate", transaction.transactionDate);
+      params.set("minAmount", String(transaction.amount));
+      params.set("maxAmount", String(transaction.amount));
+      params.set("search", transaction.description);
+      if (transaction.categoryId) {
+        params.set("categoryId", transaction.categoryId);
+      } else {
+        params.set("uncategorized", "true");
+      }
+    }
+
+    return `/transactions?${params.toString()}`;
+  };
 
   const updateNotification = async (
     alert: InsightAlertResponse,
@@ -349,37 +409,58 @@ export default function Navbar() {
             ) : (
               unreadInsights.map((alert) => (
                 <Box key={alert.id} className="dashboard-notification-item">
-                  <Box className="dashboard-notification-copy">
-                    <Typography className="dashboard-notification-title">
-                      {getAlertTitle(alert)}
-                    </Typography>
-                    <Typography className="dashboard-notification-detail">
-                      {formatDashboardCurrency(
-                        alert.amount,
-                        alert.currency ?? "CAD",
+                  <Link
+                    className="dashboard-notification-link"
+                    to={getAlertTransactionUrl(alert)}
+                    onClick={() => setNotificationAnchor(null)}
+                  >
+                    <Box
+                      className={`dashboard-notification-icon ${alert.severity}`}
+                    >
+                      {alert.severity === "critical" ? (
+                        <ErrorOutlineRounded />
+                      ) : (
+                        <WarningAmberRounded />
                       )}
-                      {" compared to "}
-                      {formatDashboardCurrency(
-                        alert.baseline,
-                        alert.currency ?? "CAD",
-                      )}
-                      {" baseline"}
-                    </Typography>
-                  </Box>
+                    </Box>
+                    <Box className="dashboard-notification-copy">
+                      <Typography className="dashboard-notification-title">
+                        {getAlertTitle(alert)}
+                      </Typography>
+                      <Typography className="dashboard-notification-detail">
+                        {formatDashboardCurrency(
+                          alert.amount,
+                          alert.currency ?? "CAD",
+                        )}
+                        {" compared to "}
+                        {formatDashboardCurrency(
+                          alert.baseline,
+                          alert.currency ?? "CAD",
+                        )}
+                        {" baseline"}
+                      </Typography>
+                    </Box>
+                  </Link>
                   <Stack
                     direction="row"
                     className="dashboard-notification-actions"
                   >
                     <Button
                       size="small"
-                      onClick={() => void updateNotification(alert, "read")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void updateNotification(alert, "read");
+                      }}
                     >
                       Read
                     </Button>
                     <Button
                       size="small"
                       color="inherit"
-                      onClick={() => void updateNotification(alert, "dismiss")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void updateNotification(alert, "dismiss");
+                      }}
                     >
                       Dismiss
                     </Button>
