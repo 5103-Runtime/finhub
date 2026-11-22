@@ -16,6 +16,7 @@ import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 import {
   CategoryMenuFooter,
   MANAGE_CATEGORIES_VALUE,
+  MANAGE_RULES_VALUE,
 } from "@app/components/Category/CategoryMenuFooter";
 import StatementUpload from "@app/components/StatementUpload";
 import type { AccountResponse } from "@app/services/accountsApi";
@@ -279,15 +280,17 @@ export default function StatementImportDialog({
             {rows.length} {rows.length === 1 ? "line" : "lines"} found in{" "}
             <strong>{file?.name}</strong>
             {parsed && parsed.skippedRows > 0
-              ? `, ${parsed.skippedRows} pending ${parsed.skippedRows === 1 ? "row" : "rows"
-              } skipped`
+              ? `, ${parsed.skippedRows} pending ${
+                  parsed.skippedRows === 1 ? "row" : "rows"
+                } skipped`
               : ""}
             . Nothing is saved until you import.
           </Typography>
           <Typography className="statement-preview-summary">
             {suggestedCount > 0
-              ? `${suggestedCount} ${suggestedCount === 1 ? "category was" : "categories were"
-              } suggested by your rules. Change any you disagree with. `
+              ? `${suggestedCount} ${
+                  suggestedCount === 1 ? "category was" : "categories were"
+                } suggested by your rules. Change any you disagree with. `
               : "No categories were suggested by your rules. "}
             <Link
               to="/rules"
@@ -394,6 +397,10 @@ export default function StatementImportDialog({
                         onChange={(event) => {
                           if (event.target.value === MANAGE_CATEGORIES_VALUE) {
                             navigate("/categories");
+                            return;
+                          }
+                          if (event.target.value === MANAGE_RULES_VALUE) {
+                            navigate("/rules");
                             return;
                           }
                           updateRow(row.statementLine, {
