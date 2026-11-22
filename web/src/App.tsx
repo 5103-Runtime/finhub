@@ -14,6 +14,7 @@ import Accounts from "@app/components/Accounts";
 import Transactions from "@app/components/Transactions";
 import Insights from "@app/components/Insights";
 import Categories from "@app/components/Categories";
+import Rules from "@app/components/Rules";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/insights" element={<Insights />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/rules" element={<Rules />} />
       </Route>
 
       {/* 404 Catch-All */}

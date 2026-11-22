@@ -9,13 +9,14 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { DialogBase } from "@app/components/Dialog/DialogBase";
 import { FormAlert } from "@app/components/Form/FormAlert";
 import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 import {
   CategoryMenuFooter,
   MANAGE_CATEGORIES_VALUE,
+  MANAGE_RULES_VALUE,
 } from "@app/components/Category/CategoryMenuFooter";
 import StatementUpload from "@app/components/StatementUpload";
 import type { AccountResponse } from "@app/services/accountsApi";
@@ -48,7 +49,16 @@ type PreviewRow = ParsedTransactionResponse & {
   include: boolean;
   categoryId: string;
   categoryWasExplicitlySet: boolean;
+  suggestedCategoryId: string;
 };
+
+function isSuggested(row: PreviewRow): boolean {
+  return (
+    row.suggestedCategoryId !== "" &&
+    row.categoryId === row.suggestedCategoryId &&
+    !row.categoryWasExplicitlySet
+  );
+}
 
 function getCategorySelectWidth(categoryOptions: CategoryOption[]): string {
   const longestLabelLength = Math.max(
@@ -85,6 +95,7 @@ export default function StatementImportDialog({
   const categorySelectWidth = getCategorySelectWidth(categoryOptions);
   const selectedRows = rows.filter((row) => row.include);
   const duplicateCount = rows.filter((row) => row.potentialDuplicate).length;
+  const suggestedCount = rows.filter(isSuggested).length;
   const allSelected = rows.length > 0 && selectedRows.length === rows.length;
   const columnLabel = (value: string) => value.replace("_", " ");
 
@@ -113,6 +124,7 @@ export default function StatementImportDialog({
           include: !transaction.potentialDuplicate,
           categoryId: transaction.categoryId ?? "",
           categoryWasExplicitlySet: false,
+          suggestedCategoryId: transaction.categoryId ?? "",
         })),
       );
       setStep("preview");
@@ -273,6 +285,20 @@ export default function StatementImportDialog({
               : ""}
             . Nothing is saved until you import.
           </Typography>
+          <Typography className="statement-preview-summary">
+            {suggestedCount > 0
+              ? `${suggestedCount} ${
+                  suggestedCount === 1 ? "category was" : "categories were"
+                } suggested by your rules. Change any you disagree with. `
+              : "No categories were suggested by your rules. "}
+            <Link
+              to="/rules"
+              className="statement-preview-rules-link"
+              onClick={onClose}
+            >
+              Manage rules
+            </Link>
+          </Typography>
 
           {institutionMismatch && (
             <FormAlert severity="warning">
@@ -359,53 +385,64 @@ export default function StatementImportDialog({
                         </Typography>
                       )}
                     </Box>
-                    <Select
-                      value={row.categoryId}
-                      size="small"
-                      displayEmpty
-                      disabled={!row.include || busy}
-                      aria-label={`Category for ${row.description}`}
-                      className="ledger-category-form-select statement-preview-category"
-                      onChange={(event) => {
-                        if (event.target.value === MANAGE_CATEGORIES_VALUE) {
-                          navigate("/categories");
-                          return;
-                        }
-                        updateRow(row.statementLine, {
-                          categoryId: event.target.value,
-                          categoryWasExplicitlySet: true,
-                        });
-                      }}
-                      renderValue={() => selectedCategory.label}
-                      MenuProps={{
-                        slots: { list: CategoryMenuList },
-                        slotProps: {
-                          paper: { className: "ledger-category-menu" },
-                        },
-                      }}
-                      style={
-                        {
-                          "--category-color": selectedCategory.color,
-                          "--category-select-width": categorySelectWidth,
-                        } as CSSProperties
-                      }
-                    >
-                      {categoryOptions.map((option) => (
-                        <MenuItem
-                          key={option.value || "uncategorized"}
-                          value={option.value}
-                          className="ledger-category-option"
-                          style={
-                            {
-                              "--category-color": option.color,
-                            } as CSSProperties
+                    <Box className="statement-preview-category-cell">
+                      <Select
+                        value={row.categoryId}
+                        size="small"
+                        displayEmpty
+                        disabled={!row.include || busy}
+                        aria-label={`Category for ${row.description}`}
+                        className="ledger-category-form-select statement-preview-category"
+                        onChange={(event) => {
+                          if (event.target.value === MANAGE_CATEGORIES_VALUE) {
+                            navigate("/categories");
+                            return;
                           }
-                        >
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                      <CategoryMenuFooter />
-                    </Select>
+                          if (event.target.value === MANAGE_RULES_VALUE) {
+                            navigate("/rules");
+                            return;
+                          }
+                          updateRow(row.statementLine, {
+                            categoryId: event.target.value,
+                            categoryWasExplicitlySet: true,
+                          });
+                        }}
+                        renderValue={() => selectedCategory.label}
+                        MenuProps={{
+                          slots: { list: CategoryMenuList },
+                          slotProps: {
+                            paper: { className: "ledger-category-menu" },
+                          },
+                        }}
+                        style={
+                          {
+                            "--category-color": selectedCategory.color,
+                            "--category-select-width": categorySelectWidth,
+                          } as CSSProperties
+                        }
+                      >
+                        {categoryOptions.map((option) => (
+                          <MenuItem
+                            key={option.value || "uncategorized"}
+                            value={option.value}
+                            className="ledger-category-option"
+                            style={
+                              {
+                                "--category-color": option.color,
+                              } as CSSProperties
+                            }
+                          >
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                        <CategoryMenuFooter />
+                      </Select>
+                      {isSuggested(row) && (
+                        <Typography className="statement-preview-suggested">
+                          Suggested by rule
+                        </Typography>
+                      )}
+                    </Box>
                     <Typography
                       className={`statement-preview-amount${row.amount > 0 ? " positive" : ""}`}
                     >

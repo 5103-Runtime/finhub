@@ -34,6 +34,8 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "@app/components/Accounts/Accounts.css";
 import "./Categories.css";
+import { useNavigate } from "react-router-dom";
+import { RuleRounded } from "@mui/icons-material";
 
 export default function Categories() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -52,6 +54,7 @@ export default function Categories() {
     defaultValues: emptyCategoryForm,
     mode: "onTouched",
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     getCategories()
@@ -142,13 +145,23 @@ export default function Categories() {
                 Categories
               </Typography>
             </Box>
-            <Button
-              className="accounts-add-button"
-              startIcon={<AddRounded />}
-              onClick={openCreate}
-            >
-              Add category
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                className="accounts-add-button"
+                startIcon={<AddRounded />}
+                onClick={openCreate}
+              >
+                Add category
+              </Button>
+              {/* This can be changed if a different way to navigate to rule creation is wanted */}
+              <Button
+                className="accounts-add-button"
+                startIcon={<RuleRounded />}
+                onClick={() => navigate("/rules")}
+              >
+                Manage rules
+              </Button>
+            </Stack>
           </Box>
           {loadError && (
             <Alert className="page-error" severity="error" variant="outlined">
