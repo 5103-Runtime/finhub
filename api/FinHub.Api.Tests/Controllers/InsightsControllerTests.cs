@@ -225,6 +225,42 @@ public sealed class InsightsControllerTests
     }
 
     /// <summary>
+    /// Verifies that state actions validate older history alerts within the supported window.
+    /// </summary>
+    [TestMethod]
+    public async Task MarkRead_AcceptsAnAlertFromTheMaximumHistoryWindow()
+    {
+        using FinHubDbContext dbContext = CreateDbContext();
+        RecordingInsightService service = new(
+        [
+            new Insight(
+                InsightTypes.CategorySpike,
+                InsightSeverities.Warning,
+                CategoryId,
+                null,
+                "CAD",
+                new DateOnly(2025, 12, 1),
+                150m,
+                100m)
+        ]);
+        InsightsController controller = CreateController(dbContext, service);
+        UpdateInsightStateRequest request = new()
+        {
+            InsightType = InsightTypes.CategorySpike,
+            CategoryId = CategoryId,
+            Currency = "CAD",
+            PeriodStart = new DateOnly(2025, 12, 1)
+        };
+
+        ActionResult<InsightAlertResponse?> result =
+            await controller.MarkRead(request, CancellationToken.None);
+
+        Assert.IsInstanceOfType<OkObjectResult>(result.Result);
+        Assert.AreEqual(InsightService.MaximumMonths, service.LastRequestedMonths);
+        Assert.AreEqual(1, dbContext.InsightStates.Count());
+    }
+
+    /// <summary>
     /// Verifies that dismiss state and its positive dismissed value are persisted.
     /// </summary>
     [TestMethod]
@@ -490,6 +526,11 @@ public sealed class InsightsControllerTests
         /// </summary>
         public int GetInsightsCallCount { get; private set; }
 
+        /// <summary>
+        /// Gets the month count from the latest GetInsightsAsync call.
+        /// </summary>
+        public int? LastRequestedMonths { get; private set; }
+
         /// <inheritdoc />
         public Task<IReadOnlyList<Insight>> GetInsightsAsync(
             Guid userId,
@@ -497,6 +538,7 @@ public sealed class InsightsControllerTests
             CancellationToken cancellationToken)
         {
             GetInsightsCallCount++;
+            LastRequestedMonths = months;
             return Task.FromResult(insights);
         }
     }

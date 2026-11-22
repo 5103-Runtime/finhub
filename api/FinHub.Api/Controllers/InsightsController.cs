@@ -165,7 +165,7 @@ public sealed class InsightsController(
         IReadOnlyList<Insight> insights =
             await insightService.GetInsightsAsync(
                 currentUserId,
-                DefaultMonths,
+                MaximumMonths,
                 cancellationToken);
         Insight? insight = insights.SingleOrDefault(candidate =>
             candidate.InsightType == request.InsightType
