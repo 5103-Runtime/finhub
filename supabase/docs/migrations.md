@@ -25,6 +25,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_allow_transfer_legs_different_details` allows the two ledger legs to have different dates and descriptions while preserving transfer amount and ledger integrity.
 - `_create_categorization_rules` creates `public.categorization_rules`, described under [Categorization rules](./categorization-rules.md).
 - `_create_insights` creates `public.insight_preferences`, `public.insight_states`, and `public.insight_mutes`, described under [Insights](./insights.md).
+- `_add_administrator_role` adds the `role` column to `public.profiles`, restricts it to `user` or `administrator`, and adds an administrator lookup function and profile policy.
 
 ## Create a migration
 
