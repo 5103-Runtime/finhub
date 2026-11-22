@@ -14,7 +14,7 @@ import Accounts from "@app/components/Accounts";
 import Transactions from "@app/components/Transactions";
 import Insights from "@app/components/Insights";
 import Categories from "@app/components/Categories";
-import Rules from "@app/components/Rules/Rules";
+import Rules from "@app/components/Rules";
 
 function App() {
   return (
