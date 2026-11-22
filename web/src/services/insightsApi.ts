@@ -54,7 +54,6 @@ export interface UpdateInsightStateRequest {
   transactionId?: string;
   currency?: string;
   periodStart?: string;
-  amount?: number;
 }
 
 /**
@@ -108,7 +107,7 @@ export function dismissAlert(
  * @returns The configured insight preferences.
  */
 export function getInsightPreferences(): Promise<InsightPreferenceResponse[]> {
-  return apiGet<InsightPreferenceResponse[]>("/api/alerts/preferences");
+  return apiGet<InsightPreferenceResponse[]>("/api/preferences");
 }
 
 /**
@@ -122,7 +121,7 @@ export function updateInsightPreference(
   request: UpdateInsightPreferenceRequest,
 ): Promise<InsightPreferenceResponse> {
   return apiPut<UpdateInsightPreferenceRequest, InsightPreferenceResponse>(
-    `/api/alerts/preferences/${insightType}`,
+    `/api/preferences/${insightType}`,
     request,
   );
 }
