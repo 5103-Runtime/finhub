@@ -8,7 +8,7 @@ namespace FinHub.Api.Services;
 /// <param name="Severity">The severity derived from the amount.</param>
 /// <param name="CategoryId">The category of a category spike; null for other types.</param>
 /// <param name="TransactionId">The transaction of an unusual purchase; null for other types.</param>
-/// <param name="Currency">The currency of a category spike; null for other types.</param>
+/// <param name="Currency">The currency of the account or category subject.</param>
 /// <param name="PeriodStart">The first day of the month a category spike covers; null for other types.</param>
 /// <param name="Amount">The positive amount the insight is about.</param>
 /// <param name="Baseline">The positive amount the insight was compared against.</param>
