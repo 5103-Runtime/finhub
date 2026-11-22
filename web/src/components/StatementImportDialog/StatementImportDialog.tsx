@@ -34,7 +34,6 @@ import {
 } from "@app/utils/transactions";
 import type { CategoryOption } from "@app/components/Transactions/categoryTypes";
 import "./StatementImportDialog.css";
-import "./StatementImportSuggestions.css";
 
 type StatementImportDialogProps = {
   open: boolean;
