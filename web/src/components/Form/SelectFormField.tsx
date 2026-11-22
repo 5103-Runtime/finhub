@@ -24,6 +24,7 @@ import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 import {
   CategoryMenuFooter,
   MANAGE_CATEGORIES_VALUE,
+  MANAGE_RULES_VALUE,
 } from "@app/components/Category/CategoryMenuFooter";
 
 export type SelectOption = {
@@ -121,6 +122,10 @@ export function SelectFormField<T extends FieldValues>({
                 selectedValue === MANAGE_CATEGORIES_VALUE
               ) {
                 navigate("/categories");
+                return;
+              }
+              if (isCategoryField && selectedValue === MANAGE_RULES_VALUE) {
+                navigate("/rules");
                 return;
               }
               field.onChange(selectedValue);

@@ -22,6 +22,7 @@ import { CategoryMenuList } from "@app/components/Category/CategoryMenuList";
 import {
   CategoryMenuFooter,
   MANAGE_CATEGORIES_VALUE,
+  MANAGE_RULES_VALUE,
 } from "@app/components/Category/CategoryMenuFooter";
 import type { AccountResponse } from "@app/services/accountsApi";
 import type { TransactionResponse } from "@app/services/transactionApi";
@@ -83,6 +84,10 @@ function CategorySelect({
       onChange={(event) => {
         if (event.target.value === MANAGE_CATEGORIES_VALUE) {
           navigate("/categories");
+          return;
+        }
+        if (event.target.value === MANAGE_RULES_VALUE) {
+          navigate("/rules");
           return;
         }
         void onChange(event.target.value);
