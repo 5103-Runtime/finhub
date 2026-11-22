@@ -34,6 +34,10 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "@app/components/Accounts/Accounts.css";
 import "./Categories.css";
+import { useNavigate } from "react-router-dom";
+
+
+
 
 export default function Categories() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -52,6 +56,7 @@ export default function Categories() {
     defaultValues: emptyCategoryForm,
     mode: "onTouched",
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     getCategories()
@@ -154,7 +159,7 @@ export default function Categories() {
               <Button
                 className="accounts-add-button"
                 startIcon={<EditRounded />}
-                onClick={openCreate}
+                onClick={() => navigate("/rules")}
               >
                 Edit rules
               </Button>
