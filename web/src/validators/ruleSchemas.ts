@@ -1,5 +1,8 @@
 import z from "zod";
 
+/**
+ * Validates a ruleset for a category. Must have at least one category and one condition to evaluate
+ */
 export const ruleSchema = z
   .object({
     categoryId: z.string().min(1, "Choose a category."),
@@ -20,9 +23,14 @@ export const ruleSchema = z
       });
     }
   });
-
+/**
+ * Represents the validated values submitted by a rule form
+ */
 export type RuleFormData = z.infer<typeof ruleSchema>;
 
+/**
+ * Represents an empty rule form
+ */
 export const emptyRuleForm: RuleFormData = {
   categoryId: "",
   accountId: "",
