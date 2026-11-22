@@ -11,7 +11,6 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
-import AutoGraphRounded from "@mui/icons-material/AutoGraphRounded";
 import TrendingDownRounded from "@mui/icons-material/TrendingDownRounded";
 import TrendingUpRounded from "@mui/icons-material/TrendingUpRounded";
 import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
@@ -41,11 +40,11 @@ import {
   getOverview,
   type OverviewDashboardResponse,
 } from "@app/services/overviewApi";
+import InsightAlertList from "@app/components/InsightAlerts";
 import "./Overview.css";
 
 const RECENT_TRANSACTION_COUNT = 4;
 const OVERVIEW_MONTHS = 6;
-const INSIGHT_SPENDING_PERCENTAGE = 8.1;
 
 /**
  * Returns a stable percentage change when the previous value is zero.
@@ -84,6 +83,7 @@ export default function Overview() {
   );
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState("");
+  const [unreadInsightCount, setUnreadInsightCount] = useState(0);
 
   // Load the authenticated user's profile.
   useEffect(() => {
@@ -440,33 +440,24 @@ export default function Overview() {
                     Spending pulse
                   </Typography>
                 </Box>
-              </Box>
-
-              <Card className="insight-card">
-                <CardContent>
-                  <Box className="insight-visual">
-                    <Box className="pulse-ring">
-                      <AutoGraphRounded />
-                    </Box>
-                  </Box>
-                  <Typography className="insight-title">
-                    You&apos;re spending less on essentials
-                  </Typography>
-                  <Typography className="insight-copy">
-                    Your essential spending is{" "}
-                    {INSIGHT_SPENDING_PERCENTAGE.toFixed(1)}% of your total
-                    balance. Nice work keeping things steady.
-                  </Typography>
+                {unreadInsightCount > 0 ? (
                   <Button
                     component={Link}
                     to="/insights"
-                    className="insight-link"
+                    className="text-action"
                     endIcon={<ArrowForwardRounded />}
                   >
-                    Explore insights
+                    View all insights
                   </Button>
-                </CardContent>
-              </Card>
+                ) : null}
+              </Box>
+
+              <InsightAlertList
+                view="unread"
+                maxItems={2}
+                compact
+                onCountChange={setUnreadInsightCount}
+              />
             </Box>
           </Box>
 

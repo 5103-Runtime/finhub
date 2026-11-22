@@ -25,7 +25,14 @@ export function CategoryFilter({
       categoryOptions[0]);
   const hasSelectedCategoryFilter =
     uncategorized || Boolean(selectedCategoryId);
-  const value = uncategorized ? "__uncategorized" : selectedCategoryId;
+  const hasAvailableCategory =
+    uncategorized ||
+    categoryOptions.some((option) => option.value === selectedCategoryId);
+  const value = uncategorized
+    ? "__uncategorized"
+    : hasAvailableCategory
+      ? selectedCategoryId
+      : "";
   const renderOption = (option: CategoryOption, value = option.value) => (
     <MenuItem
       key={value || option.label}

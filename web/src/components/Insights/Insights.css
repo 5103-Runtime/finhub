@@ -22,7 +22,7 @@
 }
 
 .insights-currency-control {
-  min-width: 140px;
+  width: 100px;
 }
 
 .insights-currency-control .MuiInputLabel-root,
@@ -55,8 +55,7 @@
 }
 
 .insights-currency-control .MuiInputLabel-root {
-  background: var(--color-ink);
-  padding: 0 4px;
+  background: transparent;
 }
 
 .insights-currency-control .MuiSvgIcon-root {
@@ -90,22 +89,369 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 16px;
+  margin-top: 16px;
 }
 
 .system-insights-section {
-  margin-top: 52px;
+  margin-top: 24px;
   padding: 24px;
-  border: 1px dashed var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.system-insights-section:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--color-bronze) 55%,
+    var(--border-subtle)
+  ) !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-bronze) 22%, transparent) !important;
+}
+
+.system-insights-section > .section-kicker,
+.insight-preferences-section > .section-kicker {
+  color: var(--color-bronze) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase;
+}
+
+.system-insights-description {
+  margin-top: 7px !important;
+  color: var(--color-mist) !important;
+  font-size: 12px !important;
+}
+
+.insights-alert-tabs {
+  margin: 10px 0 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.insights-alert-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.insights-alert-toolbar .insights-alert-tabs {
+  margin: 10px 0 0;
+  border-bottom: 0;
+}
+
+.insights-read-all {
+  min-height: 30px !important;
+  margin: 0 0 7px auto !important;
+  padding: 4px 8px !important;
+  color: var(--color-bronze) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+}
+
+.insights-read-all:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-bronze) 16%,
+    transparent
+  ) !important;
+  color: var(--color-bronze) !important;
+}
+
+.insights-alert-loading {
+  margin: 0 0 7px auto !important;
+  color: var(--color-bronze) !important;
+}
+
+.insight-alert-scroll {
+  max-height: 418px;
+  overflow: hidden;
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
 }
 
-.system-insights-copy {
+.insight-alert-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.insight-alert-scroll::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
+  border-radius: 10px;
+}
+
+.insight-alert-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
+  border-radius: 10px;
+  background: var(--color-mist);
+}
+
+.insights-alert-tabs .MuiTabs-flexContainer {
+  align-items: stretch;
+}
+
+.insights-alert-tabs .MuiTab-root {
+  min-height: 44px;
+  color: var(--color-mist);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.insights-alert-tabs .MuiTab-root.Mui-disabled {
+  color: var(--color-cream) !important;
+  opacity: 1;
+  -webkit-text-fill-color: var(--color-cream);
+}
+
+.insights-alert-tabs .MuiTab-root:hover {
+  background: color-mix(in srgb, var(--color-bronze) 12%, transparent);
+  color: var(--color-cream);
+}
+
+.insights-alert-tabs .Mui-selected {
+  color: var(--color-cream) !important;
+  font-weight: 800;
+}
+
+.insights-alert-tabs .MuiTabs-indicator {
+  background: var(--color-bronze);
+}
+
+.insight-preferences-section {
+  position: relative;
+  margin-top: 52px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
+}
+
+.insight-preferences-section::before {
+  content: "";
+  position: absolute;
+  top: -26px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.insight-preferences-grid {
+  margin-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.insight-preference-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.insight-preference-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.insight-preference-controls .MuiSwitch-root {
+  margin-top: 0;
+}
+
+.insight-preference-threshold {
+  width: 132px;
+  margin: 0;
+}
+
+.insight-preference-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: auto;
+}
+
+.insight-preference-stepper-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.insight-preference-threshold .MuiInputLabel-root {
+  color: var(--color-mist);
+  font-size: 14px;
+  font-weight: 400;
+  background: transparent;
+  padding: 0;
+}
+
+.insight-preference-threshold .MuiInputLabel-root.Mui-disabled {
+  color: var(--color-mist) !important;
+  opacity: 1;
+  -webkit-text-fill-color: var(--color-mist);
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root:not(.Mui-disabled):hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze);
+}
+
+.insight-preference-threshold input {
+  color: var(--color-cream);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  padding-right: 8px !important;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.insight-preference-threshold input::-webkit-outer-spin-button,
+.insight-preference-threshold input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.insight-preference-threshold .MuiOutlinedInput-root {
+  height: 40px;
+  min-height: 40px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-slate) 18%, transparent);
+}
+
+.insight-preference-threshold .MuiOutlinedInput-root.Mui-disabled {
+  background: color-mix(in srgb, var(--color-slate) 28%, var(--color-ink));
+  opacity: 1;
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root.Mui-disabled
+  .MuiOutlinedInput-notchedOutline {
+  border-color: color-mix(in srgb, var(--color-mist) 28%, transparent);
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root.Mui-disabled:hover
+  .MuiOutlinedInput-notchedOutline,
+.insight-preference-threshold
+  .MuiOutlinedInput-root.Mui-disabled.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--color-mist) 28%, transparent);
+}
+
+.insight-preference-threshold .MuiOutlinedInput-root.Mui-disabled input {
+  color: var(--color-cream);
+  opacity: 0.72;
+  -webkit-text-fill-color: var(--color-cream);
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root.Mui-disabled
+  .insight-preference-threshold-unit {
+  color: var(--color-mist) !important;
+  opacity: 1;
+}
+
+.insight-preference-threshold .MuiOutlinedInput-input {
+  box-sizing: border-box;
+  padding: 8px 8px 8px 12px;
+}
+
+.insight-preference-threshold-unit {
+  color: var(--color-mist) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1;
+  margin-right: 0;
+}
+
+.insight-preference-step-buttons {
+  display: grid;
+  grid-template-rows: repeat(2, 18px);
+  overflow: hidden;
+  width: 26px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-slate) 18%, transparent);
+}
+
+.insight-preference-step-buttons .MuiButtonBase-root {
+  min-width: 0 !important;
+  width: 26px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0 !important;
+  border-radius: 0;
+  color: var(--color-mist) !important;
+  font-size: 12px !important;
+  line-height: 18px;
+}
+
+.insight-preference-step-buttons .MuiButtonBase-root + .MuiButtonBase-root {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.insight-preference-step-buttons .MuiButtonBase-root:hover {
+  background: var(--border-accent);
+  color: var(--color-cream) !important;
+}
+
+.insight-preference-step-buttons .MuiButtonBase-root.Mui-disabled {
+  color: var(--color-mist) !important;
+  opacity: 0.45;
+}
+
+.insight-preference-threshold .MuiOutlinedInput-notchedOutline {
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--color-mist) 45%, transparent);
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze);
+}
+
+.insight-preference-threshold
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-bronze);
+}
+
+.insight-preference-title {
+  color: var(--color-cream) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.insight-preference-copy {
   max-width: 680px;
-  margin-top: 10px !important;
+  margin-top: 4px !important;
   color: var(--color-mist);
   font-size: 13px !important;
   line-height: 1.5 !important;
+}
+
+.insight-preference-row .MuiSwitch-switchBase.Mui-checked {
+  color: var(--color-bronze);
+}
+
+.insight-preference-row .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background: var(--color-bronze);
 }
 
 @media (max-width: 850px) {
@@ -133,5 +479,15 @@
 
   .insights-currency-control {
     width: 100%;
+  }
+
+  .insight-preference-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .insight-preference-controls {
+    width: 100%;
+    justify-content: space-between;
   }
 }

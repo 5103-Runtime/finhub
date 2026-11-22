@@ -32,9 +32,12 @@
 }
 
 .dashboard-chart-title {
-  color: var(--color-cream) !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
+  color: var(--color-bronze) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase;
 }
 
 .dashboard-chart-description {

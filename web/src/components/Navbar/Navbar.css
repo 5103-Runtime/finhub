@@ -30,7 +30,9 @@
   color: var(--color-mist);
   font-size: 13px;
   font-weight: 700;
-  transition: color 160ms ease, background 160ms ease;
+  transition:
+    color 160ms ease,
+    background 160ms ease;
 }
 
 .dashboard-nav-link:hover,
@@ -55,6 +57,28 @@
 
 .dashboard-actions {
   align-items: center;
+  gap: 12px;
+}
+
+.dashboard-insight-button {
+  color: var(--color-mist) !important;
+  margin-right: 0 !important;
+}
+
+.dashboard-insight-button:hover {
+  background: var(--surface-overlay) !important;
+  color: var(--color-bronze) !important;
+}
+
+.dashboard-insight-button .MuiBadge-badge {
+  min-width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-ink);
+  border-radius: 8px;
+  padding: 0 4px;
+  background: var(--color-danger);
+  color: var(--color-cream);
+  font-size: 9px;
 }
 
 .dashboard-profile-trigger:hover {
@@ -121,9 +145,275 @@
   border-color: var(--divider);
 }
 
+.dashboard-notification-menu .MuiPaper-root {
+  width: min(390px, calc(100vw - 24px));
+  max-height: min(520px, calc(100vh - 100px));
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 18px 45px var(--shadow-soft);
+}
+
+.dashboard-notification-menu .MuiMenu-list {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.dashboard-notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 10px;
+}
+
+.dashboard-notification-content {
+  max-height: 390px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-mist) var(--color-paper);
+  background: var(--color-paper);
+  border-radius: 0 0 12px 12px;
+}
+
+.dashboard-notification-content::-webkit-scrollbar {
+  width: 10px;
+  background: var(--color-paper);
+}
+
+.dashboard-notification-content::-webkit-scrollbar-track {
+  background: var(--color-paper);
+  border-radius: 0 0 12px 0;
+}
+
+.dashboard-notification-content::-webkit-scrollbar-thumb {
+  border: 3px solid var(--color-paper);
+  border-radius: 10px;
+  background: var(--color-mist);
+}
+
+.dashboard-notification-content::-webkit-scrollbar-corner {
+  background: var(--color-paper);
+}
+
+.dashboard-notification-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dashboard-notification-header p {
+  color: var(--color-slate);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dashboard-notification-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-notification-read-all {
+  min-height: 28px !important;
+  padding: 3px 7px !important;
+  color: var(--color-bronze-hover) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+}
+
+.dashboard-notification-read-all:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-bronze) 14%,
+    transparent
+  ) !important;
+  color: var(--color-bronze) !important;
+}
+
+.dashboard-notification-empty {
+  padding: 24px 18px;
+  color: var(--color-slate);
+  font-size: 13px;
+  text-align: center;
+}
+
+.dashboard-notification-item {
+  position: relative;
+  margin: 4px 8px;
+  padding: 0;
+  border-radius: 8px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dashboard-notification-link {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-height: 92px;
+  padding: 12px 10px 44px;
+  position: relative;
+  z-index: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.dashboard-notification-item:hover,
+.dashboard-notification-item:focus-visible {
+  background: color-mix(in srgb, var(--color-bronze) 10%, var(--color-paper));
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--color-bronze);
+}
+
+.dashboard-notification-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--color-warning);
+  border-radius: 50%;
+  color: var(--color-warning);
+  background: var(--surface-warning);
+}
+
+.dashboard-notification-icon.critical {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--surface-danger);
+}
+
+.dashboard-notification-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dashboard-notification-item:not(:last-child) {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-slate) 38%, var(--color-paper));
+}
+
+.dashboard-notification-copy {
+  min-width: 0;
+}
+
+.dashboard-notification-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dashboard-notification-title {
+  color: var(--color-ink) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.dashboard-notification-detail {
+  margin-top: 3px !important;
+  color: var(--color-slate) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.dashboard-notification-actions {
+  position: absolute;
+  z-index: 2;
+  left: 54px;
+  bottom: 10px;
+  gap: 6px;
+}
+
+.dashboard-notification-actions .MuiButton-root,
+.dashboard-notification-view-all {
+  min-height: 30px;
+  padding: 3px 8px !important;
+  color: var(--color-bronze-hover) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+}
+
+.dashboard-notification-actions .MuiButton-colorInherit {
+  color: var(--color-slate) !important;
+}
+
+.dashboard-notification-view-all {
+  justify-content: center;
+  color: var(--color-ink) !important;
+}
+
+.dashboard-notification-footer {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  background: var(--color-paper);
+  border-radius: 0 0 14px 14px;
+}
+
+.dashboard-notification-footer .MuiDivider-root {
+  border: 0;
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-slate) 78%, var(--color-paper));
+}
+
+.dashboard-notification-menu .dashboard-notification-view-all {
+  margin: 4px !important;
+  padding: 10px !important;
+  border-radius: 8px;
+}
+
+.dashboard-insight-toast {
+  position: fixed !important;
+  z-index: 1400 !important;
+  right: 28px !important;
+  bottom: auto !important;
+  left: auto !important;
+  cursor: pointer;
+}
+
+.dashboard-insight-toast-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 300px;
+  max-width: 390px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 16px 40px var(--shadow-soft);
+}
+
+.dashboard-insight-toast-content > svg {
+  flex: 0 0 auto;
+  color: var(--color-bronze);
+}
+
+.dashboard-insight-toast-content h2 {
+  margin: 0 0 3px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dashboard-insight-toast-content p {
+  color: var(--color-slate);
+  font-size: 12px;
+}
+
 .dashboard-menu-button,
 .dashboard-mobile-menu {
- display: none !important;
+  display: none !important;
 }
 
 @media (max-width: 800px) {
@@ -134,6 +424,16 @@
 
   .dashboard-profile-menu {
     display: none !important;
+  }
+
+  .dashboard-notification-menu .MuiPaper-root {
+    position: fixed;
+    top: 72px !important;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    margin: 0;
   }
 
   .dashboard-menu-button {
@@ -184,5 +484,14 @@
 @media (max-width: 480px) {
   .dashboard-profile-name {
     display: none;
+  }
+
+  .dashboard-insight-toast {
+    right: 12px !important;
+  }
+
+  .dashboard-insight-toast-content {
+    min-width: 0;
+    max-width: calc(100vw - 24px);
   }
 }

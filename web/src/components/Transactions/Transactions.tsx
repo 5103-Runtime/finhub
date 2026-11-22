@@ -55,6 +55,7 @@ import {
   getCategories,
   type CategoryResponse,
 } from "@app/services/categoriesApi";
+import { notifyInsightsChanged } from "@app/services/insightsApi";
 import {
   getEmptyTransactionForm,
   transactionFilterSchema,
@@ -201,15 +202,9 @@ export default function Transactions() {
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [draftFilterValues, setDraftFilterValues] = useState({
-    search: searchParams.get("search") ?? "",
-    minAmount: searchParams.get("minAmount") ?? "",
-    maxAmount: searchParams.get("maxAmount") ?? "",
-  });
   const [searchFilterError, setSearchFilterError] = useState("");
   const [sortOpen, setSortOpen] = useState(false);
 
-  const filterDebounceRef = useRef<number | null>(null);
   const pageFeedbackRef = useRef<HTMLDivElement>(null);
   const sortAnchorRef = useRef<{
     accountId: string;
@@ -484,7 +479,6 @@ export default function Transactions() {
     value: string,
   ) => {
     setFiltersOpen(true);
-    setDraftFilterValues((current) => ({ ...current, [key]: value }));
     if (key === "search") {
       const validation = transactionFilterSchema.shape.search.safeParse(value);
       setSearchFilterError(
@@ -494,24 +488,8 @@ export default function Transactions() {
         return;
       }
     }
-
-    if (filterDebounceRef.current !== null) {
-      window.clearTimeout(filterDebounceRef.current);
-    }
-    filterDebounceRef.current = window.setTimeout(() => {
-      updateFilter(key, value);
-    }, 350);
+    updateFilter(key, value);
   };
-
-  // Cancel pending filter updates when the page unmounts.
-  useEffect(
-    () => () => {
-      if (filterDebounceRef.current !== null) {
-        window.clearTimeout(filterDebounceRef.current);
-      }
-    },
-    [],
-  );
 
   // Auto-dismiss transaction update success feedback.
   useEffect(() => {
@@ -540,11 +518,6 @@ export default function Transactions() {
 
   const clearFilters = () => {
     setFiltersOpen(true);
-    if (filterDebounceRef.current !== null) {
-      window.clearTimeout(filterDebounceRef.current);
-      filterDebounceRef.current = null;
-    }
-    setDraftFilterValues({ search: "", minAmount: "", maxAmount: "" });
     setSearchFilterError("");
     const next = new URLSearchParams(searchParams);
     for (const key of transactionFilterKeys) {
@@ -628,6 +601,7 @@ export default function Transactions() {
         description: transaction.description,
         amount: transaction.amount,
       });
+      notifyInsightsChanged();
       await reloadTransactions();
     } catch (requestError) {
       setServerError(
@@ -715,6 +689,7 @@ export default function Transactions() {
         return next;
       });
       closeTransactionModal();
+      notifyInsightsChanged();
       if (await reloadTransactions()) {
         if (created.automaticCategoryApplied) {
           const categoryName =
@@ -794,6 +769,7 @@ export default function Transactions() {
         confirmPotentialDuplicate: isDuplicate,
       });
       closeTransferModal();
+      notifyInsightsChanged();
       if (await reloadTransactions()) {
         setSuccessMessage("Transfer created successfully.");
       }
@@ -838,6 +814,7 @@ export default function Transactions() {
       amount: Number(data.amount),
       confirmPotentialDuplicate,
     });
+    notifyInsightsChanged();
     if (await reloadTransactions()) {
       setEditingId(null);
       if (editedTransaction?.transferId) {
@@ -873,6 +850,7 @@ export default function Transactions() {
         );
         setSuccessMessage("Transaction deleted successfully.");
       }
+      notifyInsightsChanged();
       setIsDeleteModalOpen(false);
     } catch (requestError) {
       setServerError(
@@ -893,6 +871,7 @@ export default function Transactions() {
     setSuccessMessage("");
     try {
       await unlinkTransfer(transactionToDelete.transferId);
+      notifyInsightsChanged();
       setIsDeleteModalOpen(false);
       if (await reloadTransactions()) {
         setSuccessMessage("Transfer unlinked successfully.");
@@ -1284,7 +1263,7 @@ export default function Transactions() {
                   <Box className="transaction-filter-field search-field">
                     <TextField
                       label="Search description"
-                      value={draftFilterValues.search}
+                      value={searchParams.get("search") ?? ""}
                       onChange={(event) =>
                         updateTextFilter("search", event.target.value)
                       }
@@ -1294,7 +1273,7 @@ export default function Transactions() {
                       helperText={searchFilterError}
                       slotProps={{
                         input: {
-                          endAdornment: draftFilterValues.search ? (
+                          endAdornment: searchParams.get("search") ? (
                             <InputAdornment position="end">
                               <IconButton
                                 className="transaction-filter-search-clear"
@@ -1317,7 +1296,14 @@ export default function Transactions() {
                       <InputLabel>Account</InputLabel>
                       <Select
                         label="Account"
-                        value={searchParams.get("accountId") ?? ""}
+                        value={
+                          accounts.some(
+                            (account) =>
+                              account.id === searchParams.get("accountId"),
+                          )
+                            ? (searchParams.get("accountId") ?? "")
+                            : ""
+                        }
                         onChange={(event) =>
                           updateFilter("accountId", event.target.value)
                         }
@@ -1375,7 +1361,7 @@ export default function Transactions() {
                     <Box className="transaction-filter-group-fields">
                       <TextField
                         label="Min"
-                        value={draftFilterValues.minAmount}
+                        value={searchParams.get("minAmount") ?? ""}
                         onChange={(event) =>
                           updateTextFilter("minAmount", event.target.value)
                         }
@@ -1385,7 +1371,7 @@ export default function Transactions() {
                       />
                       <TextField
                         label="Max"
-                        value={draftFilterValues.maxAmount}
+                        value={searchParams.get("maxAmount") ?? ""}
                         onChange={(event) =>
                           updateTextFilter("maxAmount", event.target.value)
                         }
