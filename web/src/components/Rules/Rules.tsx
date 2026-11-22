@@ -38,6 +38,8 @@ import { getErrorMessage } from "@app/utils/formErrors";
 import RuleFormDialog from "./RuleFormDialog";
 import "@app/components/Accounts/Accounts.css";
 import "./Rules.css";
+import { useNavigate } from "react-router-dom";
+import { CategoryRounded } from "@mui/icons-material";
 
 function describeConditions(
   rule: CategorizationRuleResponse,
@@ -74,6 +76,7 @@ export default function Rules() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([getCategorizationRules(), getCategories(), getAccounts()])
@@ -216,14 +219,25 @@ export default function Rules() {
                 </Typography>
               )}
             </Box>
-            <Button
-              className="accounts-add-button"
-              startIcon={<AddRounded />}
-              onClick={openCreate}
-              disabled={loading || categories.length === 0}
-            >
-              Add rule
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                className="accounts-add-button"
+                startIcon={<AddRounded />}
+                onClick={openCreate}
+                disabled={loading || categories.length === 0}
+              >
+                Add rule
+              </Button>
+               <Button
+                className="accounts-add-button"
+                startIcon={<CategoryRounded/>}
+                onClick={() => navigate("/categories")}
+              >
+                Manage categories
+              </Button>
+
+            </Stack>
+           
           </Box>
 
           {loadError && (
