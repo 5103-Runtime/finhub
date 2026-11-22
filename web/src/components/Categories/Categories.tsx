@@ -142,13 +142,23 @@ export default function Categories() {
                 Categories
               </Typography>
             </Box>
-            <Button
-              className="accounts-add-button"
-              startIcon={<AddRounded />}
-              onClick={openCreate}
-            >
-              Add category
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                className="accounts-add-button"
+                startIcon={<AddRounded />}
+                onClick={openCreate}
+              >
+                Add category
+              </Button>
+              {/* This can be changed if a different way to navigate to rule creation is wanted */}
+              <Button
+                className="accounts-add-button"
+                startIcon={<EditRounded />}
+                onClick={openCreate}
+              >
+                Edit rules
+              </Button>
+            </Stack>
           </Box>
           {loadError && (
             <Alert className="page-error" severity="error" variant="outlined">
