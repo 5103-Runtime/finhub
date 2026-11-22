@@ -100,15 +100,17 @@
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-slate) 18%, var(--color-ink));
   transition:
-    border-color 160ms ease,
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
 .system-insights-section:hover {
-  border-color: var(--border-accent) !important;
-  box-shadow: 0 10px 28px var(--shadow-soft) !important;
-  transform: translateY(-2px);
+  border-color: color-mix(
+    in srgb,
+    var(--color-bronze) 55%,
+    var(--border-subtle)
+  ) !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-bronze) 22%, transparent) !important;
 }
 
 .system-insights-section > .section-kicker,
