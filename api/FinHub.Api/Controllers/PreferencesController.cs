@@ -5,6 +5,7 @@ using FinHub.Api.Models;
 using FinHub.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace FinHub.Api.Controllers;
 
@@ -58,7 +59,6 @@ public sealed class PreferencesController(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The created or updated preference.</returns>
     [HttpPut("{insightType}")]
-    [HttpPost("{insightType}")]
     public async Task<ActionResult<InsightPreferenceResponse>> Update(
         string insightType,
         [FromBody] UpdateInsightPreferenceRequest request,
@@ -73,32 +73,15 @@ public sealed class PreferencesController(
             });
         }
 
-        if (request.IsEnabled is null)
-        {
-            return BadRequest(new
-            {
-                error = "isEnabled is required.",
-                errorCode = "invalid_insight_preference"
-            });
-        }
-
-        if (request.Threshold is <= 0)
-        {
-            return BadRequest(new
-            {
-                error = "Threshold must be greater than zero.",
-                errorCode = "invalid_insight_threshold"
-            });
-        }
-
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
         if (failure is not null)
         {
             return failure;
         }
 
+        Guid currentUserId = userId!.Value;
         InsightPreference? preference = await dbContext.InsightPreferences
-            .Where(row => row.UserId == userId!.Value && row.InsightType == insightType)
+            .Where(row => row.UserId == currentUserId && row.InsightType == insightType)
             .SingleOrDefaultAsync(cancellationToken);
 
         if (preference is null)
@@ -106,15 +89,26 @@ public sealed class PreferencesController(
             preference = new InsightPreference
             {
                 Id = Guid.NewGuid(),
-                UserId = userId!.Value,
+                UserId = currentUserId,
                 InsightType = insightType
             };
             dbContext.InsightPreferences.Add(preference);
         }
 
-        preference.IsEnabled = request.IsEnabled.Value;
+        preference.IsEnabled = request.IsEnabled ?? true;
         preference.Threshold = request.Threshold;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            return Conflict(new
+            {
+                error = "The insight preference changed concurrently.",
+                errorCode = "insight_preference_conflict"
+            });
+        }
 
         return Ok(new InsightPreferenceResponse(
             preference.Id,
@@ -124,4 +118,13 @@ public sealed class PreferencesController(
             preference.CreatedAt,
             preference.UpdatedAt));
     }
+
+    /// <summary>
+    /// Determines whether the database exception is a unique constraint violation.
+    /// </summary>
+    private static bool IsUniqueViolation(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation
+        };
 }

@@ -8,7 +8,7 @@ namespace FinHub.Api.DTOs.Insight;
 /// <param name="Severity">The computed severity.</param>
 /// <param name="CategoryId">The category for a category-spike insight.</param>
 /// <param name="TransactionId">The transaction for an unusual-purchase insight.</param>
-/// <param name="Currency">The currency for a category-spike insight.</param>
+/// <param name="Currency">The currency of the owning account or category subject.</param>
 /// <param name="PeriodStart">The month start for a category-spike insight.</param>
 /// <param name="Amount">The amount the insight is about.</param>
 /// <param name="Baseline">The amount the insight was compared against.</param>

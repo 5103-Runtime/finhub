@@ -42,7 +42,17 @@ public sealed class InsightsControllerTests
                 new DateOnly(2026, 11, 1),
                 150m,
                 100m,
-                IsRead: false)
+                IsRead: false),
+            new Insight(
+                InsightTypes.UnusualPurchase,
+                InsightSeverities.Critical,
+                null,
+                Guid.NewGuid(),
+                "CAD",
+                null,
+                300m,
+                100m,
+                IsRead: true)
         ]);
         InsightsController controller = CreateController(dbContext, service);
 
@@ -113,7 +123,7 @@ public sealed class InsightsControllerTests
     public async Task UpdatePreference_CreatesPreferenceForAuthenticatedUser()
     {
         using FinHubDbContext dbContext = CreateDbContext();
-        InsightsController controller = CreateController(dbContext, new RecordingInsightService([]));
+        PreferencesController controller = CreatePreferencesController(dbContext);
         UpdateInsightPreferenceRequest request = new()
         {
             IsEnabled = true,
@@ -121,7 +131,7 @@ public sealed class InsightsControllerTests
         };
 
         ActionResult<InsightPreferenceResponse> result =
-            await controller.UpdatePreference(
+            await controller.Update(
                 InsightTypes.CategorySpike,
                 request,
                 CancellationToken.None);
@@ -150,10 +160,10 @@ public sealed class InsightsControllerTests
             Threshold = 3m
         });
         await dbContext.SaveChangesAsync();
-        InsightsController controller = CreateController(dbContext, new RecordingInsightService([]));
+        PreferencesController controller = CreatePreferencesController(dbContext);
 
         ActionResult<InsightPreferenceResponse> result =
-            await controller.UpdatePreference(
+            await controller.Update(
                 InsightTypes.UnusualPurchase,
                 new UpdateInsightPreferenceRequest
                 {
@@ -176,7 +186,19 @@ public sealed class InsightsControllerTests
     public async Task MarkRead_PersistsCategorySpikeReadState()
     {
         using FinHubDbContext dbContext = CreateDbContext();
-        InsightsController controller = CreateController(dbContext, new RecordingInsightService([]));
+        RecordingInsightService service = new(
+        [
+            new Insight(
+                InsightTypes.CategorySpike,
+                InsightSeverities.Warning,
+                CategoryId,
+                null,
+                "CAD",
+                new DateOnly(2026, 11, 1),
+                150m,
+                100m)
+        ]);
+        InsightsController controller = CreateController(dbContext, service);
         UpdateInsightStateRequest request = new()
         {
             InsightType = InsightTypes.CategorySpike,
@@ -186,7 +208,7 @@ public sealed class InsightsControllerTests
         };
 
         ActionResult<InsightAlertResponse?> result =
-            await controller.MarkRead(null, request, CancellationToken.None);
+            await controller.MarkRead(request, CancellationToken.None);
 
         Assert.IsInstanceOfType<OkObjectResult>(result.Result);
         InsightState state = dbContext.InsightStates.Single();
@@ -194,6 +216,12 @@ public sealed class InsightsControllerTests
         Assert.AreEqual(CategoryId, state.CategoryId);
         Assert.IsNotNull(state.ReadAt);
         Assert.IsNull(state.DismissedAt);
+        InsightAlertResponse? response =
+            (result.Result as OkObjectResult)?.Value as InsightAlertResponse;
+        Assert.AreEqual(150m, response?.Amount);
+        Assert.AreEqual(100m, response?.Baseline);
+        Assert.AreEqual(InsightSeverities.Warning, response?.Severity);
+        Assert.IsTrue(response?.IsRead);
     }
 
     /// <summary>
@@ -203,29 +231,95 @@ public sealed class InsightsControllerTests
     public async Task Dismiss_PersistsDismissedValue()
     {
         using FinHubDbContext dbContext = CreateDbContext();
-        InsightsController controller = CreateController(dbContext, new RecordingInsightService([]));
+        RecordingInsightService service = new(
+        [
+            new Insight(
+                InsightTypes.UnusualPurchase,
+                InsightSeverities.Warning,
+                null,
+                TransactionId,
+                "USD",
+                null,
+                300m,
+                100m)
+        ]);
+        InsightsController controller = CreateController(dbContext, service);
         UpdateInsightStateRequest request = new()
         {
             InsightType = InsightTypes.UnusualPurchase,
             TransactionId = TransactionId,
-            Amount = 300m
+            Currency = "USD"
         };
 
         ActionResult<InsightAlertResponse?> result =
-            await controller.Dismiss(null, request, CancellationToken.None);
+            await controller.Dismiss(request, CancellationToken.None);
 
         Assert.IsInstanceOfType<OkObjectResult>(result.Result);
         InsightState state = dbContext.InsightStates.Single();
         Assert.AreEqual(TransactionId, state.TransactionId);
         Assert.IsNotNull(state.DismissedAt);
+        Assert.IsNull(state.Currency);
         Assert.AreEqual(300m, state.DismissedValue);
+        InsightAlertResponse? response =
+            (result.Result as OkObjectResult)?.Value as InsightAlertResponse;
+        Assert.AreEqual(300m, response?.Amount);
+        Assert.AreEqual(100m, response?.Baseline);
+        Assert.AreEqual(InsightSeverities.Warning, response?.Severity);
+        Assert.IsFalse(response?.IsRead);
     }
 
     /// <summary>
-    /// Verifies that dismissal requires a positive amount.
+    /// Verifies that marking a dismissed insight read clears the dismissal marker.
     /// </summary>
     [TestMethod]
-    public async Task Dismiss_RejectsMissingAmount()
+    public async Task MarkRead_ClearsDismissalMarker()
+    {
+        using FinHubDbContext dbContext = CreateDbContext();
+        dbContext.InsightStates.Add(new InsightState
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            InsightType = InsightTypes.UnusualPurchase,
+            TransactionId = TransactionId,
+            DismissedAt = new DateTime(2026, 11, 18, 11, 0, 0, DateTimeKind.Utc),
+            DismissedValue = 300m
+        });
+        await dbContext.SaveChangesAsync();
+        RecordingInsightService service = new(
+        [
+            new Insight(
+                InsightTypes.UnusualPurchase,
+                InsightSeverities.Warning,
+                null,
+                TransactionId,
+                "USD",
+                null,
+                300m,
+                100m)
+        ]);
+        InsightsController controller = CreateController(dbContext, service);
+        UpdateInsightStateRequest request = new()
+        {
+            InsightType = InsightTypes.UnusualPurchase,
+            TransactionId = TransactionId,
+            Currency = "USD"
+        };
+
+        ActionResult<InsightAlertResponse?> result =
+            await controller.MarkRead(request, CancellationToken.None);
+
+        Assert.IsInstanceOfType<OkObjectResult>(result.Result);
+        InsightState state = dbContext.InsightStates.Single();
+        Assert.IsNotNull(state.ReadAt);
+        Assert.IsNull(state.DismissedAt);
+        Assert.IsNull(state.DismissedValue);
+    }
+
+    /// <summary>
+    /// Verifies that dismissing a nonexistent insight is rejected.
+    /// </summary>
+    [TestMethod]
+    public async Task Dismiss_RejectsMissingInsight()
     {
         using FinHubDbContext dbContext = CreateDbContext();
         InsightsController controller = CreateController(dbContext, new RecordingInsightService([]));
@@ -236,9 +330,9 @@ public sealed class InsightsControllerTests
         };
 
         ActionResult<InsightAlertResponse?> result =
-            await controller.Dismiss(null, request, CancellationToken.None);
+            await controller.Dismiss(request, CancellationToken.None);
 
-        Assert.IsInstanceOfType<BadRequestObjectResult>(result.Result);
+        Assert.IsInstanceOfType<NotFoundObjectResult>(result.Result);
         Assert.AreEqual(0, dbContext.InsightStates.Count());
     }
 
@@ -257,7 +351,32 @@ public sealed class InsightsControllerTests
         };
 
         ActionResult<InsightAlertResponse?> result =
-            await controller.MarkRead(null, request, CancellationToken.None);
+            await controller.MarkRead(request, CancellationToken.None);
+
+        Assert.IsInstanceOfType<BadRequestObjectResult>(result.Result);
+        Assert.AreEqual(0, dbContext.InsightStates.Count());
+    }
+
+    /// <summary>
+    /// Verifies that category-spike period values must be the first day of a month.
+    /// </summary>
+    [TestMethod]
+    public async Task MarkRead_RejectsInvalidPeriodStart()
+    {
+        using FinHubDbContext dbContext = CreateDbContext();
+        InsightsController controller = CreateController(
+            dbContext,
+            new RecordingInsightService([]));
+        UpdateInsightStateRequest request = new()
+        {
+            InsightType = InsightTypes.CategorySpike,
+            CategoryId = CategoryId,
+            Currency = "CAD",
+            PeriodStart = new DateOnly(2026, 11, 2)
+        };
+
+        ActionResult<InsightAlertResponse?> result =
+            await controller.MarkRead(request, CancellationToken.None);
 
         Assert.IsInstanceOfType<BadRequestObjectResult>(result.Result);
         Assert.AreEqual(0, dbContext.InsightStates.Count());
@@ -290,6 +409,16 @@ public sealed class InsightsControllerTests
             CreateAuthClient(),
             service,
             TimeProvider.System)
+        {
+            ControllerContext = CreateControllerContext()
+        };
+
+    /// <summary>
+    /// Creates an authenticated preferences controller.
+    /// </summary>
+    private static PreferencesController CreatePreferencesController(
+        FinHubDbContext dbContext) =>
+        new(dbContext, CreateAuthClient())
         {
             ControllerContext = CreateControllerContext()
         };

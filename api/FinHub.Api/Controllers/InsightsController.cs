@@ -5,6 +5,7 @@ using FinHub.Api.Models;
 using FinHub.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace FinHub.Api.Controllers;
 
@@ -67,144 +68,29 @@ public sealed class InsightsController(
     /// <summary>
     /// Marks one alert as read.
     /// </summary>
-    /// <param name="insightType">The optional insight type supplied by the route.</param>
-    /// <param name="request">The insight subject and optional amount.</param>
+    /// <param name="request">The insight subject.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated alert state response.</returns>
     [HttpPost("read")]
-    [HttpPost("{insightType}/read")]
     public async Task<ActionResult<InsightAlertResponse?>> MarkRead(
-        [FromRoute] string? insightType,
         [FromBody] UpdateInsightStateRequest request,
         CancellationToken cancellationToken)
     {
-        if (insightType is not null)
-        {
-            request.InsightType = insightType;
-        }
-
         return await UpdateStateAsync(request, isDismissed: false, cancellationToken);
     }
 
     /// <summary>
     /// Dismisses one alert.
     /// </summary>
-    /// <param name="insightType">The optional insight type supplied by the route.</param>
-    /// <param name="request">The insight subject and dismissed amount.</param>
+    /// <param name="request">The insight subject.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated dismissed-alert response.</returns>
     [HttpPost("dismiss")]
-    [HttpPost("{insightType}/dismiss")]
     public async Task<ActionResult<InsightAlertResponse?>> Dismiss(
-        [FromRoute] string? insightType,
         [FromBody] UpdateInsightStateRequest request,
         CancellationToken cancellationToken)
     {
-        if (insightType is not null)
-        {
-            request.InsightType = insightType;
-        }
-
         return await UpdateStateAsync(request, isDismissed: true, cancellationToken);
-    }
-
-    /// <summary>
-    /// Gets the authenticated user's insight preferences.
-    /// </summary>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The user's insight preferences.</returns>
-    [HttpGet("preferences")]
-    public async Task<ActionResult<IReadOnlyList<InsightPreferenceResponse>>> GetPreferences(
-        CancellationToken cancellationToken)
-    {
-        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
-        if (failure is not null)
-        {
-            return failure;
-        }
-
-        List<InsightPreferenceResponse> preferences = await dbContext.InsightPreferences
-            .AsNoTracking()
-            .Where(preference => preference.UserId == userId!.Value)
-            .OrderBy(preference => preference.InsightType)
-            .Select(preference => new InsightPreferenceResponse(
-                preference.Id,
-                preference.InsightType,
-                preference.IsEnabled,
-                preference.Threshold,
-                preference.CreatedAt,
-                preference.UpdatedAt))
-            .ToListAsync(cancellationToken);
-
-        return Ok(preferences);
-    }
-
-    /// <summary>
-    /// Creates or updates the authenticated user's preference for an insight type.
-    /// </summary>
-    /// <param name="insightType">The insight type to update.</param>
-    /// <param name="request">The enabled state and optional threshold.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The created or updated preference.</returns>
-    [HttpPut("preferences/{insightType}")]
-    public async Task<ActionResult<InsightPreferenceResponse>> UpdatePreference(
-        string insightType,
-        [FromBody] UpdateInsightPreferenceRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (insightType is not (InsightTypes.CategorySpike or InsightTypes.UnusualPurchase))
-        {
-            return BadRequest(new
-            {
-                error = "The insight type must be category_spike or unusual_purchase.",
-                errorCode = "invalid_insight_type"
-            });
-        }
-
-        if (request.IsEnabled is null)
-        {
-            return BadRequest(new
-            {
-                error = "isEnabled is required.",
-                errorCode = "invalid_insight_preference"
-            });
-        }
-
-        if (request.Threshold is <= 0)
-        {
-            return BadRequest(new
-            {
-                error = "Threshold must be greater than zero.",
-                errorCode = "invalid_insight_threshold"
-            });
-        }
-
-        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
-        if (failure is not null)
-        {
-            return failure;
-        }
-
-        InsightPreference? preference = await dbContext.InsightPreferences
-            .Where(row => row.UserId == userId!.Value && row.InsightType == insightType)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        if (preference is null)
-        {
-            preference = new InsightPreference
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId!.Value,
-                InsightType = insightType
-            };
-            dbContext.InsightPreferences.Add(preference);
-        }
-
-        preference.IsEnabled = request.IsEnabled.Value;
-        preference.Threshold = request.Threshold;
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return Ok(ToPreferenceResponse(preference));
     }
 
     /// <summary>
@@ -263,15 +149,6 @@ public sealed class InsightsController(
         bool isDismissed,
         CancellationToken cancellationToken)
     {
-        if (isDismissed && (request.Amount is null || request.Amount <= 0))
-        {
-            return BadRequest(new
-            {
-                error = "Dismissing an insight requires a positive amount.",
-                errorCode = "invalid_dismissed_amount"
-            });
-        }
-
         (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
         if (failure is not null)
         {
@@ -285,13 +162,43 @@ public sealed class InsightsController(
         }
 
         Guid currentUserId = userId!.Value;
+        IReadOnlyList<Insight> insights =
+            await insightService.GetInsightsAsync(
+                currentUserId,
+                DefaultMonths,
+                cancellationToken);
+        Insight? insight = insights.SingleOrDefault(candidate =>
+            candidate.InsightType == request.InsightType
+            && candidate.CategoryId == request.CategoryId
+            && candidate.TransactionId == request.TransactionId
+            && (request.InsightType == InsightTypes.UnusualPurchase
+                || (candidate.Currency == request.Currency
+                    && candidate.PeriodStart == request.PeriodStart)));
+        if (insight is null)
+        {
+            return NotFound(new
+            {
+                error = "The insight could not be found or is no longer active.",
+                errorCode = "insight_not_found"
+            });
+        }
+
+        string? stateCurrency =
+            request.InsightType == InsightTypes.UnusualPurchase
+                ? null
+                : request.Currency;
+        DateOnly? statePeriod =
+            request.InsightType == InsightTypes.UnusualPurchase
+                ? null
+                : request.PeriodStart;
+
         InsightState? state = await dbContext.InsightStates
             .Where(row => row.UserId == currentUserId
                 && row.InsightType == request.InsightType
                 && row.CategoryId == request.CategoryId
                 && row.TransactionId == request.TransactionId
-                && row.Currency == request.Currency
-                && row.PeriodStart == request.PeriodStart)
+                && row.Currency == stateCurrency
+                && row.PeriodStart == statePeriod)
             .SingleOrDefaultAsync(cancellationToken);
 
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
@@ -304,8 +211,8 @@ public sealed class InsightsController(
                 InsightType = request.InsightType,
                 CategoryId = request.CategoryId,
                 TransactionId = request.TransactionId,
-                Currency = request.Currency,
-                PeriodStart = request.PeriodStart
+                Currency = stateCurrency,
+                PeriodStart = statePeriod
             };
             dbContext.InsightStates.Add(state);
         }
@@ -313,26 +220,42 @@ public sealed class InsightsController(
         if (isDismissed)
         {
             state.DismissedAt = now;
-            state.DismissedValue = request.Amount;
+            state.DismissedValue = insight.Amount;
         }
         else
         {
             state.ReadAt = now;
+            state.DismissedAt = null;
+            state.DismissedValue = null;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            return Conflict(new
+            {
+                error = "The insight state changed concurrently.",
+                errorCode = "insight_state_conflict"
+            });
+        }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return Conflict(new
+            {
+                error = "The insight state changed concurrently.",
+                errorCode = "insight_state_conflict"
+            });
+        }
 
-        return Ok(new InsightAlertResponse(
-            BuildId(request),
-            request.InsightType,
-            "",
-            request.CategoryId,
-            request.TransactionId,
-            request.Currency,
-            request.PeriodStart,
-            request.Amount ?? 0m,
-            0m,
-            !isDismissed));
+        Insight updatedInsight = insight with
+        {
+            IsRead = !isDismissed
+        };
+        return Ok(ToAlertResponse(updatedInsight));
     }
 
     /// <summary>
@@ -355,12 +278,20 @@ public sealed class InsightsController(
                     errorCode = "invalid_insight_subject"
                 });
             }
+            if (request.PeriodStart is DateOnly periodStart
+                && periodStart.Day != 1)
+            {
+                return BadRequest(new
+                {
+                    error = "The periodStart value must be the first day of a month.",
+                    errorCode = "invalid_insight_period"
+                });
+            }
         }
         else if (request.InsightType == InsightTypes.UnusualPurchase)
         {
             if (request.TransactionId is null
                 || request.CategoryId is not null
-                || request.Currency is not null
                 || request.PeriodStart is not null)
             {
                 return BadRequest(new
@@ -400,19 +331,6 @@ public sealed class InsightsController(
         insight.IsRead);
 
     /// <summary>
-    /// Converts a preference entity to its API response representation.
-    /// </summary>
-    /// <param name="preference">The preference entity.</param>
-    /// <returns>The preference response representation.</returns>
-    private static InsightPreferenceResponse ToPreferenceResponse(InsightPreference preference) => new(
-        preference.Id,
-        preference.InsightType,
-        preference.IsEnabled,
-        preference.Threshold,
-        preference.CreatedAt,
-        preference.UpdatedAt);
-
-    /// <summary>
     /// Builds a stable alert ID from a computed insight subject.
     /// </summary>
     /// <param name="insight">The computed insight.</param>
@@ -423,12 +341,11 @@ public sealed class InsightsController(
             : $"unusual_purchase:{insight.TransactionId}";
 
     /// <summary>
-    /// Builds a stable alert ID from a state request subject.
+    /// Determines whether the database exception is a unique constraint violation.
     /// </summary>
-    /// <param name="request">The state request.</param>
-    /// <returns>The stable insight subject ID.</returns>
-    private static string BuildId(UpdateInsightStateRequest request) =>
-        request.InsightType == InsightTypes.CategorySpike
-            ? $"category_spike:{request.CategoryId}:{request.Currency}:{request.PeriodStart:yyyy-MM-dd}"
-            : $"unusual_purchase:{request.TransactionId}";
+    private static bool IsUniqueViolation(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation
+        };
 }

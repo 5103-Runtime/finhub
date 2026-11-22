@@ -25,7 +25,8 @@ public sealed class UpdateInsightStateRequest
     public Guid? TransactionId { get; set; }
 
     /// <summary>
-    /// Gets or sets the three-letter currency code for a category-spike insight.
+    /// Gets or sets the returned three-letter currency code.
+    /// It is required for category spikes and ignored for unusual purchases.
     /// </summary>
     [RegularExpression("^[A-Z]{3}$")]
     public string? Currency { get; set; }
@@ -35,9 +36,4 @@ public sealed class UpdateInsightStateRequest
     /// </summary>
     public DateOnly? PeriodStart { get; set; }
 
-    /// <summary>
-    /// Gets or sets the amount used as the dismissed value.
-    /// </summary>
-    [Range(typeof(decimal), "0.01", "999999999999.99")]
-    public decimal? Amount { get; set; }
 }

@@ -50,9 +50,52 @@ public sealed class InsightServiceTests(TestContext testContext)
             dbContext,
             timeProvider,
             TimeZoneInfo.Utc);
+        Guid accountId = Guid.NewGuid();
         Guid categoryId = Guid.NewGuid();
-        Guid transactionId = Guid.NewGuid();
-        dbContext.InsightStates.AddRange(
+        dbContext.FinancialAccounts.Add(new FinancialAccount
+        {
+            Id = accountId,
+            UserId = UserId,
+            Name = "Chequing",
+            AccountType = "chequing",
+            Currency = "CAD"
+        });
+        dbContext.Categories.Add(new Category
+        {
+            Id = categoryId,
+            UserId = UserId,
+            Name = "Food",
+            IsSystem = false
+        });
+        dbContext.Transactions.AddRange(
+            new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                CategoryId = categoryId,
+                TransactionDate = new DateOnly(2026, 9, 10),
+                Description = "September groceries",
+                Amount = -100m
+            },
+            new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                CategoryId = categoryId,
+                TransactionDate = new DateOnly(2026, 10, 10),
+                Description = "October groceries",
+                Amount = -100m
+            },
+            new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                CategoryId = categoryId,
+                TransactionDate = new DateOnly(2026, 11, 10),
+                Description = "November groceries",
+                Amount = -150m
+            });
+        dbContext.InsightStates.Add(
             new InsightState
             {
                 Id = Guid.NewGuid(),
@@ -62,22 +105,14 @@ public sealed class InsightServiceTests(TestContext testContext)
                 Currency = "CAD",
                 PeriodStart = new DateOnly(2026, 11, 1),
                 ReadAt = new DateTime(2026, 11, 18, 11, 0, 0, DateTimeKind.Utc)
-            },
-            new InsightState
-            {
-                Id = Guid.NewGuid(),
-                UserId = UserId,
-                InsightType = InsightTypes.UnusualPurchase,
-                TransactionId = transactionId,
-                DismissedAt = new DateTime(2026, 11, 18, 11, 0, 0, DateTimeKind.Utc),
-                DismissedValue = 100m
             });
         await dbContext.SaveChangesAsync(testContext.CancellationToken);
 
         IReadOnlyList<Insight> insights =
             await service.GetInsightsAsync(UserId, 6, testContext.CancellationToken);
 
-        Assert.AreEqual(0, insights.Count);
+        Assert.AreEqual(1, insights.Count);
+        Assert.IsTrue(insights[0].IsRead);
     }
 
     /// <summary>
