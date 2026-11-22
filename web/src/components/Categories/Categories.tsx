@@ -37,9 +37,6 @@ import "./Categories.css";
 import { useNavigate } from "react-router-dom";
 import { RuleRounded } from "@mui/icons-material";
 
-
-
-
 export default function Categories() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);

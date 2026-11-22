@@ -228,16 +228,14 @@ export default function Rules() {
               >
                 Add rule
               </Button>
-               <Button
+              <Button
                 className="accounts-add-button"
-                startIcon={<CategoryRounded/>}
+                startIcon={<CategoryRounded />}
                 onClick={() => navigate("/categories")}
               >
                 Manage categories
               </Button>
-
             </Stack>
-           
           </Box>
 
           {loadError && (

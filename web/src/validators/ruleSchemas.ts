@@ -23,6 +23,7 @@ export const ruleSchema = z
       });
     }
   });
+
 /**
  * Represents the validated values submitted by a rule form
  */

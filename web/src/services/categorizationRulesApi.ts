@@ -35,7 +35,9 @@ export type CategorizationRuleRequest = {
 /**
  * @brief Retrieves the user's rules ordered by priority (first match wins).
  */
-export function getCategorizationRules(): Promise<CategorizationRuleResponse[]> {
+export function getCategorizationRules(): Promise<
+  CategorizationRuleResponse[]
+> {
   return apiGet<CategorizationRuleResponse[]>("/api/categorization-rules");
 }
 
