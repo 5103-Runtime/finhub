@@ -182,6 +182,18 @@ Content-Type: text/csv
 
 ###
 
+POST {{FinHub.Api_HostAddress}}/api/statements/preview
+Content-Type: multipart/form-data; boundary=guest-statement
+
+--guest-statement
+Content-Disposition: form-data; name="file"; filename="rbc-chequing-statement.csv"
+Content-Type: text/csv
+
+< ../../test/fixtures/statements/rbc-chequing-statement.csv
+--guest-statement--
+
+###
+
 POST {{FinHub.Api_HostAddress}}/api/statements/import
 Content-Type: application/json
 

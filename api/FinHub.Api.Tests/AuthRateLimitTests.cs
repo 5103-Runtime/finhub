@@ -23,7 +23,7 @@ public sealed class AuthRateLimitTests(TestContext testContext)
     }
 
     [TestMethod]
-    public void AppSettings_ShipTenPerMinute()
+    public void AppSettings_ShipConfiguredRateLimits()
     {
         IConfigurationSection auth = new ConfigurationBuilder()
             .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"))
@@ -32,6 +32,14 @@ public sealed class AuthRateLimitTests(TestContext testContext)
 
         Assert.AreEqual(10, auth.GetValue<int>("PermitLimit"));
         Assert.AreEqual(60, auth.GetValue<int>("WindowSeconds"));
+
+        IConfigurationSection guestPreview = new ConfigurationBuilder()
+            .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"))
+            .Build()
+            .GetSection("RateLimiting:GuestPreview");
+
+        Assert.AreEqual(1, guestPreview.GetValue<int>("PermitLimit"));
+        Assert.AreEqual(60, guestPreview.GetValue<int>("WindowSeconds"));
     }
 
     [TestMethod]
@@ -41,12 +49,21 @@ public sealed class AuthRateLimitTests(TestContext testContext)
     [DataRow("WindowSeconds", null)]
     [DataRow("WindowSeconds", "0")]
     [DataRow("WindowSeconds", "-1")]
+    [DataRow("GuestPreview:PermitLimit", null)]
+    [DataRow("GuestPreview:PermitLimit", "0")]
+    [DataRow("GuestPreview:PermitLimit", "-1")]
+    [DataRow("GuestPreview:WindowSeconds", null)]
+    [DataRow("GuestPreview:WindowSeconds", "0")]
+    [DataRow("GuestPreview:WindowSeconds", "-1")]
     public void Startup_FailsOnAMissingOrNonPositiveValue(string key, string? value)
     {
         using WebApplicationFactory<Program> factory = WithSettings((key, value));
 
         InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(factory.CreateClient);
-        Assert.Contains($"RateLimiting:Auth:{key}", ex.Message);
+        string settingName = key.StartsWith("GuestPreview:", StringComparison.Ordinal)
+            ? $"RateLimiting:{key}"
+            : $"RateLimiting:Auth:{key}";
+        Assert.Contains(settingName, ex.Message);
     }
 
     private static WebApplicationFactory<Program> WithSettings(params (string Key, string? Value)[] settings) =>
@@ -54,7 +71,10 @@ public sealed class AuthRateLimitTests(TestContext testContext)
         {
             foreach ((string key, string? value) in settings)
             {
-                builder.UseSetting($"RateLimiting:Auth:{key}", value);
+                string settingName = key.StartsWith("GuestPreview:", StringComparison.Ordinal)
+                    ? $"RateLimiting:{key}"
+                    : $"RateLimiting:Auth:{key}";
+                builder.UseSetting(settingName, value);
             }
         });
 }

@@ -50,6 +50,14 @@ TimeSpan authWindow = authRateLimit.GetValue<int?>("WindowSeconds") is int secon
     ? TimeSpan.FromSeconds(seconds)
     : throw new InvalidOperationException("RateLimiting:Auth:WindowSeconds must be a positive integer.");
 
+IConfigurationSection guestPreviewRateLimit = builder.Configuration.GetSection("RateLimiting:GuestPreview");
+int guestPreviewPermitLimit = guestPreviewRateLimit.GetValue<int?>("PermitLimit") is int guestPermits and > 0
+    ? guestPermits
+    : throw new InvalidOperationException("RateLimiting:GuestPreview:PermitLimit must be a positive integer.");
+TimeSpan guestPreviewWindow = guestPreviewRateLimit.GetValue<int?>("WindowSeconds") is int guestSeconds and > 0
+    ? TimeSpan.FromSeconds(guestSeconds)
+    : throw new InvalidOperationException("RateLimiting:GuestPreview:WindowSeconds must be a positive integer.");
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -63,6 +71,13 @@ builder.Services.AddRateLimiter(options =>
         {
             PermitLimit = authPermitLimit,
             Window = authWindow
+        }));
+    options.AddPolicy("guest-preview", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = guestPreviewPermitLimit,
+            Window = guestPreviewWindow
         }));
     options.OnRejected = async (context, cancellationToken) =>
     {

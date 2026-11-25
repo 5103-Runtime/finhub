@@ -5,13 +5,13 @@ using FinHub.Api.Models;
 using FinHub.Api.Services;
 using FinHub.Api.Statements;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinHub.Api.Controllers;
 
 /// <summary>
-/// Controller responsible for turning the authenticated user's uploaded statements into candidate transactions
-/// and saving the lines the user confirms.
+/// Controller responsible for previewing uploaded statements and saving lines confirmed by authenticated users.
 /// </summary>
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
@@ -29,6 +29,51 @@ public sealed class StatementsController(
     /// The largest request body accepted. A statement export is a few kilobytes; the parser's row and cell caps assume a bounded file.
     /// </summary>
     private const long MaxRequestBytes = 1024 * 1024;
+    private const int MaxGuestPreviewTransactions = 20;
+
+    /// <summary>
+    /// Parses an uploaded statement for a guest to preview without account data or persistence.
+    /// </summary>
+    /// <param name="request">The uploaded statement.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The candidate transactions, in file order.</returns>
+    [HttpPost("preview")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(MaxRequestBytes)]
+    [EnableRateLimiting("guest-preview")]
+    public async Task<ActionResult<PreviewStatementResponse>> Preview(
+        [FromForm] PreviewStatementRequest request,
+        CancellationToken cancellationToken)
+    {
+        IFormFile file = request.File!;
+        IStatementParser? parser = parsers.FirstOrDefault(candidate => candidate.CanParse(file.FileName));
+        if (parser is null)
+        {
+            return BadRequest(new
+            {
+                error = "Only CSV exports are supported. Upload a .csv file.",
+                errorCode = "unsupported_file_type"
+            });
+        }
+
+        ParsedStatement statement;
+        try
+        {
+            await using Stream content = file.OpenReadStream();
+            statement = await parser.ParseAsync(content, cancellationToken);
+        }
+        catch (StatementFormatException exception)
+        {
+            return BadRequest(new
+            {
+                error = exception.Message,
+                errorCode = exception.ErrorCode,
+                line = exception.Line
+            });
+        }
+
+        return Ok(ToGuestPreviewResponse(statement));
+    }
 
     /// <summary>
     /// Parses an uploaded statement into candidate transactions for one of the authenticated user's accounts.
@@ -189,6 +234,26 @@ public sealed class StatementsController(
     }
 
     /// <summary>
+    /// Converts a parsed statement to the bounded response shown to a guest.
+    /// </summary>
+    /// <param name="statement">The parsed statement.</param>
+    /// <returns>The preview response, including the total count and at most 20 lines.</returns>
+    internal static PreviewStatementResponse ToGuestPreviewResponse(ParsedStatement statement) => new(
+        statement.Bank,
+        statement.AccountType,
+        statement.SkippedRows,
+        statement.Transactions.Count,
+        statement.Transactions
+            .Take(MaxGuestPreviewTransactions)
+            .Select(transaction => new PreviewStatementTransactionResponse(
+                transaction.StatementLine,
+                transaction.TransactionDate,
+                transaction.Description,
+                transaction.Amount,
+                transaction.BalanceAfter))
+            .ToList());
+
+    /// <summary>
     /// Converts a parsed statement to its response representation, flagging the candidates the account already holds.
     /// </summary>
     /// <param name="statement">The parsed statement.</param>
@@ -273,6 +338,14 @@ public sealed class StatementsController(
             StatementLine = line.StatementLine!.Value
         };
     }
+
+    /// <summary>
+    /// The fields the duplicate check compares: the same date, description, and amount that POST /api/transactions checks before saving.
+    /// </summary>
+    /// <param name="TransactionDate">The date the transaction occurred.</param>
+    /// <param name="Description">The trimmed description.</param>
+    /// <param name="Amount">The signed amount, rounded to cents.</param>
+    internal sealed record TransactionKey(DateOnly TransactionDate, string Description, decimal Amount);
 
     /// <summary>
     /// Rounds a money value to cents, half away from zero, as POST /api/transactions does before saving.
@@ -401,12 +474,4 @@ public sealed class StatementsController(
         errorCode = "potential_duplicates",
         statementLines
     });
-
-    /// <summary>
-    /// The fields the duplicate check compares: the same date, description, and amount that POST /api/transactions checks before saving.
-    /// </summary>
-    /// <param name="TransactionDate">The date the transaction occurred.</param>
-    /// <param name="Description">The trimmed description.</param>
-    /// <param name="Amount">The signed amount, rounded to cents.</param>
-    internal sealed record TransactionKey(DateOnly TransactionDate, string Description, decimal Amount);
 }

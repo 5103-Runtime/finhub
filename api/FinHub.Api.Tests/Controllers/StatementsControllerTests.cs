@@ -1,6 +1,10 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using FinHub.Api.Controllers;
 using FinHub.Api.DTOs.Statement;
 using FinHub.Api.Models;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace FinHub.Api.Tests.Controllers;
 
@@ -10,6 +14,39 @@ public sealed class StatementsControllerTests
     private static readonly ParsedTransaction Coffee = new(2, new DateOnly(2026, 10, 20), "Coffee", -4.5m, null);
 
     private static readonly ImportTransactionRequest CoffeeLine = new(2, Coffee.TransactionDate, "Coffee", -4.5m, null, null);
+
+    [TestMethod]
+    public async Task Preview_AllowsGuestsAndReturnsOnlyParsedCandidates()
+    {
+        using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("RateLimiting:GuestPreview:PermitLimit", "1");
+                builder.UseSetting("RateLimiting:GuestPreview:WindowSeconds", "60");
+            });
+        using HttpClient client = factory.CreateClient();
+        using MultipartFormDataContent request = CreateGuestPreviewRequest();
+
+        using HttpResponseMessage response = await client.PostAsync(
+            "/api/statements/preview",
+            request);
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        using JsonDocument body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        JsonElement root = body.RootElement;
+        Assert.AreEqual("rbc", root.GetProperty("bank").GetString());
+        Assert.IsTrue(root.GetProperty("totalTransactions").GetInt32() > 0);
+        Assert.IsTrue(root.GetProperty("transactions").GetArrayLength() <= 20);
+        JsonElement transaction = root.GetProperty("transactions")[0];
+        Assert.IsFalse(transaction.TryGetProperty("potentialDuplicate", out _));
+        Assert.IsFalse(transaction.TryGetProperty("categoryId", out _));
+
+        using MultipartFormDataContent rateLimitedRequest = CreateGuestPreviewRequest();
+        using HttpResponseMessage rateLimitedResponse = await client.PostAsync(
+            "/api/statements/preview",
+            rateLimitedRequest);
+        Assert.AreEqual(HttpStatusCode.TooManyRequests, rateLimitedResponse.StatusCode);
+    }
 
     [TestMethod]
     public void ToResponse_FlagsTheCandidatesTheAccountAlreadyHolds()
@@ -28,6 +65,36 @@ public sealed class StatementsControllerTests
         Assert.AreEqual(
             new ParsedTransactionResponse(3, Coffee.TransactionDate, "Tea", -4.5m, null, false),
             response.Transactions[1]);
+    }
+
+    [TestMethod]
+    public void ToGuestPreviewResponse_ReportsAllCandidatesAndReturnsAtMostTwenty()
+    {
+        ParsedTransaction[] transactions = Enumerable.Range(1, 21)
+            .Select(line => Coffee with { StatementLine = line })
+            .ToArray();
+        ParsedStatement statement = new("rbc", "chequing", transactions, 0);
+
+        PreviewStatementResponse response = StatementsController.ToGuestPreviewResponse(statement);
+
+        Assert.AreEqual(21, response.TotalTransactions);
+        Assert.AreEqual(20, response.Transactions.Count);
+        Assert.AreEqual(1, response.Transactions[0].StatementLine);
+        Assert.AreEqual(20, response.Transactions[^1].StatementLine);
+    }
+
+    private static MultipartFormDataContent CreateGuestPreviewRequest()
+    {
+        string filePath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Fixtures",
+            "rbc-chequing-statement.csv");
+        ByteArrayContent fileContent = new(File.ReadAllBytes(filePath));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+
+        MultipartFormDataContent request = new();
+        request.Add(fileContent, "file", "rbc-chequing-statement.csv");
+        return request;
     }
 
     [TestMethod]
