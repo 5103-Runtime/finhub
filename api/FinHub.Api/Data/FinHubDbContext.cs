@@ -70,6 +70,7 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
             entity.Property(profile => profile.LastName).HasColumnName("last_name").HasMaxLength(100);
             entity.Property(profile => profile.PreferredName).HasColumnName("preferred_name").HasMaxLength(100);
             entity.Property(profile => profile.DateOfBirth).HasColumnName("date_of_birth");
+            entity.Property(profile => profile.Role).HasColumnName("role").HasMaxLength(20);
             entity.Property(profile => profile.CreatedAt).HasColumnName("created_at").ValueGeneratedOnAdd();
             entity.Property(profile => profile.UpdatedAt).HasColumnName("updated_at").ValueGeneratedOnAddOrUpdate();
         });

@@ -26,6 +26,11 @@ public sealed class Profile
     public string? PreferredName { get; set; }
 
     /// <summary>
+    /// Gets or sets the application role. Valid values are user and administrator.
+    /// </summary>
+    public string Role { get; set; } = "user";
+
+    /// <summary>
     /// Gets or sets the date of birth of the user.
     /// </summary>
     public DateOnly? DateOfBirth { get; set; }

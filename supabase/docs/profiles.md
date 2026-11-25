@@ -9,8 +9,13 @@ Supabase Auth owns credentials and password hashing. The `public.profiles` table
   - Date of birth is private personal information, so the table is protected by RLS and should not be publicly readable.
 - `avatar_url`
 - timestamps
+- `role`
+  - Defaults to `user`.
+  - May be `user` or `administrator`.
+  - Administrators are assigned explicitly; they are not granted by registration or profile updates.
+  - The profile API does not accept or update `role`; role changes are made through direct database/SQL provisioning.
 
-These fields are nullable so registration can begin with only an email and password.
+Profile details such as names, date of birth, and avatar URL are nullable so registration can begin with only an email and password. The profile ID and role are required.
 
 ## Verify The Migration
 
