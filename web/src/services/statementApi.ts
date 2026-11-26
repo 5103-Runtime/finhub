@@ -28,6 +28,20 @@ export interface ParsedStatementResponse {
 }
 
 /**
+ * @brief Response returned when a guest previews a statement.
+ */
+export interface PreviewStatementResponse {
+  bank: string;
+  accountType: AccountType;
+  skippedRows: number;
+  totalTransactions: number;
+  transactions: Omit<
+    ParsedTransactionResponse,
+    "potentialDuplicate" | "categoryId" | "categoryWasExplicitlySet"
+  >[];
+}
+
+/**
  * @brief One confirmed statement line to save as a transaction.
  */
 export interface ImportTransactionLine {
@@ -64,6 +78,23 @@ export function parseStatement(
   form.append("file", file);
   form.append("accountId", accountId);
   return apiPostForm<ParsedStatementResponse>("/api/statements/parse", form);
+}
+
+/**
+ * @brief Uploads a CSV statement for a guest preview. The API does not save the upload or its transactions.
+ * @param file The CSV export from the bank.
+ * @returns A promise containing the parsed statement preview.
+ * @throws ApiError if the file cannot be read or the request fails.
+ */
+export function previewStatement(
+  file: File,
+): Promise<PreviewStatementResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  return apiPostForm<PreviewStatementResponse>(
+    "/api/statements/preview",
+    form,
+  );
 }
 
 /**

@@ -1,0 +1,104 @@
+.guest-statement-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.guest-preview-summary,
+.guest-preview-empty {
+  color: var(--color-slate) !important;
+  font-size: 13px !important;
+}
+
+.guest-preview-table {
+  max-height: min(55vh, 560px);
+  overflow: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-slate) 6%, var(--color-paper));
+}
+
+.guest-preview-row {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 8px 14px;
+}
+
+.guest-preview-row + .guest-preview-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.guest-preview-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 38px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--color-paper);
+  color: var(--color-bronze);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.guest-preview-date,
+.guest-preview-description,
+.guest-preview-amount {
+  color: var(--color-ink) !important;
+  font-size: 13px !important;
+}
+
+.guest-preview-date {
+  color: var(--color-slate) !important;
+  white-space: nowrap;
+}
+
+.guest-preview-description {
+  overflow: hidden;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guest-preview-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.guest-preview-amount.positive {
+  color: var(--color-success) !important;
+}
+
+.guest-preview-privacy {
+  color: var(--color-slate) !important;
+  font-size: 12px !important;
+}
+
+@media (max-width: 600px) {
+  .guest-preview-row {
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+  }
+
+  .guest-preview-head {
+    display: none;
+  }
+
+  .guest-preview-date {
+    grid-column: 1 / -1;
+  }
+
+  .guest-preview-description {
+    grid-column: 1;
+  }
+
+  .guest-preview-amount {
+    grid-column: 2;
+  }
+}

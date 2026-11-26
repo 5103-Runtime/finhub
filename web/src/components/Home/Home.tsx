@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -11,11 +11,57 @@ import {
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import CloudUploadRounded from "@mui/icons-material/CloudUploadRounded";
+import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
 import Footer from "@app/components/Footer";
+import StatementPreviewDialog from "@app/components/StatementPreviewDialog";
+import { FormAlert } from "@app/components/Form/FormAlert";
+import {
+  previewStatement,
+  type PreviewStatementResponse,
+} from "@app/services/statementApi";
+import { getErrorMessage } from "@app/utils/formErrors";
+import { STATEMENT_ACCEPT, validateStatementFile } from "@app/utils/statements";
 import "./Home.css";
 
 export default function Home() {
-  const [sampleFile, setSampleFile] = useState("");
+  const [preview, setPreview] = useState<PreviewStatementResponse | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  const handlePreviewClose = () => {
+    setPreview(null);
+    setUploadError("");
+  };
+
+  const handleSampleFileChange = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateStatementFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      setPreview(null);
+      return;
+    }
+
+    setUploadError("");
+    setIsPreviewing(true);
+    try {
+      setPreview(await previewStatement(file));
+    } catch (error) {
+      setPreview(null);
+      setUploadError(
+        getErrorMessage(error, "Unable to preview the statement."),
+      );
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
 
   return (
     <Box className="home-page">
@@ -70,28 +116,29 @@ export default function Home() {
                   Curious how it works?
                 </Typography>
                 <Typography className="import-copy">
-                  Upload a sample statement and preview your organized finances.
+                  Upload a sample statement and preview how it gets parsed.
                 </Typography>
-                {sampleFile && (
-                  <Typography className="file-name">{sampleFile}</Typography>
-                )}
               </Box>
               <Button
                 component="label"
                 className="import-button"
-                endIcon={<ArrowForwardRounded />}
+                startIcon={<UploadFileRounded />}
+                loading={isPreviewing}
               >
-                Try import
+                {isPreviewing ? "Reading statement..." : "Upload statement"}
                 <input
                   hidden
                   type="file"
-                  accept=".csv,.pdf,.ofx,.qfx"
-                  onChange={(event) =>
-                    setSampleFile(event.target.files?.[0]?.name ?? "")
-                  }
+                  accept={STATEMENT_ACCEPT}
+                  onChange={handleSampleFileChange}
                 />
               </Button>
             </Paper>
+            {uploadError && (
+              <Box className="home-import-error">
+                <FormAlert severity="error">{uploadError}</FormAlert>
+              </Box>
+            )}
           </Box>
           <Box className="home-side">
             <Typography className="home-side-label">
@@ -112,6 +159,12 @@ export default function Home() {
         </Box>
         <Footer />
       </Container>
+      {preview && (
+        <StatementPreviewDialog
+          preview={preview}
+          onClose={handlePreviewClose}
+        />
+      )}
     </Box>
   );
 }

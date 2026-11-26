@@ -125,10 +125,22 @@
   max-width: 590px;
   margin-top: 42px;
   padding: 17px 18px;
-  border: 1px solid var(--border-accent);
+  border: 1px solid var(--border-subtle);
   border-radius: 17px !important;
   background: var(--surface-overlay) !important;
   color: var(--color-cream);
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.import-card:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--color-bronze) 55%,
+    var(--border-subtle)
+  ) !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-bronze) 22%, transparent) !important;
 }
 
 .import-icon {
@@ -156,21 +168,25 @@
   font-size: 12px !important;
 }
 
-.file-name {
-  margin-top: 4px !important;
-  overflow: hidden;
-  color: var(--color-bronze);
-  font-size: 11px !important;
-  text-overflow: ellipsis;
+.import-button {
+  min-height: 42px;
+  padding: 0 14px !important;
+  border-radius: 10px !important;
+  background: var(--color-bronze) !important;
+  color: var(--color-ink) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
   white-space: nowrap;
 }
 
-.import-button {
-  min-width: 105px;
-  color: var(--color-bronze) !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-transform: none !important;
+.import-button:hover {
+  background: var(--color-bronze-hover) !important;
+}
+
+.home-import-error {
+  max-width: 590px;
+  margin-top: 12px;
 }
 
 .home-side {
