@@ -1,7 +1,9 @@
 # API
+
 ASP.NET Core Web API (.NET 10) using controllers.
 
 ## Conventions
+
 - Every endpoint lives under `/api/`.
 - Write routes out in full and in lowercase: `[Route("api/transactions")]`, not `[Route("api/[controller]")]`.
 - Secrets (connection strings, JWT keys) go in user-secrets, never in committed files.
@@ -37,14 +39,18 @@ Unit tests live in `FinHub.Api.Tests` and run against the sample statements unde
 dotnet test api/FinHub.Api.Tests
 ```
 
-## Auth rate limit
+## Rate limits
 
-Register, login, forgot-password and update-password calls are limited per client IP. The production values live in `appsettings.json` under `RateLimiting:Auth` (10 requests per 60 seconds). Adjust them per environment without a code change:
+Register, login, forgot-password and update-password calls are limited per client IP. The production values live in `appsettings.json` under `RateLimiting:Auth` (10 requests per 60 seconds).
 
-- Local development: add a `RateLimiting` block to `appsettings.Development.json`.
-- CI and deployment: set `RateLimiting__Auth__PermitLimit` and `RateLimiting__Auth__WindowSeconds` as environment variables.
+Anonymous statement previews are limited per connection peer under `RateLimiting:GuestPreview` (one request per 60 seconds). Failed preview requests, including unsupported file types and invalid statements, also use a permit.
 
-Both keys are required and must be positive; the API refuses to start otherwise. A rejected call returns `429` with a `Retry-After` header and `errorCode: "rate_limited"`.
+Adjust either limit per environment without a code change:
+
+- Local development: add the corresponding `RateLimiting` section to `appsettings.Development.json`.
+- CI and deployment: set `RateLimiting__Auth__PermitLimit`, `RateLimiting__Auth__WindowSeconds`, `RateLimiting__GuestPreview__PermitLimit`, and `RateLimiting__GuestPreview__WindowSeconds` as environment variables.
+
+All four keys are required and must be positive; the API refuses to start otherwise. A rejected call returns `429` with a `Retry-After` header and `errorCode: "rate_limited"`.
 
 ## Related Documentation
 

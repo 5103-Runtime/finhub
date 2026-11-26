@@ -49,6 +49,30 @@ public sealed class StatementsControllerTests
     }
 
     [TestMethod]
+    public async Task Preview_UnsupportedUploadUsesTheGuestPreviewPermit()
+    {
+        using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("RateLimiting:GuestPreview:PermitLimit", "1");
+                builder.UseSetting("RateLimiting:GuestPreview:WindowSeconds", "60");
+            });
+        using HttpClient client = factory.CreateClient();
+        using MultipartFormDataContent unsupportedRequest = CreateGuestPreviewRequest("statement.txt");
+
+        using HttpResponseMessage unsupportedResponse = await client.PostAsync(
+            "/api/statements/preview",
+            unsupportedRequest);
+        Assert.AreEqual(HttpStatusCode.BadRequest, unsupportedResponse.StatusCode);
+
+        using MultipartFormDataContent validRequest = CreateGuestPreviewRequest();
+        using HttpResponseMessage rateLimitedResponse = await client.PostAsync(
+            "/api/statements/preview",
+            validRequest);
+        Assert.AreEqual(HttpStatusCode.TooManyRequests, rateLimitedResponse.StatusCode);
+    }
+
+    [TestMethod]
     public void ToResponse_FlagsTheCandidatesTheAccountAlreadyHolds()
     {
         ParsedStatement statement = new("rbc", "chequing", [Coffee, Coffee with { StatementLine = 3, Description = "Tea" }], 1);
@@ -83,7 +107,8 @@ public sealed class StatementsControllerTests
         Assert.AreEqual(20, response.Transactions[^1].StatementLine);
     }
 
-    private static MultipartFormDataContent CreateGuestPreviewRequest()
+    private static MultipartFormDataContent CreateGuestPreviewRequest(
+        string fileName = "rbc-chequing-statement.csv")
     {
         string filePath = Path.Combine(
             AppContext.BaseDirectory,
@@ -93,7 +118,7 @@ public sealed class StatementsControllerTests
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
 
         MultipartFormDataContent request = new();
-        request.Add(fileContent, "file", "rbc-chequing-statement.csv");
+        request.Add(fileContent, "file", fileName);
         return request;
     }
 

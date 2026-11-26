@@ -41,7 +41,8 @@ builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a 
 builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
 builder.Services.AddScoped<IInsightService, InsightService>();
 
-// The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit and RateLimiting__Auth__WindowSeconds.
+// The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit, RateLimiting__Auth__WindowSeconds,
+// RateLimiting__GuestPreview__PermitLimit, and RateLimiting__GuestPreview__WindowSeconds.
 IConfigurationSection authRateLimit = builder.Configuration.GetSection("RateLimiting:Auth");
 int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit") is int permits and > 0
     ? permits

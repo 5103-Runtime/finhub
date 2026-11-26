@@ -28,7 +28,7 @@ FinHub parses bank statements in the API, not the browser. The user uploads a CS
 
 `potentialDuplicate` is true when the account already holds a transaction with the same date, description, and amount, the same check `POST /api/transactions` makes before saving (FIN-42), so the review page can warn before the user confirms the line. The endpoint reports the detected bank and account type but does not compare them with the account, since a Scotiabank savings export reads as `chequing`; the review page can show them so a file dropped on the wrong account is caught before anything is saved. The account must belong to the user (404 `account_not_found`), the file must be a `.csv` (400 `unsupported_file_type`), and a request body over 1 MiB is refused with a 400 validation error before it is read; what the parser rejects is listed under [Errors](#errors).
 
-`POST /api/statements/preview` anonymously parses a CSV for preview only. It returns up to 20 candidates and the total count, saves nothing, accepts requests up to 1 MiB, and allows one request per minute per connection peer.
+`POST /api/statements/preview` anonymously parses a CSV for preview only. It returns up to 20 candidates and the total count, saves nothing, accepts requests up to 1 MiB, and allows one request per minute per connection peer. Failed requests, including unsupported file types and invalid statements, also use a permit.
 
 `POST /api/statements/import` saves the confirmed lines into one account in a single request:
 
