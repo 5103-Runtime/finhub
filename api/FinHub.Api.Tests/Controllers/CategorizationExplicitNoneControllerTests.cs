@@ -1,5 +1,4 @@
 using System.Net;
-using System.Threading.RateLimiting;
 using System.Text;
 using FinHub.Api.Constants;
 using FinHub.Api.Controllers;
@@ -218,14 +217,7 @@ public sealed class CategorizationExplicitNoneControllerTests
             CreateAuthClient(),
             [],
             service,
-            PartitionedRateLimiter.Create<HttpContext, string>(
-                _ => RateLimitPartition.GetFixedWindowLimiter(
-                    "test",
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 1,
-                        Window = TimeSpan.FromMinutes(1)
-                    })))
+            new GuestPreviewRateLimiter(1, TimeSpan.FromMinutes(1), TimeProvider.System))
         {
             ControllerContext = CreateControllerContext()
         };

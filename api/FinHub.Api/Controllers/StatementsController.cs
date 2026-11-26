@@ -1,4 +1,3 @@
-using System.Threading.RateLimiting;
 using FinHub.Api.Data;
 using FinHub.Api.DTOs.Statement;
 using FinHub.Api.DTOs.Transaction;
@@ -24,7 +23,7 @@ public sealed class StatementsController(
     SupabaseAuthClient authClient,
     IEnumerable<IStatementParser> parsers,
     ICategorizationRuleService categorizationRuleService,
-    PartitionedRateLimiter<HttpContext> guestPreviewRateLimiter) : AuthenticatedControllerBase(authClient)
+    GuestPreviewRateLimiter guestPreviewRateLimiter) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The largest request body accepted. A statement export is a few kilobytes; the parser's row and cell caps assume a bounded file.
@@ -56,33 +55,12 @@ public sealed class StatementsController(
             });
         }
 
-        ParsedStatement statement;
-        try
+        GuestPreviewRateLimiter.PreviewLease? previewLease = guestPreviewRateLimiter.TryAcquire(
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            out TimeSpan retryAfter);
+        if (previewLease is null)
         {
-            await using Stream content = file.OpenReadStream();
-            statement = await parser.ParseAsync(content, cancellationToken);
-        }
-        catch (StatementFormatException exception)
-        {
-            return BadRequest(new
-            {
-                error = exception.Message,
-                errorCode = exception.ErrorCode,
-                line = exception.Line
-            });
-        }
-
-        using RateLimitLease lease = await guestPreviewRateLimiter.AcquireAsync(
-            HttpContext,
-            1,
-            cancellationToken);
-        if (!lease.IsAcquired)
-        {
-            if (lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
-            {
-                Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString();
-            }
-
+            Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString();
             return StatusCode(StatusCodes.Status429TooManyRequests, new
             {
                 error = "Too many attempts. Please try again later.",
@@ -90,7 +68,29 @@ public sealed class StatementsController(
             });
         }
 
-        return Ok(ToGuestPreviewResponse(statement));
+        using (previewLease)
+        {
+            try
+            {
+                ParsedStatement statement;
+                await using (Stream content = file.OpenReadStream())
+                {
+                    statement = await parser.ParseAsync(content, cancellationToken);
+                }
+
+                previewLease.MarkSuccessful();
+                return Ok(ToGuestPreviewResponse(statement));
+            }
+            catch (StatementFormatException exception)
+            {
+                return BadRequest(new
+                {
+                    error = exception.Message,
+                    errorCode = exception.ErrorCode,
+                    line = exception.Line
+                });
+            }
+        }
     }
 
     /// <summary>

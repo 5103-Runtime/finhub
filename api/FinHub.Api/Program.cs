@@ -87,15 +87,11 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-builder.Services.AddSingleton(
-    PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = guestPreviewPermitLimit,
-                Window = guestPreviewWindow
-            })));
+builder.Services.AddSingleton(services =>
+    new GuestPreviewRateLimiter(
+        guestPreviewPermitLimit,
+        guestPreviewWindow,
+        services.GetRequiredService<TimeProvider>()));
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

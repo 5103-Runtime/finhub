@@ -77,7 +77,8 @@ public sealed class StatementsControllerTests
         using HttpResponseMessage validResponse = await client.PostAsync("/api/statements/preview", validRequest);
         Assert.AreEqual(HttpStatusCode.OK, validResponse.StatusCode);
 
-        using MultipartFormDataContent secondValidRequest = CreateGuestPreviewRequest();
+        using MultipartFormDataContent secondValidRequest = CreateGuestPreviewRequest(
+            statementContent: "not,a,supported,bank,statement");
         using HttpResponseMessage rateLimitedResponse = await client.PostAsync(
             "/api/statements/preview",
             secondValidRequest);
