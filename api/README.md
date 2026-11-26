@@ -43,7 +43,7 @@ dotnet test api/FinHub.Api.Tests
 
 Register, login, forgot-password and update-password calls are limited per client IP. The production values live in `appsettings.json` under `RateLimiting:Auth` (10 requests per 60 seconds).
 
-Anonymous statement previews are limited per connection peer under `RateLimiting:GuestPreview` (one request per 60 seconds). Failed preview requests, including unsupported file types and invalid statements, also use a permit.
+Anonymous statement previews are limited per connection peer under `RateLimiting:GuestPreview` (one successful parse per 60 seconds). Unsupported file types and invalid statements do not use a permit.
 
 Adjust either limit per environment without a code change:
 

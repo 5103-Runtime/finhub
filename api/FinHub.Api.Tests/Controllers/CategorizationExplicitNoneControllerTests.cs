@@ -1,4 +1,5 @@
 using System.Net;
+using System.Threading.RateLimiting;
 using System.Text;
 using FinHub.Api.Constants;
 using FinHub.Api.Controllers;
@@ -212,7 +213,19 @@ public sealed class CategorizationExplicitNoneControllerTests
     private static StatementsController CreateStatementController(
         FinHubDbContext dbContext,
         ICategorizationRuleService service) =>
-        new(dbContext, CreateAuthClient(), [], service)
+        new(
+            dbContext,
+            CreateAuthClient(),
+            [],
+            service,
+            PartitionedRateLimiter.Create<HttpContext, string>(
+                _ => RateLimitPartition.GetFixedWindowLimiter(
+                    "test",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 1,
+                        Window = TimeSpan.FromMinutes(1)
+                    })))
         {
             ControllerContext = CreateControllerContext()
         };

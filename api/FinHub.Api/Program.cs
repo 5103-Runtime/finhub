@@ -73,13 +73,6 @@ builder.Services.AddRateLimiter(options =>
             PermitLimit = authPermitLimit,
             Window = authWindow
         }));
-    options.AddPolicy("guest-preview", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = guestPreviewPermitLimit,
-            Window = guestPreviewWindow
-        }));
     options.OnRejected = async (context, cancellationToken) =>
     {
         if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
@@ -93,6 +86,16 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken);
     };
 });
+
+builder.Services.AddSingleton(
+    PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = guestPreviewPermitLimit,
+                Window = guestPreviewWindow
+            })));
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

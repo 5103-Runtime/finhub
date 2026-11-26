@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using FinHub.Api.Data;
 using FinHub.Api.DTOs.Statement;
 using FinHub.Api.DTOs.Transaction;
@@ -5,7 +6,6 @@ using FinHub.Api.Models;
 using FinHub.Api.Services;
 using FinHub.Api.Statements;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinHub.Api.Controllers;
@@ -23,7 +23,8 @@ public sealed class StatementsController(
     FinHubDbContext dbContext,
     SupabaseAuthClient authClient,
     IEnumerable<IStatementParser> parsers,
-    ICategorizationRuleService categorizationRuleService) : AuthenticatedControllerBase(authClient)
+    ICategorizationRuleService categorizationRuleService,
+    PartitionedRateLimiter<HttpContext> guestPreviewRateLimiter) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The largest request body accepted. A statement export is a few kilobytes; the parser's row and cell caps assume a bounded file.
@@ -40,7 +41,6 @@ public sealed class StatementsController(
     [HttpPost("preview")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxRequestBytes)]
-    [EnableRateLimiting("guest-preview")]
     public async Task<ActionResult<PreviewStatementResponse>> Preview(
         [FromForm] PreviewStatementRequest request,
         CancellationToken cancellationToken)
@@ -69,6 +69,24 @@ public sealed class StatementsController(
                 error = exception.Message,
                 errorCode = exception.ErrorCode,
                 line = exception.Line
+            });
+        }
+
+        using RateLimitLease lease = await guestPreviewRateLimiter.AcquireAsync(
+            HttpContext,
+            1,
+            cancellationToken);
+        if (!lease.IsAcquired)
+        {
+            if (lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+            {
+                Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString();
+            }
+
+            return StatusCode(StatusCodes.Status429TooManyRequests, new
+            {
+                error = "Too many attempts. Please try again later.",
+                errorCode = "rate_limited"
             });
         }
 

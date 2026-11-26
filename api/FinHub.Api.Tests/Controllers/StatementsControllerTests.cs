@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using FinHub.Api.Controllers;
 using FinHub.Api.DTOs.Statement;
@@ -49,7 +50,7 @@ public sealed class StatementsControllerTests
     }
 
     [TestMethod]
-    public async Task Preview_UnsupportedUploadUsesTheGuestPreviewPermit()
+    public async Task Preview_FailedUploadsDoNotUseTheSuccessfulPreviewPermit()
     {
         using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -65,10 +66,21 @@ public sealed class StatementsControllerTests
             unsupportedRequest);
         Assert.AreEqual(HttpStatusCode.BadRequest, unsupportedResponse.StatusCode);
 
+        using MultipartFormDataContent invalidStatementRequest = CreateGuestPreviewRequest(
+            statementContent: "not,a,supported,bank,statement");
+        using HttpResponseMessage invalidStatementResponse = await client.PostAsync(
+            "/api/statements/preview",
+            invalidStatementRequest);
+        Assert.AreEqual(HttpStatusCode.BadRequest, invalidStatementResponse.StatusCode);
+
         using MultipartFormDataContent validRequest = CreateGuestPreviewRequest();
+        using HttpResponseMessage validResponse = await client.PostAsync("/api/statements/preview", validRequest);
+        Assert.AreEqual(HttpStatusCode.OK, validResponse.StatusCode);
+
+        using MultipartFormDataContent secondValidRequest = CreateGuestPreviewRequest();
         using HttpResponseMessage rateLimitedResponse = await client.PostAsync(
             "/api/statements/preview",
-            validRequest);
+            secondValidRequest);
         Assert.AreEqual(HttpStatusCode.TooManyRequests, rateLimitedResponse.StatusCode);
     }
 
@@ -108,13 +120,13 @@ public sealed class StatementsControllerTests
     }
 
     private static MultipartFormDataContent CreateGuestPreviewRequest(
-        string fileName = "rbc-chequing-statement.csv")
+        string fileName = "rbc-chequing-statement.csv",
+        string? statementContent = null)
     {
-        string filePath = Path.Combine(
-            AppContext.BaseDirectory,
-            "Fixtures",
-            "rbc-chequing-statement.csv");
-        ByteArrayContent fileContent = new(File.ReadAllBytes(filePath));
+        byte[] content = statementContent is null
+            ? File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Fixtures", "rbc-chequing-statement.csv"))
+            : Encoding.UTF8.GetBytes(statementContent);
+        ByteArrayContent fileContent = new(content);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
 
         MultipartFormDataContent request = new();
