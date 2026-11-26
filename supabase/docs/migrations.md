@@ -26,6 +26,7 @@ Do not place passwords, access tokens, connection strings, or publishable keys i
 - `_create_categorization_rules` creates `public.categorization_rules`, described under [Categorization rules](./categorization-rules.md).
 - `_create_insights` creates `public.insight_preferences`, `public.insight_states`, and `public.insight_mutes`, described under [Insights](./insights.md).
 - `_add_administrator_role` adds the `role` column to `public.profiles`, restricts it to `user` or `administrator`, and assigns new profiles the `user` role.
+- `_create_statement_mappings` creates `public.statement_mappings`, described under [Statement mappings](./statement-mappings.md), and inserts the five bank mappings.
 
 ## Create a migration
 
