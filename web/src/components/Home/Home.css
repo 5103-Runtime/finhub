@@ -259,11 +259,27 @@
 
 @media (max-width: 480px) {
   .import-card {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 43px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px 14px;
+  }
+
+  .import-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .import-copy-block {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
   }
 
   .import-button {
-    margin-left: 58px;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    margin-left: 0;
   }
 }

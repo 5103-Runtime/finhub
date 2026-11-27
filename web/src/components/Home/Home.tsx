@@ -111,7 +111,7 @@ export default function Home() {
               <Box className="import-icon">
                 <CloudUploadRounded />
               </Box>
-              <Box sx={{ flex: 1 }}>
+              <Box className="import-copy-block" sx={{ flex: 1 }}>
                 <Typography className="import-title">
                   Curious how it works?
                 </Typography>

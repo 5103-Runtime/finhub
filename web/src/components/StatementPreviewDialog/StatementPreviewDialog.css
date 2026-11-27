@@ -81,6 +81,61 @@
 }
 
 @media (max-width: 600px) {
+  .app-dialog .MuiDialog-paper:has(.guest-statement-preview) {
+    width: calc(100% - 24px);
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    margin: 12px;
+    overflow: hidden;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.guest-statement-preview)
+    .MuiDialogTitle-root,
+  .app-dialog
+    .MuiDialog-paper:has(.guest-statement-preview)
+    .MuiDialogActions-root {
+    flex-shrink: 0;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.guest-statement-preview)
+    .MuiDialogTitle-root {
+    padding: 22px 16px 8px;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.guest-statement-preview)
+    .MuiDialogContent-root {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 8px 16px;
+    overflow: hidden;
+  }
+
+  .guest-statement-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 8px;
+    padding-top: 4px;
+    overflow: hidden;
+  }
+
+  .guest-preview-table {
+    flex: 1 1 auto;
+    min-height: 120px;
+    max-height: none;
+    overscroll-behavior: contain;
+  }
+
+  .app-dialog
+    .MuiDialog-paper:has(.guest-statement-preview)
+    .MuiDialogActions-root {
+    padding: 8px 16px 16px;
+  }
+
   .guest-preview-row {
     grid-template-columns: 1fr auto;
     gap: 4px 10px;
