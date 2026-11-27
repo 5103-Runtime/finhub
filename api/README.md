@@ -52,6 +52,15 @@ Adjust either limit per environment without a code change:
 
 All four keys are required and must be positive; the API refuses to start otherwise. A rejected call returns `429` with a `Retry-After` header and `errorCode: "rate_limited"`.
 
+## User management APIs
+
+Application user reads are exposed through:
+
+- `GET /api/admin/users` — lists all application users.
+- `GET /api/admin/users/{id}` — retrieves one application user.
+
+Both endpoints require a valid access token and an application profile with `role = 'administrator'`. Normal users receive `403` with `errorCode: "administrator_required"`. Unknown user IDs return `404` with `errorCode: "user_not_found"`.
+
 ## Related Documentation
 
 See the [root README](../README.md) to run it.

@@ -1,6 +1,9 @@
 using FinHub.Api.Extensions;
 using FinHub.Api.Services;
+using FinHub.Api.Data;
+using FinHub.Api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinHub.Api.Controllers;
 
@@ -38,6 +41,34 @@ public abstract class AuthenticatedControllerBase(SupabaseAuthClient authClient)
     }
 
     /// <summary>
+    /// Resolves the authenticated user and verifies that the application profile has the administrator role.
+    /// </summary>
+    /// <param name="dbContext">The database context used to look up the application role.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The administrator's ID, or the failure response the action should return as is.</returns>
+    protected async Task<(Guid? AdministratorId, ActionResult? Failure)> ResolveAdministratorAsync(
+        FinHubDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        (Guid? userId, ActionResult? failure) = await ResolveCurrentUserAsync(cancellationToken);
+        if (failure is not null)
+        {
+            return (null, failure);
+        }
+
+        Profile? profile = await dbContext.Profiles
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == userId!.Value, cancellationToken);
+
+        if (profile?.Role != "administrator")
+        {
+            return (null, ForbiddenAdministratorResponse());
+        }
+
+        return (userId, null);
+    }
+
+    /// <summary>
     /// Creates the response returned when the request carries no access token.
     /// </summary>
     /// <returns>An unauthorized response.</returns>
@@ -56,6 +87,18 @@ public abstract class AuthenticatedControllerBase(SupabaseAuthClient authClient)
         error = "The authorization token is invalid or expired.",
         errorCode = "invalid_token"
     });
+
+    /// <summary>
+    /// Creates the response returned when an authenticated user does not have the administrator role.
+    /// </summary>
+    /// <returns>A forbidden response.</returns>
+    protected ObjectResult ForbiddenAdministratorResponse() => StatusCode(
+        StatusCodes.Status403Forbidden,
+        new
+        {
+            error = "Administrator access is required.",
+            errorCode = "administrator_required"
+        });
 
     /// <summary>
     /// Creates the response returned when the authentication service is unavailable.
