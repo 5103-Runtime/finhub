@@ -10,8 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FinHub.Api.Controllers;
 
 /// <summary>
-/// Controller responsible for turning the authenticated user's uploaded statements into candidate transactions
-/// and saving the lines the user confirms.
+/// Controller responsible for previewing uploaded statements and saving lines confirmed by authenticated users.
 /// </summary>
 /// <param name="dbContext">The database context.</param>
 /// <param name="authClient">The authentication client.</param>
@@ -23,12 +22,76 @@ public sealed class StatementsController(
     FinHubDbContext dbContext,
     SupabaseAuthClient authClient,
     IEnumerable<IStatementParser> parsers,
-    ICategorizationRuleService categorizationRuleService) : AuthenticatedControllerBase(authClient)
+    ICategorizationRuleService categorizationRuleService,
+    GuestPreviewRateLimiter guestPreviewRateLimiter) : AuthenticatedControllerBase(authClient)
 {
     /// <summary>
     /// The largest request body accepted. A statement export is a few kilobytes; the parser's row and cell caps assume a bounded file.
     /// </summary>
     private const long MaxRequestBytes = 1024 * 1024;
+    private const int MaxGuestPreviewTransactions = 20;
+
+    /// <summary>
+    /// Parses an uploaded statement for a guest to preview without account data or persistence.
+    /// </summary>
+    /// <param name="request">The uploaded statement.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The candidate transactions, in file order.</returns>
+    [HttpPost("preview")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(MaxRequestBytes)]
+    public async Task<ActionResult<PreviewStatementResponse>> Preview(
+        [FromForm] PreviewStatementRequest request,
+        CancellationToken cancellationToken)
+    {
+        IFormFile file = request.File!;
+        IStatementParser? parser = parsers.FirstOrDefault(candidate => candidate.CanParse(file.FileName));
+        if (parser is null)
+        {
+            return BadRequest(new
+            {
+                error = "Only CSV exports are supported. Upload a .csv file.",
+                errorCode = "unsupported_file_type"
+            });
+        }
+
+        GuestPreviewRateLimiter.PreviewLease? previewLease = guestPreviewRateLimiter.TryAcquire(
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            out TimeSpan retryAfter);
+        if (previewLease is null)
+        {
+            Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString();
+            return StatusCode(StatusCodes.Status429TooManyRequests, new
+            {
+                error = "Too many attempts. Please try again later.",
+                errorCode = "rate_limited"
+            });
+        }
+
+        using (previewLease)
+        {
+            try
+            {
+                ParsedStatement statement;
+                await using (Stream content = file.OpenReadStream())
+                {
+                    statement = await parser.ParseAsync(content, cancellationToken);
+                }
+
+                previewLease.MarkSuccessful();
+                return Ok(ToGuestPreviewResponse(statement));
+            }
+            catch (StatementFormatException exception)
+            {
+                return BadRequest(new
+                {
+                    error = exception.Message,
+                    errorCode = exception.ErrorCode,
+                    line = exception.Line
+                });
+            }
+        }
+    }
 
     /// <summary>
     /// Parses an uploaded statement into candidate transactions for one of the authenticated user's accounts.
@@ -189,6 +252,26 @@ public sealed class StatementsController(
     }
 
     /// <summary>
+    /// Converts a parsed statement to the bounded response shown to a guest.
+    /// </summary>
+    /// <param name="statement">The parsed statement.</param>
+    /// <returns>The preview response, including the total count and at most 20 lines.</returns>
+    internal static PreviewStatementResponse ToGuestPreviewResponse(ParsedStatement statement) => new(
+        statement.Bank,
+        statement.AccountType,
+        statement.SkippedRows,
+        statement.Transactions.Count,
+        statement.Transactions
+            .Take(MaxGuestPreviewTransactions)
+            .Select(transaction => new PreviewStatementTransactionResponse(
+                transaction.StatementLine,
+                transaction.TransactionDate,
+                transaction.Description,
+                transaction.Amount,
+                transaction.BalanceAfter))
+            .ToList());
+
+    /// <summary>
     /// Converts a parsed statement to its response representation, flagging the candidates the account already holds.
     /// </summary>
     /// <param name="statement">The parsed statement.</param>
@@ -273,6 +356,14 @@ public sealed class StatementsController(
             StatementLine = line.StatementLine!.Value
         };
     }
+
+    /// <summary>
+    /// The fields the duplicate check compares: the same date, description, and amount that POST /api/transactions checks before saving.
+    /// </summary>
+    /// <param name="TransactionDate">The date the transaction occurred.</param>
+    /// <param name="Description">The trimmed description.</param>
+    /// <param name="Amount">The signed amount, rounded to cents.</param>
+    internal sealed record TransactionKey(DateOnly TransactionDate, string Description, decimal Amount);
 
     /// <summary>
     /// Rounds a money value to cents, half away from zero, as POST /api/transactions does before saving.
@@ -401,12 +492,4 @@ public sealed class StatementsController(
         errorCode = "potential_duplicates",
         statementLines
     });
-
-    /// <summary>
-    /// The fields the duplicate check compares: the same date, description, and amount that POST /api/transactions checks before saving.
-    /// </summary>
-    /// <param name="TransactionDate">The date the transaction occurred.</param>
-    /// <param name="Description">The trimmed description.</param>
-    /// <param name="Amount">The signed amount, rounded to cents.</param>
-    internal sealed record TransactionKey(DateOnly TransactionDate, string Description, decimal Amount);
 }

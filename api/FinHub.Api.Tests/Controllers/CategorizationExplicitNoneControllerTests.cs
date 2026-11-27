@@ -212,7 +212,12 @@ public sealed class CategorizationExplicitNoneControllerTests
     private static StatementsController CreateStatementController(
         FinHubDbContext dbContext,
         ICategorizationRuleService service) =>
-        new(dbContext, CreateAuthClient(), [], service)
+        new(
+            dbContext,
+            CreateAuthClient(),
+            [],
+            service,
+            new GuestPreviewRateLimiter(1, TimeSpan.FromMinutes(1), TimeProvider.System))
         {
             ControllerContext = CreateControllerContext()
         };

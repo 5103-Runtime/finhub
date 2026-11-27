@@ -41,7 +41,8 @@ builder.Services.AddSingleton(new StatementMappingCatalog()); // Built now so a 
 builder.Services.AddSingleton<IStatementParser, CsvStatementParser>();
 builder.Services.AddScoped<IInsightService, InsightService>();
 
-// The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit and RateLimiting__Auth__WindowSeconds.
+// The production values live in appsettings.json; override per environment with RateLimiting__Auth__PermitLimit, RateLimiting__Auth__WindowSeconds,
+// RateLimiting__GuestPreview__PermitLimit, and RateLimiting__GuestPreview__WindowSeconds.
 IConfigurationSection authRateLimit = builder.Configuration.GetSection("RateLimiting:Auth");
 int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit") is int permits and > 0
     ? permits
@@ -49,6 +50,14 @@ int authPermitLimit = authRateLimit.GetValue<int?>("PermitLimit") is int permits
 TimeSpan authWindow = authRateLimit.GetValue<int?>("WindowSeconds") is int seconds and > 0
     ? TimeSpan.FromSeconds(seconds)
     : throw new InvalidOperationException("RateLimiting:Auth:WindowSeconds must be a positive integer.");
+
+IConfigurationSection guestPreviewRateLimit = builder.Configuration.GetSection("RateLimiting:GuestPreview");
+int guestPreviewPermitLimit = guestPreviewRateLimit.GetValue<int?>("PermitLimit") is int guestPermits and > 0
+    ? guestPermits
+    : throw new InvalidOperationException("RateLimiting:GuestPreview:PermitLimit must be a positive integer.");
+TimeSpan guestPreviewWindow = guestPreviewRateLimit.GetValue<int?>("WindowSeconds") is int guestSeconds and > 0
+    ? TimeSpan.FromSeconds(guestSeconds)
+    : throw new InvalidOperationException("RateLimiting:GuestPreview:WindowSeconds must be a positive integer.");
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -77,6 +86,12 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken);
     };
 });
+
+builder.Services.AddSingleton(services =>
+    new GuestPreviewRateLimiter(
+        guestPreviewPermitLimit,
+        guestPreviewWindow,
+        services.GetRequiredService<TimeProvider>()));
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
