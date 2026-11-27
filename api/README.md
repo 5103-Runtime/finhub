@@ -59,7 +59,7 @@ Application user reads are exposed through:
 - `GET /api/admin/users` — lists all application users.
 - `GET /api/admin/users/{id}` — retrieves one application user.
 
-Both endpoints require a valid access token and an application profile with `role = 'administrator'`. Normal users receive `403` with `errorCode: "administrator_required"`. Unknown user IDs return `404` with `errorCode: "user_not_found"`.
+Both endpoints require a valid access token and an application profile with `role = 'administrator'`. Responses include the user's email from Supabase Auth alongside their application profile. Normal users receive `403` with `errorCode: "administrator_required"`. Unknown user IDs return `404` with `errorCode: "user_not_found"`.
 
 ## Related Documentation
 

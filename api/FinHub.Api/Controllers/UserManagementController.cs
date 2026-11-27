@@ -36,9 +36,14 @@ public sealed class UserManagementController(
 
         List<UserManagementResponse> users = await dbContext.Profiles
             .AsNoTracking()
-            .OrderBy(profile => profile.CreatedAt)
-            .ThenBy(profile => profile.Id)
-            .Select(profile => ToResponse(profile))
+            .Join(
+                dbContext.AuthUsers.AsNoTracking(),
+                profile => profile.Id,
+                authUser => authUser.Id,
+                (profile, authUser) => new { Profile = profile, AuthUser = authUser })
+            .OrderBy(user => user.Profile.CreatedAt)
+            .ThenBy(user => user.Profile.Id)
+            .Select(user => ToResponse(user.Profile, user.AuthUser))
             .ToListAsync(cancellationToken);
 
         return Ok(users);
@@ -62,17 +67,24 @@ public sealed class UserManagementController(
             return failure;
         }
 
-        Profile? profile = await dbContext.Profiles
+        UserManagementResponse? user = await dbContext.Profiles
             .AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+            .Join(
+                dbContext.AuthUsers.AsNoTracking(),
+                profile => profile.Id,
+                authUser => authUser.Id,
+                (profile, authUser) => new { Profile = profile, AuthUser = authUser })
+            .Where(item => item.Profile.Id == id)
+            .Select(item => ToResponse(item.Profile, item.AuthUser))
+            .SingleOrDefaultAsync(cancellationToken);
 
-        return profile is null
+        return user is null
             ? NotFound(new
             {
                 error = "The user could not be found.",
                 errorCode = "user_not_found"
             })
-            : Ok(ToResponse(profile));
+            : Ok(user);
     }
 
     /// <summary>
@@ -80,8 +92,9 @@ public sealed class UserManagementController(
     /// </summary>
     /// <param name="profile">The profile to convert.</param>
     /// <returns>The user response.</returns>
-    private static UserManagementResponse ToResponse(Profile profile) => new(
+    private static UserManagementResponse ToResponse(Profile profile, AuthUser authUser) => new(
         profile.Id,
+        authUser.Email,
         profile.FirstName,
         profile.LastName,
         profile.PreferredName,

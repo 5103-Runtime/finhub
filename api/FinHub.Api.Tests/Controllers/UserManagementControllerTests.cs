@@ -27,6 +27,9 @@ public sealed class UserManagementControllerTests
         dbContext.Profiles.AddRange(
             CreateProfile(AdministratorId, "administrator"),
             CreateProfile(UserId, "user"));
+        dbContext.AuthUsers.AddRange(
+            CreateAuthUser(AdministratorId, "admin@example.com"),
+            CreateAuthUser(UserId, "user@example.com"));
         await dbContext.SaveChangesAsync();
 
         UserManagementController controller = CreateController(dbContext, AdministratorId);
@@ -39,6 +42,8 @@ public sealed class UserManagementControllerTests
             ((OkObjectResult)result.Result!).Value as IReadOnlyList<UserManagementResponse>
             ?? throw new AssertFailedException("The response did not contain user responses.");
         Assert.AreEqual(2, users.Count);
+        Assert.AreEqual("admin@example.com", users.Single(user => user.Id == AdministratorId).Email);
+        Assert.AreEqual("user@example.com", users.Single(user => user.Id == UserId).Email);
     }
 
     [TestMethod]
@@ -66,6 +71,9 @@ public sealed class UserManagementControllerTests
         dbContext.Profiles.AddRange(
             CreateProfile(AdministratorId, "administrator"),
             CreateProfile(UserId, "user"));
+        dbContext.AuthUsers.AddRange(
+            CreateAuthUser(AdministratorId, "admin@example.com"),
+            CreateAuthUser(UserId, "user@example.com"));
         await dbContext.SaveChangesAsync();
 
         UserManagementController controller = CreateController(dbContext, AdministratorId);
@@ -78,6 +86,7 @@ public sealed class UserManagementControllerTests
             ((OkObjectResult)result.Result!).Value as UserManagementResponse
             ?? throw new AssertFailedException("The response did not contain a user.");
         Assert.AreEqual(UserId, user.Id);
+        Assert.AreEqual("user@example.com", user.Email);
         Assert.AreEqual("user", user.Role);
     }
 
@@ -114,6 +123,12 @@ public sealed class UserManagementControllerTests
         Role = role,
         CreatedAt = DateTime.UtcNow,
         UpdatedAt = DateTime.UtcNow
+    };
+
+    private static AuthUser CreateAuthUser(Guid id, string email) => new()
+    {
+        Id = id,
+        Email = email
     };
 
     private static UserManagementController CreateController(

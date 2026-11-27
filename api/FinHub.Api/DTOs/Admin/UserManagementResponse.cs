@@ -4,6 +4,7 @@ namespace FinHub.Api.DTOs.Admin;
 /// Represents an application user returned to an administrator.
 /// </summary>
 /// <param name="Id">The user ID.</param>
+/// <param name="Email">The user's email address.</param>
 /// <param name="FirstName">The user's first name.</param>
 /// <param name="LastName">The user's last name.</param>
 /// <param name="PreferredName">The user's preferred name.</param>
@@ -13,6 +14,7 @@ namespace FinHub.Api.DTOs.Admin;
 /// <param name="UpdatedAt">The date and time the user was last updated.</param>
 public sealed record UserManagementResponse(
     Guid Id,
+    string? Email,
     string? FirstName,
     string? LastName,
     string? PreferredName,
