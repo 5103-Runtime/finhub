@@ -52,14 +52,18 @@ Adjust either limit per environment without a code change:
 
 All four keys are required and must be positive; the API refuses to start otherwise. A rejected call returns `429` with a `Retry-After` header and `errorCode: "rate_limited"`.
 
-## User management APIs
+## Administrator APIs
 
-Application user reads are exposed through:
+These endpoints are restricted to authenticated administrators with an application profile role of `administrator`. Normal users receive `403` with `errorCode: "administrator_required"`.
 
-- `GET /api/admin/users` — lists all application users.
-- `GET /api/admin/users/{id}` — retrieves one application user.
+### User management
 
-Both endpoints require a valid access token and an application profile with `role = 'administrator'`. Responses include the user's email from Supabase Auth alongside their application profile. Normal users receive `403` with `errorCode: "administrator_required"`. Unknown user IDs return `404` with `errorCode: "user_not_found"`.
+- `GET /api/admin/users` lists all application users. Optional `sortBy` values are `email`, `name` (last name, then first name), `firstName`, `lastName`, `preferredName`, `role`, `createdAt`, and `updatedAt`; `sortOrder` accepts `asc` or `desc`.
+- `GET /api/admin/users/{id}` retrieves one application user.
+
+When both sorting parameters are omitted, the list is ordered by creation time, oldest first. A supplied `sortBy` defaults to descending order; `sortOrder` requires `sortBy`. Missing or unsupported sorting parameters return `400` with `errorCode: "missing_sort_field"`, `"invalid_sort_field"`, or `"invalid_sort_order"`.
+
+Responses include the user's email from Supabase Auth alongside their application profile. An unknown user ID returns `404` with `errorCode: "user_not_found"`.
 
 ## Related Documentation
 

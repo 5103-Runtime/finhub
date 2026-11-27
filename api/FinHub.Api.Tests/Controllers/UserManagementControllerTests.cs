@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using FinHub.Api.Constants;
 using FinHub.Api.Controllers;
 using FinHub.Api.Data;
@@ -35,7 +36,7 @@ public sealed class UserManagementControllerTests
         UserManagementController controller = CreateController(dbContext, AdministratorId);
 
         ActionResult<IReadOnlyList<UserManagementResponse>> result =
-            await controller.List(CancellationToken.None);
+            await controller.List(null, null, CancellationToken.None);
 
         Assert.IsInstanceOfType<OkObjectResult>(result.Result);
         IReadOnlyList<UserManagementResponse> users =
@@ -44,6 +45,58 @@ public sealed class UserManagementControllerTests
         Assert.AreEqual(2, users.Count);
         Assert.AreEqual("admin@example.com", users.Single(user => user.Id == AdministratorId).Email);
         Assert.AreEqual("user@example.com", users.Single(user => user.Id == UserId).Email);
+    }
+
+    [TestMethod]
+    [DataRow("asc", "a-user@example.com")]
+    [DataRow("desc", "z-admin@example.com")]
+    [DataRow(null, "z-admin@example.com")]
+    public async Task List_SortsByEmail(string? sortOrder, string firstEmail)
+    {
+        await using FinHubDbContext dbContext = CreateDbContext();
+        Profile administrator = CreateProfile(AdministratorId, "administrator");
+        administrator.CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        Profile user = CreateProfile(UserId, "user");
+        user.CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+        dbContext.Profiles.AddRange(administrator, user);
+        dbContext.AuthUsers.AddRange(
+            CreateAuthUser(AdministratorId, "z-admin@example.com"),
+            CreateAuthUser(UserId, "a-user@example.com"));
+        await dbContext.SaveChangesAsync();
+
+        UserManagementController controller = CreateController(dbContext, AdministratorId);
+
+        ActionResult<IReadOnlyList<UserManagementResponse>> result =
+            await controller.List("email", sortOrder, CancellationToken.None);
+
+        Assert.IsInstanceOfType<OkObjectResult>(result.Result);
+        IReadOnlyList<UserManagementResponse> users =
+            ((OkObjectResult)result.Result!).Value as IReadOnlyList<UserManagementResponse>
+            ?? throw new AssertFailedException("The response did not contain user responses.");
+        Assert.AreEqual(firstEmail, users[0].Email);
+    }
+
+    [TestMethod]
+    [DataRow(null, "asc", "missing_sort_field")]
+    [DataRow("emailAddress", "asc", "invalid_sort_field")]
+    [DataRow("email", "sideways", "invalid_sort_order")]
+    public async Task List_RejectsInvalidSorting(
+        string? sortBy,
+        string? sortOrder,
+        string expectedErrorCode)
+    {
+        await using FinHubDbContext dbContext = CreateDbContext();
+        dbContext.Profiles.Add(CreateProfile(AdministratorId, "administrator"));
+        await dbContext.SaveChangesAsync();
+
+        UserManagementController controller = CreateController(dbContext, AdministratorId);
+
+        ActionResult<IReadOnlyList<UserManagementResponse>> result =
+            await controller.List(sortBy, sortOrder, CancellationToken.None);
+
+        Assert.IsInstanceOfType<BadRequestObjectResult>(result.Result);
+        string body = JsonSerializer.Serialize(((BadRequestObjectResult)result.Result!).Value);
+        StringAssert.Contains(body, expectedErrorCode);
     }
 
     [TestMethod]
@@ -56,7 +109,7 @@ public sealed class UserManagementControllerTests
         UserManagementController controller = CreateController(dbContext, UserId);
 
         ActionResult<IReadOnlyList<UserManagementResponse>> result =
-            await controller.List(CancellationToken.None);
+            await controller.List(null, null, CancellationToken.None);
 
         ObjectResult? response = result.Result as ObjectResult;
         Assert.IsNotNull(response);
