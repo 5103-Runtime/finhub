@@ -21,7 +21,7 @@ public sealed class UserManagementController(
     /// <summary>
     /// Lists every application user.
     /// </summary>
-    /// <param name="sortBy">The field to sort by: email, name (last name, then first name), firstName, lastName, preferredName, role, createdAt, or updatedAt.</param>
+    /// <param name="sortBy">The field to sort by: email, firstName, lastName, preferredName, role, createdAt, or updatedAt.</param>
     /// <param name="sortOrder">The sort direction: asc or desc.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The users, oldest first.</returns>
@@ -67,11 +67,6 @@ public sealed class UserManagementController(
                 "email" => descending
                     ? query.OrderByDescending(user => user.AuthUser.Email)
                     : query.OrderBy(user => user.AuthUser.Email),
-                "name" => descending
-                    ? query.OrderByDescending(user => user.Profile.LastName)
-                        .ThenByDescending(user => user.Profile.FirstName)
-                    : query.OrderBy(user => user.Profile.LastName)
-                        .ThenBy(user => user.Profile.FirstName),
                 "firstname" => descending
                     ? query.OrderByDescending(user => user.Profile.FirstName)
                     : query.OrderBy(user => user.Profile.FirstName),
@@ -125,12 +120,12 @@ public sealed class UserManagementController(
         }
 
         string field = sortBy.Trim().ToLowerInvariant();
-        if (field != "email" && field != "name" && field != "firstname" && field != "lastname"
+        if (field != "email" && field != "firstname" && field != "lastname"
             && field != "preferredname" && field != "role" && field != "createdat" && field != "updatedat")
         {
             return new BadRequestObjectResult(new
             {
-                error = "Sort by email, name, firstName, lastName, preferredName, role, createdAt, or updatedAt.",
+                error = "Sort by email, firstName, lastName, preferredName, role, createdAt, or updatedAt.",
                 errorCode = "invalid_sort_field"
             });
         }

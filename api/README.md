@@ -58,7 +58,7 @@ These endpoints are restricted to authenticated administrators with an applicati
 
 ### User management
 
-- `GET /api/admin/users` lists all application users. Optional `sortBy` values are `email`, `name` (last name, then first name), `firstName`, `lastName`, `preferredName`, `role`, `createdAt`, and `updatedAt`; `sortOrder` accepts `asc` or `desc`.
+- `GET /api/admin/users` lists all application users. Optional `sortBy` values are `email`, `firstName`, `lastName`, `preferredName`, `role`, `createdAt`, and `updatedAt`; `sortOrder` accepts `asc` or `desc`.
 - `GET /api/admin/users/{id}` retrieves one application user.
 
 When both sorting parameters are omitted, the list is ordered by creation time, oldest first. A supplied `sortBy` defaults to descending order; `sortOrder` requires `sortBy`. Missing or unsupported sorting parameters return `400` with `errorCode: "missing_sort_field"`, `"invalid_sort_field"`, or `"invalid_sort_order"`.
