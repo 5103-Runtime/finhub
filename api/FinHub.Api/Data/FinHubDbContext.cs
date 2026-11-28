@@ -11,6 +11,11 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     : DbContext(options)
 {
     /// <summary>
+    /// Gets the read-only identity records owned by Supabase Auth.
+    /// </summary>
+    public DbSet<AuthUser> AuthUsers => Set<AuthUser>();
+
+    /// <summary>
     /// Gets the DbSet of user profiles in the database.
     /// </summary>
     public DbSet<Profile> Profiles => Set<Profile>();
@@ -61,6 +66,14 @@ public sealed class FinHubDbContext(DbContextOptions<FinHubDbContext> options)
     /// <param name="modelBuilder">The ModelBuilder instance used to configure the model.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AuthUser>(entity =>
+        {
+            entity.ToTable("users", "auth");
+            entity.HasKey(user => user.Id);
+            entity.Property(user => user.Id).HasColumnName("id");
+            entity.Property(user => user.Email).HasColumnName("email");
+        });
+
         modelBuilder.Entity<Profile>(entity =>
         {
             entity.ToTable("profiles", "public");
